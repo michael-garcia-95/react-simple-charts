@@ -23,7 +23,7 @@ jobs:
         run: |
           node --version
           npm --version
-          npm ls react react-dom @types/react @types/react-dom
+          node -e 'for (const name of ["react", "react-dom", "@types/react", "@types/react-dom"]) console.log(name + "@" + require("./node_modules/" + name + "/package.json").version)'
       - run: npm run typecheck
       - run: npm run test:types
       - run: npm run lint
