@@ -226,7 +226,9 @@ git diff --check
 RSC_BROWSER_PATH=/usr/bin/chromium node scripts/verify-consumers.mjs
 ```
 
-The default-cache pack attempt was corrected to use a writable cache. Initial
+Initial registry-version queries failed because the default npm cache was not
+writable; they passed after selecting the writable cache. Packing used the
+writable cache. Initial
 network-denied shell attempts were rerun with command network access, preserving
 the configured proxy. The first axe attempt needed an explicit Playwright browser
 context; the runner now supplies one. A Pages measurement-gate timeout and a
