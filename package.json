@@ -32,7 +32,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "verify:package": "npm run build && node scripts/verify-package.mjs",
-    "prepack": "npm run build"
+    "prepack": "npm run build",
+    "test:types": "tsc --project tsconfig.types.json"
   },
   "peerDependencies": {
     "react": "^18.2.0 || ^19.0.0",
