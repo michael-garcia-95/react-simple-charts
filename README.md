@@ -39,4 +39,4 @@ See [architecture](docs/ARCHITECTURE.md), [open decisions](docs/OPEN_DECISIONS.m
 
 ## License
 
-MIT is the selected license. The copyright holder has not been confirmed. `LICENSE` contains the standard terms without an invented copyright notice; the holder and notice must be finalized before publication.
+Licensed under the MIT License. Copyright (c) 2026 Michael Garcia. The copyright holder has been approved by the Development Lead; see `LICENSE` for the standard terms.

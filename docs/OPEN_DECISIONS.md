@@ -1,6 +1,7 @@
 # Open decisions
 
-- Confirm the MIT copyright holder and copyright notice before publication. No holder has been inferred from the repository owner.
+The MIT copyright-holder decision is finalized: the Development Lead approved Michael Garcia. `LICENSE` includes Copyright (c) 2026 Michael Garcia.
+
 - Approve publication, final package name, initial version, and release process. Package remains private at version 0.0.0.
 - Define chart props, data contracts, scale semantics, accessibility behavior, and named exports in later approved tasks.
 - Define explicit/responsive dimensions, SSR fallback sizing, stable IDs, and hydration integration tests. The preserved client directive is preparation only.
