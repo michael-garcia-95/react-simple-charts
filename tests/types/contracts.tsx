@@ -1,7 +1,6 @@
 import type { ReactElement } from 'react';
 import type {
   LineChartProps,
-  AreaChartProps,
   BarChartProps,
   PieChartProps,
   DonutChartProps,
@@ -27,10 +26,7 @@ interface Row {
   impossible: never;
 }
 export const data: readonly Row[] = [];
-import { LineChart } from 'react-simple-charts';
-declare function AreaChart<T extends object>(
-  props: AreaChartProps<T>,
-): ReactElement;
+import { LineChart, AreaChart } from 'react-simple-charts';
 declare function BarChart<T extends object>(
   props: BarChartProps<T>,
 ): ReactElement;
@@ -250,7 +246,7 @@ export const boolKey: CategoricalFieldKey<Row> = 'flag';
 // @ts-expect-error Internal package subpaths are not public.
 import type { LineChartProps as InternalProps } from 'react-simple-charts/types/contracts';
 // @ts-expect-error Future chart families remain types only.
-import { AreaChart as RuntimeChart } from 'react-simple-charts';
+import { BarChart as RuntimeChart } from 'react-simple-charts';
 export type RejectedInternalImport = InternalProps<Row>;
 export const rejectedRuntimeImport = RuntimeChart;
 
@@ -277,3 +273,9 @@ export function describeInputMethod(method: InputMethod): string {
 
 // @ts-expect-error Mouse is represented by pointer, not a separate input method.
 export const invalidInputMethod: InputMethod = 'mouse';
+
+// @ts-expect-error Pie remains a future runtime component.
+import { PieChart as RuntimePie } from 'react-simple-charts';
+// @ts-expect-error Donut remains a future runtime component.
+import { DonutChart as RuntimeDonut } from 'react-simple-charts';
+export const rejectedPolarRuntimeImports = [RuntimePie, RuntimeDonut];

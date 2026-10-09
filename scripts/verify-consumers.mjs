@@ -80,17 +80,25 @@ const browser = await chromium.launch({
   args: ['--no-sandbox'],
 });
 report.browser = browser.version();
-const sample = `import { LineChart } from 'react-simple-charts';
+const sample = `import { LineChart, AreaChart } from 'react-simple-charts';
 const data = [{quarter:'Q1',value:12},{quarter:'Q2',value:24},{quarter:'Q3',value:18},{quarter:'Q4',value:32}];
 export default function Sample() {return <main><h1>Packaged public LineChart</h1>
 <section id="explicit"><LineChart data={data} xKey="quarter" yKey="value" width={640} accessibility={{label:'Explicit',description:'Quarterly values',dataTable:'visible'}} /></section>
 <section id="responsive" style={{width:'80%','--rsc-series-color':'#086b62'} as import('react').CSSProperties}><LineChart data={data} xKey="quarter" yKey="value" accessibility={{label:'Responsive'}} /></section>
 <section id="independent" style={{width:320}}><LineChart data={data} xKey="quarter" yKey="value" accessibility={{label:'Independent'}} /></section>
-<section id="local-time"><LineChart width={640} data={[{date:new Date('2026-03-07T00:00:00Z'),value:2}]} xScale="time" xKey="date" yKey="value" accessibility={{label:'Local time'}}/></section><Interactive/></main>;}
+<section id="local-time"><LineChart width={640} data={[{date:new Date('2026-03-07T00:00:00Z'),value:2}]} xScale="time" xKey="date" yKey="value" accessibility={{label:'Local time'}}/></section>
+<section id="area-explicit"><AreaChart data={data} xKey="quarter" yKey="value" width={640} accessibility={{label:'Positive Area',dataTable:'visible'}} /></section>
+<section id="area-negative"><AreaChart data={[{x:'A',y:-2},{x:'B',y:-5},{x:'C',y:-1}]} xKey="x" yKey="y" width={640} accessibility={{label:'Negative Area'}} /></section>
+<section id="area-mixed"><AreaChart data={[{x:'A',y:-2},{x:'B',y:5},{x:'C',y:-1}]} xKey="x" yKey="y" width={640} yAxis={{min:-3,max:3}} accessibility={{label:'Mixed clipped Area'}} /></section>
+<section id="area-gaps"><AreaChart data={[{x:'A',a:1,b:-1},{x:'A',a:2,b:-2},{x:'C',a:null,b:-3},{x:'D',a:4,b:null}]} xKey="x" series={[{key:'a',color:'#2563eb'},{key:'b',color:'#0d9488'}]} width={640} accessibility={{label:'Independent Area gaps'}} /></section>
+<section id="area-responsive"><AreaChart data={data} xKey="quarter" yKey="value" accessibility={{label:'Responsive Area'}} /></section>
+<section id="area-time"><AreaChart data={[{x:new Date('2026-01-01'),y:1}]} xKey="x" xScale="time" yKey="y" width={640} accessibility={{label:'Local time Area'}} /></section>
+<Interactive/></main>;}
 import Interactive from './Interactive';`;
 const interactive = `'use client';
-import {useState} from 'react'; import {LineChart} from 'react-simple-charts';
-export default function Interactive(){const [result,setResult]=useState(''); const [count,setCount]=useState(0);return <section id="interactive"><LineChart width={640} data={[{x:'A',y:1},{x:'A',y:2}]} xKey="x" yKey="y" onDataActivate={p=>{setCount(n=>n+1);setResult(p.index+':'+p.inputMethod);}} accessibility={{label:'Interactive'}}/><output>{result}:{count}</output></section>;}`;
+import {useState} from 'react'; import {LineChart, AreaChart} from 'react-simple-charts';
+function Inspection({area=false}:{area?:boolean}){const Chart=area?AreaChart:LineChart;const [result,setResult]=useState(''); const [count,setCount]=useState(0);return <section id={area?'area-interactive':'interactive'}><Chart width={640} data={[{x:'A',y:1},{x:'A',y:2}]} xKey="x" yKey="y" onDataActivate={p=>{setCount(n=>n+1);setResult(p.index+':'+p.inputMethod);}} accessibility={{label:area?'Interactive Area':'Interactive'}}/><output>{result}:{count}</output></section>;}
+export default function Interactive(){return <><Inspection/><Inspection area/></>;}`;
 const tsconfig = {
   compilerOptions: {
     target: 'ES2022',
@@ -191,10 +199,20 @@ async function start(dir, kind, port, major) {
     });
     let before;
     let responsiveBefore;
+    let areaBefore;
+    let areaResponsiveBefore;
     if (kind === 'next') {
       const staticPage = await browser.newPage({ javaScriptEnabled: false });
       await staticPage.goto(url);
       responsiveBefore = await staticPage.locator('#responsive').innerHTML();
+      areaBefore = await staticPage
+        .locator('#area-explicit svg')
+        .evaluate((el) => el.outerHTML);
+      areaResponsiveBefore = await staticPage
+        .locator('#area-responsive')
+        .innerHTML();
+      assert.equal(await staticPage.locator('#area-responsive svg').count(), 0);
+      assert.equal(await staticPage.locator('#area-time svg').count(), 0);
       before = await staticPage
         .locator('#explicit svg')
         .evaluate((el) => el.outerHTML);
@@ -211,7 +229,7 @@ async function start(dir, kind, port, major) {
           .evaluate((el) => getComputedStyle(el).height),
         '280px',
       );
-      assert.equal(await staticPage.getByRole('table').count(), 5);
+      assert.equal(await staticPage.getByRole('table').count(), 12);
       await file(
         dir,
         'evidence/before.html',
@@ -222,7 +240,7 @@ async function start(dir, kind, port, major) {
     await page.goto(url);
     await page.waitForFunction(() => window.__observers.length >= 2);
     assert.equal(await page.locator('#responsive svg').count(), 0);
-    assert.equal(await page.getByRole('table').count(), 5);
+    assert.equal(await page.getByRole('table').count(), 12);
     if (responsiveBefore)
       assert.equal(
         await page.locator('#responsive').innerHTML(),
@@ -232,6 +250,16 @@ async function start(dir, kind, port, major) {
       assert.equal(
         await page.locator('#explicit svg').evaluate((el) => el.outerHTML),
         before,
+      );
+    if (areaBefore)
+      assert.equal(
+        await page.locator('#area-explicit svg').evaluate((el) => el.outerHTML),
+        areaBefore,
+      );
+    if (areaResponsiveBefore)
+      assert.equal(
+        await page.locator('#area-responsive').innerHTML(),
+        areaResponsiveBefore,
       );
     await file(
       dir,
@@ -289,70 +317,90 @@ async function start(dir, kind, port, major) {
     assert.equal(await page.getByRole('tooltip').count(), 1);
     await page.keyboard.press('Escape');
     assert.equal(await page.getByRole('tooltip').count(), 0);
-    await page.locator('#interactive [role=button]').first().focus();
-    await page.keyboard.press('ArrowRight');
-    await page.keyboard.press('Enter');
-    assert.equal(await page.locator('output').textContent(), '1:keyboard:1');
-    await page.locator('#interactive [role=button]').first().click();
-    assert.equal(await page.locator('output').textContent(), '0:pointer:2');
-    await page
-      .locator('#interactive [role=button]')
-      .last()
-      .scrollIntoViewIfNeeded();
-    const hit = await page
-      .locator('#interactive [role=button]')
-      .last()
-      .boundingBox();
-    assert(hit);
-    await page.touchscreen.tap(hit.x + hit.width / 2, hit.y + hit.height / 2);
-    await page.waitForFunction(
-      () => document.querySelector('output')?.textContent === '1:touch:3',
-    );
-    assert.equal(await page.locator('output').textContent(), '1:touch:3');
-    assert.equal(await page.getByRole('tooltip').count(), 1);
-    await page.getByRole('button', { name: 'Dismiss inspection' }).click();
-    assert.equal(await page.getByRole('tooltip').count(), 0);
-    await page
-      .locator('#interactive [role=button]')
-      .last()
-      .evaluate((el) =>
-        el.dispatchEvent(
-          new window.MouseEvent('click', { bubbles: true, detail: 0 }),
-        ),
+    for (const section of ['#interactive', '#area-interactive']) {
+      await page.locator(`${section} [role=button]`).first().focus();
+      await page.keyboard.press('ArrowRight');
+      await page.keyboard.press('Enter');
+      assert.equal(
+        await page.locator(`${section} output`).textContent(),
+        '1:keyboard:1',
       );
-    await page.waitForFunction(
-      () => document.querySelector('output')?.textContent === '1:keyboard:4',
-    );
-    await page.locator('#interactive [role=button]').first().click();
-    await page.waitForFunction(
-      () => document.querySelector('output')?.textContent === '0:pointer:5',
-    );
-    await page
-      .locator('#interactive [role=button]')
-      .first()
-      .evaluate((el) => {
-        el.dispatchEvent(
-          new window.KeyboardEvent('keydown', {
-            key: 'Enter',
-            bubbles: true,
-            cancelable: true,
-          }),
+      await page.locator(`${section} [role=button]`).first().click();
+      assert.equal(
+        await page.locator(`${section} output`).textContent(),
+        '0:pointer:2',
+      );
+      await page
+        .locator(`${section} [role=button]`)
+        .last()
+        .scrollIntoViewIfNeeded();
+      const hit = await page
+        .locator(`${section} [role=button]`)
+        .last()
+        .boundingBox();
+      assert(hit);
+      await page.touchscreen.tap(hit.x + hit.width / 2, hit.y + hit.height / 2);
+      await page.waitForFunction(
+        ({ selector, expected }) =>
+          document.querySelector(selector)?.textContent === expected,
+        { selector: `${section} output`, expected: '1:touch:3' },
+      );
+      assert.equal(
+        await page.locator(`${section} output`).textContent(),
+        '1:touch:3',
+      );
+      assert.equal(await page.getByRole('tooltip').count(), 1);
+      await page.getByRole('button', { name: 'Dismiss inspection' }).click();
+      assert.equal(await page.getByRole('tooltip').count(), 0);
+      await page
+        .locator(`${section} [role=button]`)
+        .last()
+        .evaluate((el) =>
+          el.dispatchEvent(
+            new window.MouseEvent('click', { bubbles: true, detail: 0 }),
+          ),
         );
-        el.dispatchEvent(
-          new window.KeyboardEvent('keyup', {
-            key: 'Enter',
-            bubbles: true,
-            cancelable: true,
-          }),
-        );
-        el.dispatchEvent(
-          new window.MouseEvent('click', { bubbles: true, detail: 0 }),
-        );
-      });
-    await page.waitForFunction(
-      () => document.querySelector('output')?.textContent === '0:keyboard:6',
-    );
+      await page.waitForFunction(
+        ({ selector, expected }) =>
+          document.querySelector(selector)?.textContent === expected,
+        { selector: `${section} output`, expected: '1:keyboard:4' },
+      );
+      await page.locator(`${section} [role=button]`).first().click();
+      await page.waitForFunction(
+        ({ selector, expected }) =>
+          document.querySelector(selector)?.textContent === expected,
+        { selector: `${section} output`, expected: '0:pointer:5' },
+      );
+      await page
+        .locator(`${section} [role=button]`)
+        .first()
+        .evaluate((el) => {
+          el.dispatchEvent(
+            new window.KeyboardEvent('keydown', {
+              key: 'Enter',
+              bubbles: true,
+              cancelable: true,
+            }),
+          );
+          el.dispatchEvent(
+            new window.KeyboardEvent('keyup', {
+              key: 'Enter',
+              bubbles: true,
+              cancelable: true,
+            }),
+          );
+          el.dispatchEvent(
+            new window.MouseEvent('click', { bubbles: true, detail: 0 }),
+          );
+        });
+      await page.waitForFunction(
+        ({ selector, expected }) =>
+          document.querySelector(selector)?.textContent === expected,
+        { selector: `${section} output`, expected: '0:keyboard:6' },
+      );
 
+      await page.keyboard.press('Escape');
+    }
     await page.keyboard.press('Escape');
     assert.equal(
       await page
@@ -366,6 +414,72 @@ async function start(dir, kind, port, major) {
         .evaluate((el) => getComputedStyle(el).clipPath),
       'inset(50%)',
     );
+    await page.locator('#area-responsive svg').waitFor();
+    await page.locator('#area-time svg').waitFor();
+    for (const section of [
+      'area-explicit',
+      'area-negative',
+      'area-mixed',
+      'area-gaps',
+    ]) {
+      assert((await page.locator(`#${section} [data-area-fill]`).count()) > 0);
+      assert(
+        await page
+          .locator(`#${section} [data-area-fill]`)
+          .evaluateAll((nodes) =>
+            nodes.every(
+              (n) =>
+                n.getAttribute('stroke') === 'none' &&
+                n.getAttribute('fill-opacity') === '0.2' &&
+                !/NaN|Infinity/.test(n.getAttribute('d')),
+            ),
+          ),
+      );
+      assert(
+        await page
+          .locator(`#${section} [data-area-boundary]`)
+          .evaluateAll((nodes) =>
+            nodes.every(
+              (n) =>
+                n.getAttribute('fill') === 'none' &&
+                !n.getAttribute('d').includes('Z'),
+            ),
+          ),
+      );
+      assert(
+        await page
+          .locator(`#${section} [data-layer="marks"]`)
+          .getAttribute('clip-path'),
+      );
+    }
+    assert.equal(
+      await page
+        .locator('#area-gaps [data-series="a"] [data-area-fill]')
+        .count(),
+      1,
+    );
+    assert.equal(
+      await page.locator('#area-gaps [data-series="a"] circle').count(),
+      3,
+    );
+    for (const [section, sign] of [
+      ['area-explicit', 1],
+      ['area-negative', -1],
+    ]) {
+      assert(
+        await page
+          .locator(`#${section} [data-area-fill]`)
+          .evaluate((node, sign) => {
+            const coords = [
+              ...node.getAttribute('d').matchAll(/[ML]([^,]+),([^MLZ]+)/g),
+            ].map((m) => [Number(m[1]), Number(m[2])]);
+            const baseline = coords.at(-1)[1];
+            return coords
+              .slice(0, coords.length / 2)
+              .every((p) => (sign > 0 ? p[1] < baseline : p[1] > baseline));
+          }, sign),
+      );
+    }
     const ax = await page.locator('main').ariaSnapshot();
     assert(ax.includes('rowheader "Q4"') && ax.includes('Responsive — data'));
     await file(dir, 'evidence/accessibility.txt', ax);
@@ -386,7 +500,7 @@ async function start(dir, kind, port, major) {
       await page.waitForFunction(() => window.__observers.length >= 2);
       await page.evaluate(() => window.__release());
       await page.locator('#responsive svg').waitFor();
-      assert.equal(await page.getByRole('table').count(), 5);
+      assert.equal(await page.getByRole('table').count(), 12);
       assert.deepEqual(errors, []);
     } else {
       await page.evaluate(() => window.__unmount());
@@ -473,7 +587,7 @@ try {
         `import assert from 'node:assert/strict';
 import * as api from 'react-simple-charts';
 import {readFileSync} from 'node:fs';
-assert.deepEqual(Object.keys(api), ['LineChart']); assert.equal(typeof api.LineChart,'function');
+assert.deepEqual(Object.keys(api).sort(), ['AreaChart','LineChart']); assert.equal(typeof api.LineChart,'function'); assert.equal(typeof api.AreaChart,'function');
 const p=JSON.parse(readFileSync('node_modules/react-simple-charts/package.json'));
 assert.equal(p.private,true); assert.deepEqual(Object.keys(p.exports),['.']);
 assert(p.peerDependencies.react && p.peerDependencies['react-dom']);
@@ -534,9 +648,9 @@ for(const path of ['src/internal/RenderingProbe','dist/index.js','internal']) { 
           'roots-server.mjs',
           `import {createElement} from 'react';
 import {renderToString} from 'react-dom/server';
-import {LineChart} from 'react-simple-charts';
+import {LineChart,AreaChart} from 'react-simple-charts';
 import {writeFileSync} from 'node:fs';
-const parts=['alpha-','beta-'].map((prefix,i)=>'<div id="root'+i+'">'+renderToString(createElement(LineChart,{width:640,data:[{x:'A',y:1}],xKey:'x',yKey:'y'}),{identifierPrefix:prefix})+'</div>');
+const parts=['alpha-','beta-'].map((prefix,i)=>'<div id="root'+i+'">'+renderToString(createElement(i===0?LineChart:AreaChart,{width:640,data:[{x:'A',y:1}],xKey:'x',yKey:'y'}),{identifierPrefix:prefix})+'</div>');
 writeFileSync('roots.html','<!doctype html><html lang="en"><head><title>Separate roots</title><link rel="icon" href="data:,"></head><body>'+parts.join('')+'<script type="module" src="/roots.tsx"></script></body></html>');`,
         );
         await run('node', ['roots-server.mjs'], dir);
@@ -544,8 +658,8 @@ writeFileSync('roots.html','<!doctype html><html lang="en"><head><title>Separate
           dir,
           'roots.tsx',
           `import {hydrateRoot} from 'react-dom/client';
-import {LineChart} from 'react-simple-charts';
-['alpha-','beta-'].forEach((identifierPrefix,i)=>hydrateRoot(document.getElementById('root'+i)!,<LineChart width={640} data={[{x:'A',y:1}]} xKey="x" yKey="y"/>,{identifierPrefix,onRecoverableError: error=>console.error(error)}));`,
+import {LineChart,AreaChart} from 'react-simple-charts';
+['alpha-','beta-'].forEach((identifierPrefix,i)=>{const Chart=i===0?LineChart:AreaChart;hydrateRoot(document.getElementById('root'+i)!,<Chart width={640} data={[{x:'A',y:1}]} xKey="x" yKey="y"/>,{identifierPrefix,onRecoverableError: error=>console.error(error)});});`,
         );
         await file(
           dir,

@@ -37,3 +37,5 @@ export type {
 } from './types/contracts';
 
 export { LineChart } from './charts/LineChart';
+
+export { AreaChart } from './charts/AreaChart';

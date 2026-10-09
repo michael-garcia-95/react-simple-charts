@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LineChart } from '../src';
+import { LineChart, AreaChart } from '../src';
 import { LinePreview } from '../src/internal/LinePreview';
 import { RenderingProbe } from '../src/internal/RenderingProbe';
 
@@ -7,7 +7,7 @@ export function App() {
   const [activation, setActivation] = useState('No activation yet');
   return (
     <main>
-      <p className="eyebrow">Development playground · M03-T02</p>
+      <p className="eyebrow">Development playground · M03-T03</p>
       <h1>React Simple Charts</h1>
       <p>
         A lightweight, customizable React charting library built with
@@ -18,7 +18,8 @@ export function App() {
           Public LineChart and internal rendering fixtures
         </h2>
         <p>
-          LineChart is publicly importable. Other chart families remain planned.
+          LineChart is publicly importable. AreaChart is also public; Bar, Pie
+          and Donut remain planned.
         </p>
         <p>Planned chart families: Line, Bar, Area, Pie, and Donut.</p>
       </section>
@@ -120,6 +121,116 @@ export function App() {
           tooltip={false}
           onDataActivate={(p) => setActivation(`${p.value} (${p.inputMethod})`)}
           accessibility={{ label: 'Public activation only' }}
+        />
+      </section>
+      <section aria-labelledby="area-heading">
+        <h2 id="area-heading">
+          Public AreaChart · independent zero-baseline fills
+        </h2>
+        {[
+          [2, 5, 3],
+          [-2, -5, -3],
+          [-2, 5, -3],
+          [0, 0, 0],
+        ].map((values, index) => (
+          <div key={index}>
+            <h3>
+              {['Positive', 'Negative', 'Mixed sign', 'Zero only'][index]}
+            </h3>
+            <AreaChart
+              width={640}
+              data={values.map((y, i) => ({ x: String(i + 1), y }))}
+              xKey="x"
+              yKey="y"
+              accessibility={{
+                label: [
+                  'Positive Area',
+                  'Negative Area',
+                  'Mixed Area',
+                  'Zero Area',
+                ][index]!,
+                dataTable: 'visible',
+              }}
+              onDataActivate={(p) =>
+                setActivation(`${p.value} (${p.inputMethod})`)
+              }
+            />
+          </div>
+        ))}
+        <h3>
+          Multiple series · independent gaps · singleton · repeated categories
+        </h3>
+        <AreaChart
+          width={640}
+          data={[
+            { x: 'Jan', a: 2, b: -2 },
+            { x: 'Jan', a: 5, b: -4 },
+            { x: 'Mar', a: null, b: -1 },
+            { x: 'Apr', a: 3, b: null },
+          ]}
+          xKey="x"
+          series={[
+            { key: 'a', label: 'Above' },
+            { key: 'b', label: 'Below' },
+          ]}
+          accessibility={{
+            label: 'Area series and gaps',
+            dataTable: 'visible',
+          }}
+        />
+        <h3>Responsive Area · resize the window</h3>
+        <AreaChart
+          data={[
+            { x: 'A', y: 2 },
+            { x: 'B', y: 6 },
+          ]}
+          xKey="x"
+          yKey="y"
+          accessibility={{ label: 'Responsive Area' }}
+        />
+        <h3>Linear Area · bounds and clipping · item tooltip</h3>
+        <AreaChart
+          width={640}
+          data={[
+            { x: -2, y: -10 },
+            { x: 4, y: 4 },
+            { x: 12, y: 10 },
+          ]}
+          xScale="linear"
+          xKey="x"
+          yKey="y"
+          xAxis={{ min: 0, max: 10 }}
+          yAxis={{ min: -5, max: 5 }}
+          tooltip={{ mode: 'item' }}
+          animate
+          accessibility={{ label: 'Clipped linear Area' }}
+        />
+        <h3>UTC Area</h3>
+        <AreaChart
+          width={640}
+          data={dateData}
+          xScale="utc"
+          xKey="date"
+          yKey="value"
+          xAxis={{ formatTick: (date) => date.toISOString().slice(5, 10) }}
+          accessibility={{ label: 'UTC Area' }}
+        />
+        <h3>Empty Area</h3>
+        <AreaChart<{ x: string; y: number }>
+          width={640}
+          data={[]}
+          xKey="x"
+          yKey="y"
+          accessibility={{ label: 'Empty Area' }}
+        />
+        <h3>Unavailable Area</h3>
+        <AreaChart
+          width={640}
+          data={[{ x: 'A', y: 2 }]}
+          xKey="x"
+          yKey="y"
+          yAxis={{ min: 5, max: 1 }}
+          accessibility={{ label: 'Unavailable Area' }}
         />
       </section>
       <section aria-labelledby="line-heading">

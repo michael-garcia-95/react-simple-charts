@@ -4,12 +4,12 @@ A lightweight, customizable React charting library built with TypeScript.
 
 ## Status
 
-M03-T02 implements the public `LineChart` on the merged Cartesian engine.
+M03-T03 adds public `AreaChart` alongside `LineChart` on the merged Cartesian engine.
 It supports multiple series, independent gaps, category/linear/UTC/local-time X,
 responsive and explicit dimensions, accessible tables, tooltips, point inspection,
-activation and optional reduced-motion-aware animation. Area/Bar/Pie/Donut remain
+activation and optional reduced-motion-aware animation. Area adds independent translucent zero-baseline fills; Bar/Pie/Donut remain
 unimplemented runtime APIs. The package stays private at 0.0.0; no npm release is
-available. See [LineChart usage and every prop](docs/LINE_CHART.md).
+available. See [LineChart](docs/LINE_CHART.md) and [AreaChart usage](docs/AREA_CHART.md).
 
 ```tsx
 import { LineChart } from 'react-simple-charts';
@@ -38,7 +38,7 @@ npm ci
 npm run dev
 ```
 
-Vite serves the React playground and prints its local URL. The page shows public LineChart examples alongside historical rendering fixtures. Its CSS belongs to the playground only; the prototype's essential styles are self-contained. The optional real-browser smoke workflow is documented in [rendering compatibility](docs/RENDERING_COMPATIBILITY.md).
+Vite serves the React playground and prints its local URL. The page shows public LineChart and AreaChart examples alongside historical rendering fixtures. Its CSS belongs to the playground only; the prototype's essential styles are self-contained. The optional real-browser smoke workflow is documented in [rendering compatibility](docs/RENDERING_COMPATIBILITY.md).
 
 | Command                    | Purpose                                                                   |
 | -------------------------- | ------------------------------------------------------------------------- |
@@ -57,7 +57,7 @@ Vite serves the React playground and prints its local URL. The page shows public
 
 ## Architecture
 
-The library targets React 18.2+ and React 19.x. Planned Line, Bar, Area, Pie, and Donut components will share infrastructure, use SVG rendering, and use d3-scale/d3-shape for pure calculations. Consumers supply React and React DOM as peers. Distribution is ESM-only, with declarations and a single root entry; LineChart is a named runtime export. No internal subpaths are public.
+The library targets React 18.2+ and React 19.x. Planned Line, Bar, Area, Pie, and Donut components will share infrastructure, use SVG rendering, and use d3-scale/d3-shape for pure calculations. Consumers supply React and React DOM as peers. Distribution is ESM-only, with declarations and a single root entry; LineChart and AreaChart are the only named runtime exports. No internal subpaths are public.
 
 See [architecture](docs/ARCHITECTURE.md), [open decisions](docs/OPEN_DECISIONS.md), and [contributor rules](AGENTS.md). CI checks Node 22/24 with React 18.2/19. The baseline uses React 18 definitions; CI also checks matching React 19 definitions.
 
@@ -65,4 +65,4 @@ See [architecture](docs/ARCHITECTURE.md), [open decisions](docs/OPEN_DECISIONS.m
 
 Licensed under the MIT License. Copyright (c) 2026 Michael Garcia. The copyright holder has been approved by the Development Lead; see `LICENSE` for the standard terms.
 
-The historical RenderingProbe and source-internal LinePreview remain available only in the repository. Genuine packaged Vite/Next validation uses the public LineChart; see [consumer compatibility](docs/CONSUMER_COMPATIBILITY.md).
+The historical RenderingProbe and source-internal LinePreview remain available only in the repository. Genuine packaged Vite/Next validation uses both public charts; see [consumer compatibility](docs/CONSUMER_COMPATIBILITY.md).

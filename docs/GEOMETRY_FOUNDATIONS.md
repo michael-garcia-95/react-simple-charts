@@ -1,7 +1,7 @@
 # Shared geometry foundations — M02-T04
 
-Milestone 02's four planned internal foundation tasks are implemented, subject to
-M02-T04 PR review and merge. Public chart components do not exist. Geometry is
+Milestone 02's four planned internal foundation tasks are complete and merged.
+Public LineChart and AreaChart consume this internal geometry. Geometry is
 pure Cartesian calculation, with no React, DOM, SVG elements, styling, interactions,
 stacking, or polar geometry. All helpers remain source-internal.
 
@@ -224,3 +224,11 @@ across gaps, pixel minimums, stacking and mathematical clipping impose additiona
 semantics and are deferred. Development Lead review remains for renderer-facing
 presentation, final visual spacing choices, local-time SSR strategy and broader
 extreme-number precision support. M02-T04 does not begin the next milestone.
+
+## M03-T03 internal Area boundary extension
+
+Area PointRun results additionally expose optional `outlinePath`: the existing
+pure linePath calculation on that same mapped run. Area singletons set it to null;
+Line runs retain their prior shape. Filled `path` values are unchanged. Boundary
+failure makes geometry unusable. React consumes both paths without mathematical
+construction; tests compare real SVG attributes and the pure line calculation.

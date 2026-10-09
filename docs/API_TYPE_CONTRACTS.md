@@ -1,7 +1,7 @@
 # Public TypeScript contracts — M01-T02
 
 RSC-026/RSC-027 contracts are preserved. LineChart is a public runtime component
-as of M03-T02; AreaChart, BarChart, PieChart and DonutChart remain types only.
+as of M03-T02; AreaChart is public as of M03-T03. BarChart, PieChart and DonutChart remain types only.
 See [LineChart behavior](LINE_CHART.md) for runnable examples and runtime defaults. Import every public type from the package root.
 
 ```ts
@@ -75,7 +75,7 @@ non-distributive conditional to reject partially incompatible unions:
 
 `NoInfer<T>` on field mappings and callback contexts keeps inference anchored to
 `data`. This prevents an invalid field or callback from influencing the inferred
-record type. The real LineChart import demonstrates JSX inference; future families use
+record type. The real LineChart and AreaChart imports demonstrate JSX inference; future families use
 compile-only declarations. `satisfies ChartProps<Record>` is convenient
 for validating reusable prop objects; plain object literals may widen string
 keys before assignment, so annotate them or use `satisfies` at construction.
@@ -176,7 +176,7 @@ grid, x-scale, or Cartesian series configuration.
 
 Accessibility options are `label`, `description`, and `dataTable` with only
 `visible` and `visually-hidden`. There is no mode that removes the accessible
-data alternative. LineChart implements source tables and roving point inspection.
+data alternative. LineChart and AreaChart implement source tables and roving point inspection.
 
 ## Intended defaults and runtime responsibilities
 
@@ -226,3 +226,6 @@ type tests, and built-package verification passed with React types 18.3.31
 The four foundation unit tests, ESLint, formatting, library/playground builds,
 and dry-run packing passed. Runtime tests used React 19.3.0; the full Node
 22/24 and React 18/19 CI matrix is separate from these local checks.
+
+M03-T03 preserves AreaChartProps without changes. Actual packaged AreaChart JSX
+now exercises the contract; see [AreaChart behavior](AREA_CHART.md).
