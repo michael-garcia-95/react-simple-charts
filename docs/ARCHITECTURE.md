@@ -38,4 +38,8 @@ Vitest tests the foundation playground with React Testing Library and the packag
 
 ## Public contract milestone
 
-M01-T02 implements RSC-026/RSC-027 as types, with data-driven generic inference, exclusive single/multi-series mappings, scale-specific keys, and physical-axis typing for horizontal Bars. Compile-time tests use test-only generic declarations; they are not chart implementations. Dedicated source tests and package-root consumer verification exercise both JSX and props objects. React 18/19 type definitions now accompany the runtime CI matrix. All rendering, normalization, validation, interaction, and accessibility behavior remains deferred.
+M01-T02 implements RSC-026/RSC-027 as types, with data-driven generic inference, exclusive single/multi-series mappings, scale-specific keys, and physical-axis typing for horizontal Bars. Compile-time tests use test-only generic declarations; they are not chart implementations. Dedicated source tests and package-root consumer verification exercise both JSX and props objects. React 18/19 type definitions now accompany the runtime CI matrix. Public rendering, interaction, and accessibility behavior remains deferred. M02-T01 now implements internal data normalization and its mapping/value validation; see [data normalization](DATA_NORMALIZATION.md).
+
+## Internal data foundation — M02-T01
+
+`src/core/data/` separates mapping validation, value classification, structured diagnostics, Cartesian normalization, and shared Pie/Donut segment normalization. Results preserve source references, indices, order, and raw values. Configuration errors return no model; row issues retain classified records. No React runtime, DOM, scales, geometry, or public runtime exports are introduced. Milestone 01 is complete; M02-T02 has not begun.
