@@ -18,7 +18,8 @@ export type CategoryValue = string | number | Date;
 export type CategoricalFieldKey<T> = KeysOfType<T, CategoryValue>;
 export type ValueFormatter = (value: number) => string;
 export type CategoryFormatter = (value: CategoryValue) => string;
-export type InputMethod = 'pointer' | 'keyboard';
+/** Pointer identifies mouse/pen activation; touch is reported separately. */
+export type InputMethod = 'pointer' | 'keyboard' | 'touch';
 
 export interface AccessibilityOptions {
   label?: string;
@@ -72,7 +73,7 @@ export type CartesianTooltipContext<T> =
     }
   | { mode: 'item'; item: CartesianDatum<T> };
 export interface CartesianTooltipConfig<T> {
-  /** Intended default: shared. */
+  /** Intended defaults: Line/Area shared; Bar item. */
   mode?: 'shared' | 'item';
   render?: (context: CartesianTooltipContext<T>) => ReactNode;
 }

@@ -12,6 +12,7 @@ import type {
   CategoricalFieldKey,
   CartesianActivation,
   SegmentActivation,
+  InputMethod,
 } from 'react-simple-charts';
 
 interface Row {
@@ -254,3 +255,27 @@ import type { LineChartProps as InternalProps } from 'react-simple-charts/types/
 import { LineChart as RuntimeChart } from 'react-simple-charts';
 export type RejectedInternalImport = InternalProps<Row>;
 export const rejectedRuntimeImport = RuntimeChart;
+
+export const cartesianInputMethods: readonly CartesianActivation<Row>['inputMethod'][] =
+  ['pointer', 'keyboard', 'touch'];
+export const segmentInputMethods: readonly SegmentActivation<Row>['inputMethod'][] =
+  ['pointer', 'keyboard', 'touch'];
+
+// Consumers can exhaustively distinguish mouse/pen, keyboard, and touch.
+export function describeInputMethod(method: InputMethod): string {
+  switch (method) {
+    case 'pointer':
+      return 'Mouse or pen';
+    case 'keyboard':
+      return 'Keyboard';
+    case 'touch':
+      return 'Touch';
+    default: {
+      const unreachable: never = method;
+      return unreachable;
+    }
+  }
+}
+
+// @ts-expect-error Mouse is represented by pointer, not a separate input method.
+export const invalidInputMethod: InputMethod = 'mouse';

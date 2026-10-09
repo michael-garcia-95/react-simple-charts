@@ -115,6 +115,8 @@ predictable generic inference. Numeric and date scale tick types remain exact.
 Both tooltip families accept `true`, `false`, a configuration object, or a custom
 `(context) => ReactNode` renderer. Omission intends the default enabled tooltip.
 Cartesian configuration supports `mode: 'shared' | 'item'` and `render`.
+The intended default is shared inspection for Line/Area, item inspection for
+Bar, and segment inspection for Pie/Donut.
 `CartesianTooltipContext<T>` is a discriminated union: shared inspection has
 `category` and readonly `items`; item inspection has one `item`. Renderers narrow
 `context.mode`; the renderer input remains the complete union even if a config
@@ -134,8 +136,11 @@ on a **0–100** scale. `segmentId` equals the original record index, allowing
 duplicate labels without losing identity. No DOM event or SVG geometry is public.
 
 `onDataActivate` receives `CartesianActivation<T>` or `SegmentActivation<T>`.
-These extend their inspection datum with `inputMethod: 'pointer' | 'keyboard'`.
-Pointer encompasses mouse, touch, and pen. No persistent selection is introduced.
+These extend their inspection datum with
+`inputMethod: 'pointer' | 'keyboard' | 'touch'`. Pointer identifies mouse/pen
+activation; touch is reported separately. Consumers can branch on `inputMethod`
+in either activation callback. Runtime event detection remains deferred.
+No persistent selection is introduced.
 
 ```ts
 const interactive = {
@@ -177,8 +182,8 @@ data alternative. Implementation of tables and keyboard behavior remains future 
 ## Intended defaults and runtime responsibilities
 
 These are implementation intentions, not runtime behavior supplied by this task:
-width `100%`, height `300`, animation enabled, axes visible, grid enabled for
-Cartesian charts, legend enabled, tooltip enabled (Cartesian shared), category
+width `100%`, height `280` (280px), animation enabled, axes visible, grid enabled for
+Cartesian charts, legend enabled, tooltip enabled (Line/Area shared, Bar item, Pie/Donut segment inspection), category
 x-scale, vertical Bar orientation, segment labels hidden, accessible table
 visually hidden, Donut inner radius ratio `0.6`. Palette, automatic series label
 resolution, default formatting, accessible naming fallback, and tick generation
