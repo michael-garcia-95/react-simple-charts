@@ -200,7 +200,7 @@ and local server/browser execution work. The consumer script uses its writable
 Final validation and artifact results are recorded in
 [consumer compatibility](CONSUMER_COMPATIBILITY.md). GitHub CLI REST access returned
 `Forbidden`; the connected GitHub tool remains the supported route for PR/CI reads.
-The Node 22/24 × React 18.2/19 matrix must pass before merge approval is proposed.
+All four Node 22/24 × React 18.2/19 jobs passed on implementation commit `a0b723f1a7625ec9521f1a84c8a46b62d8874ff7`; exact resolved versions and CI run evidence are recorded in consumer compatibility. Subsequent commits still require their own green CI before merge review.
 
 ## Remaining risk register and proposed support policy
 
