@@ -7,6 +7,7 @@ import type {
   CategoryValue,
   ValueFormatter,
 } from '../../types/contracts';
+import { dateTimestamp } from './date-value';
 import { readableKey, seriesLabel, visuallyHidden } from './presentation';
 
 function display<V extends CategoryValue>(
@@ -16,15 +17,17 @@ function display<V extends CategoryValue>(
   if (state.status !== 'valid')
     return state.status === 'missing' ? 'Missing' : 'Invalid';
   const value = state.value;
+  const timestamp = dateTimestamp(value);
+  if (timestamp !== null && !Number.isFinite(timestamp)) return 'Invalid';
   try {
     const text = formatter?.(
-      value instanceof Date ? (new Date(value.getTime()) as V) : value,
+      timestamp !== null ? (new Date(timestamp) as V) : value,
     );
     if (typeof text === 'string') return text;
   } catch {
     /* Keep the source data alternative available after formatter failures. */
   }
-  return value instanceof Date ? value.toISOString() : String(value);
+  return timestamp !== null ? new Date(timestamp).toISOString() : String(value);
 }
 export function DataTable<T>({
   model,
@@ -96,8 +99,11 @@ export function SourceDataTable({
   ];
   const rawText = (value: unknown): string => {
     if (value === null || value === undefined) return 'Missing';
-    if (value instanceof Date)
-      return Number.isFinite(value.getTime()) ? value.toISOString() : 'Invalid';
+    const timestamp = dateTimestamp(value);
+    if (timestamp !== null)
+      return Number.isFinite(timestamp)
+        ? new Date(timestamp).toISOString()
+        : 'Invalid';
     if (typeof value === 'number')
       return Number.isFinite(value) ? String(value) : 'Invalid';
     if (typeof value === 'string' || typeof value === 'boolean')

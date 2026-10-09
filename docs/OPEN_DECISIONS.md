@@ -11,11 +11,11 @@ The MIT copyright-holder decision is finalized: the Development Lead approved Mi
 - Choose a broader browser support policy and document it when components exist. Current JS target is ES2022.
 - React 18/19 type-definition coverage is added for M01-T02; M01-T03 adds internal SSR, hydration, lifecycle, accessibility, and styling tests to the existing matrix. Future public runtime components still need consumer integration and interaction testing, real screen-reader review, and cross-browser validation.
 
-Milestone 01 and Milestone 02's planned M02-T01 through M02-T04 internal foundation tasks are implemented, subject to M02-T04 PR review and merge. Normalization, scales, layout, and geometry remain internal. Production chart implementation has not begun. The public library still has no implemented chart components.
+Milestone 01 and Milestone 02's M02-T01 through M02-T04 internal foundation tasks are complete and merged. Normalization, scales, layout, and geometry remain internal. M03-T01 provides internal SVG rendering; public production chart components remain deferred.
 
 M02-T03 documents bounded margin estimates, greedy tick selection, single-line formatting failures, hidden-axis title suppression, horizontal Bar mappings, and independent value grids in [layout and axes](LAYOUT_AND_AXES.md). These engine policies are explicit; future decisions concern final renderer font/title styling and fitting, diagnostic presentation, local-time SSR strategy, and final renderer visual spacing.
 
-M02-T04 documents independent missing-point runs, singleton retention, Area baseline closure, stable grouped Bar slots (80% groups/90% slots), and unclamped out-of-plot metadata in [geometry foundations](GEOMETRY_FOUNDATIONS.md). These are implemented internal calculation policies. Development Lead review remains for final visual spacing, clipping/marker presentation, diagnostic UI, performance budgets and future extreme-number support. Actual SVG clipping and public rendering are deferred.
+M02-T04 documents independent missing-point runs, singleton retention, Area baseline closure, stable grouped Bar slots (80% groups/90% slots), and unclamped out-of-plot metadata in [geometry foundations](GEOMETRY_FOUNDATIONS.md). These are implemented internal calculation policies. Development Lead review remains for final visual spacing, clipping/marker presentation, diagnostic UI, performance budgets and future extreme-number support. M03-T01 now provides internal SVG plot clipping; public production rendering remains deferred.
 
 M03-T01 adds the internal engine-based Line preview and actual SVG plot clipping.
 Its local-time policy is an initial placeholder followed by client-timezone
