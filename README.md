@@ -4,7 +4,7 @@ A lightweight, customizable React charting library built with TypeScript.
 
 ## Status
 
-M01-T03 adds an internal SVG rendering prototype to validate explicit/responsive dimensions, SSR, hydration, accessibility, and self-contained styling. No public runtime chart components exist yet. See [rendering compatibility](docs/RENDERING_COMPATIBILITY.md) and [API type contracts](docs/API_TYPE_CONTRACTS.md). The provisional package name is `react-simple-charts`; it remains private and is not ready for installation from npm.
+M01-T03 adds an internal SVG rendering prototype to validate explicit/responsive dimensions, SSR, hydration, accessibility, and self-contained styling. No public runtime chart components exist yet. See [rendering compatibility](docs/RENDERING_COMPATIBILITY.md) and [API type contracts](docs/API_TYPE_CONTRACTS.md). M01-T04 packaged-consumer verification is documented in [consumer compatibility](docs/CONSUMER_COMPATIBILITY.md); its runtime tests use a temporary test-only distribution. The provisional package name is `react-simple-charts`; it remains private and is not ready for installation from npm.
 
 ## Development
 
