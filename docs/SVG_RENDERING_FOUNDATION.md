@@ -2,7 +2,7 @@
 
 `LinePreview` is a source-internal visual consumer, not a released LineChart.
 This document records the historical M03-T01 fixture. The package root now exports
-LineChart and AreaChart plus approved types; see their public behavior documents.
+LineChart, AreaChart and BarChart plus approved types; see their public behavior documents.
 
 ## Engine and structure
 

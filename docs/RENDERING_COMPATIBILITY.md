@@ -1,3 +1,7 @@
+# Current public Cartesian rendering
+
+M03-T05 audits all three public families; see [integration hardening](M03_INTEGRATION_HARDENING.md) and [genuine consumer compatibility](CONSUMER_COMPATIBILITY.md). The following M01-T03 report is preserved as historical fixture evidence, not a description of the current public API.
+
 # Internal rendering compatibility proof — M01-T03
 
 This is an architecture fixture, not a public chart implementation. It draws

@@ -38,7 +38,7 @@ Vitest tests the foundation playground with React Testing Library and the packag
 
 ## Public contract milestone
 
-M01-T02 implements RSC-026/RSC-027 as types, with data-driven generic inference, exclusive single/multi-series mappings, scale-specific keys, and physical-axis typing for horizontal Bars. Compile-time tests use test-only generic declarations; they are not chart implementations. Dedicated source tests and package-root consumer verification exercise both JSX and props objects. React 18/19 type definitions now accompany the runtime CI matrix. Public rendering, interaction, and accessibility behavior remains deferred. M02-T01 now implements internal data normalization and its mapping/value validation; see [data normalization](DATA_NORMALIZATION.md).
+M01-T02 implements RSC-026/RSC-027 as types, with data-driven generic inference, exclusive single/multi-series mappings, scale-specific keys, and physical-axis typing for horizontal Bars. Compile-time tests use test-only generic declarations; they are not chart implementations. Dedicated source tests and package-root consumer verification exercise both JSX and props objects. React 18/19 type definitions now accompany the runtime CI matrix. Public Cartesian rendering, interaction and source-table accessibility are implemented in M03; polar behavior remains deferred. M02-T01 now implements internal data normalization and its mapping/value validation; see [data normalization](DATA_NORMALIZATION.md).
 
 ## Internal data foundation — M02-T01
 
@@ -101,4 +101,8 @@ and corrected gesture handling also serve Line/Area. Item inspection is the Bar
 default; visible rectangle intersections and in-plot zero targets determine
 eligibility. Exact decorative extents, stable missing slots, source tables and
 SSR policy are preserved. No public props, dependencies, core math changes or
-subpaths are added. See [BarChart](BAR_CHART.md). M03-T05 remains deferred.
+subpaths are added. See [BarChart](BAR_CHART.md). M03-T05 integration hardening is documented below.
+
+## M03-T05 integration hardening
+
+The shared inspection tooltip uses a 220px border-box matching its positioning estimate and wraps long text. Visible normalized/raw source tables wrap long fields without changing semantic data or hidden-table exposure. Cross-family tests and the playground/browser matrix verify independent lifecycle and state transitions. Genuine consumers add narrow text and three separately hydrated Strict Mode roots. No pure-core math or public contract changes. See [integration hardening](M03_INTEGRATION_HARDENING.md).

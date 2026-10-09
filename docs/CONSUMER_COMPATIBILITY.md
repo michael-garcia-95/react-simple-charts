@@ -1,3 +1,80 @@
+# M03-T05 packaged integration validation
+
+The corrected private 0.0.0 package retains exactly AreaChart, BarChart and
+LineChart runtime exports. The complete genuine consumer suite passed again:
+
+| Installed consumer                       | Package declarations        | Production build/browser | Focused axe  |
+| ---------------------------------------- | --------------------------- | ------------------------ | ------------ |
+| Vite 8.3.4 / React & DOM 18.2.0          | Pass (strict)               | Pass                     | 0 violations |
+| Vite 8.3.4 / React & DOM 19.3.0          | Pass (strict)               | Pass                     | 0 violations |
+| Next 14.2.35 / React & DOM 18.2.0        | Pass (strict package check) | App and Pages pass       | 0 violations |
+| Next 16.4.0 Webpack / React & DOM 19.3.0 | Pass (strict package check) | App and Pages pass       | 0 violations |
+
+Node 24.19.0, npm 11.9.0, Chromium 151.0.7922.173, Playwright Core 1.64.0,
+axe 4.13.0. TypeScript is 6.0.3 except Next 14 (5.4.5). React 18 types are
+18.3.31 / DOM 18.3.7; React 19 types are 19.3.0 / DOM 19.3.0. Node types are
+24.19.1 except Next 14 (20.19.0). These are executed versions, not a promise for
+all versions. Next Turbopack, Firefox and WebKit were not executed.
+
+Each generated application reinstalls the current packed archive, compares its
+installed ESM bytes to the build, compiles public declarations with
+skipLibCheck=false, and builds for production. Existing Line/Area/Bar interaction,
+source-table, SVG geometry, SSR/hydration and observer-cleanup scenarios remain.
+New narrow installed-package examples verify default tooltip/table wrapping and
+empty/unusable/replacement transitions across all three families. Total source
+tables increase from 18 to 21. Vite's independently hydrated roots now include
+all three charts under Strict Mode with matching distinct identifierPrefix values
+and categorical Dates; initial markup and IDs match without recoverable errors.
+Both Next App and Pages Router retain real installed root imports. Browser checks
+fail on console/page/hydration errors; all four completed without such errors.
+
+The new real-playground matrix separately covers five responsive configurations,
+320/480/768/1200px shrink/grow, keyboard exits, signed values/zero, focus/tooltip
+captures, three state-specific axe scans (zero violations), reduced motion,
+forced-colors emulation, CSS text enlargement and bounded performance samples.
+See [integration hardening](M03_INTEGRATION_HARDENING.md) for methodology,
+actual visual observations, source validation, evidence locations and limitations.
+No manual screen-reader, native zoom, native OS forced-colors or WCAG certification
+claim is made. The full 649-test baseline is retained with eight new integration
+tests (657 total). Playground assertions reflect its five additional tables.
+
+| Genuine corrected artifact |  Bytes |
+| -------------------------- | -----: |
+| ESM                        | 77,013 |
+| ESM gzip                   | 18,524 |
+
+Final genuine tarball: **62,540 bytes**, six files. The tarball byte count depends on the included README; final packed measurements
+are retained in ignored `work/consumers/results.json`. No runtime dependency,
+public type, root export, license or publication configuration changed.
+
+GitHub CLI Actions reads returned `Forbidden`; connected GitHub tools are used
+for PR/CI verification when available. The four Node 22/24 × React 18.2/19 jobs
+are a separate merge gate: local Node 24 and framework results do not establish
+remote CI success. Publication, merge and Milestone 04 are not authorized here.
+
+## M03-T05 GitHub CI evidence
+
+Implementation commit `a0b723f1a7625ec9521f1a84c8a46b62d8874ff7` passed
+[GitHub CI run 37998172096](https://github.com/michael-garcia-95/react-simple-charts/actions/runs/37998172096).
+Connected GitHub tools returned completed/success for all four jobs, and decoded
+job logs confirmed 657 passing tests in each job with these resolved versions:
+
+| CI job              | Node    | React / DOM | React types / DOM types | Result |
+| ------------------- | ------- | ----------- | ----------------------- | ------ |
+| checks (22, 18.2.0) | 22.23.3 | 18.2.0      | 18.3.31 / 18.3.7        | Pass   |
+| checks (22, 19)     | 22.23.3 | 19.3.0      | 19.3.0 / 19.3.0         | Pass   |
+| checks (24, 18.2.0) | 24.21.0 | 18.2.0      | 18.3.31 / 18.3.7        | Pass   |
+| checks (24, 19)     | 24.21.0 | 19.3.0      | 19.3.0 / 19.3.0         | Pass   |
+
+Each job passed typecheck, type contracts, lint, formatting, all tests, actual
+package verification, playground production build and dry-run packing. This
+section is a subsequent documentation-only record of the tested implementation;
+any later commit still requires its own green CI before merge review. The PR
+remains open and unmerged for Development Lead review.
+
+The sections below preserve historical M03-T04 and earlier evidence; their test
+counts, sizes and limitations describe those runs, not current M03-T05 results.
+
 # Packaged public BarChart — M03-T04
 
 The genuine private 0.0.0 tarball now exports exactly AreaChart, BarChart and

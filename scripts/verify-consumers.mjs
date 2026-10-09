@@ -103,7 +103,8 @@ const interactive = `'use client';
 import {useState} from 'react'; import {LineChart, AreaChart, BarChart} from 'react-simple-charts';
 function Inspection({area=false}:{area?:boolean}){const Chart=area?AreaChart:LineChart;const [result,setResult]=useState(''); const [count,setCount]=useState(0);return <section id={area?'area-interactive':'interactive'}><Chart width={640} data={[{x:'A',y:1},{x:'A',y:2}]} xKey="x" yKey="y" onDataActivate={p=>{setCount(n=>n+1);setResult(p.index+':'+p.inputMethod);}} accessibility={{label:area?'Interactive Area':'Interactive'}}/><output>{result}:{count}</output></section>;}
 function BarInspection({horizontal=false}:{horizontal?:boolean}){const [result,setResult]=useState('');const [count,setCount]=useState(0);return <section id={horizontal?'bar-horizontal-interactive':'bar-interactive'}><BarChart width={640} orientation={horizontal?'horizontal':'vertical'} data={[{x:'A',y:-2},{x:'A',y:0}]} xKey="x" yKey="y" onDataActivate={p=>{setCount(n=>n+1);setResult(p.index+':'+p.inputMethod);}} accessibility={{label:'Interactive Bar'}}/><output>{result}:{count}</output></section>;}
-export default function Interactive(){return <><Inspection/><Inspection area/><BarInspection/><BarInspection horizontal/></>;}`;
+export default function Interactive(){return <><Inspection/><Inspection area/><BarInspection/><BarInspection horizontal/><Narrow/></>;}
+function Narrow(){const [state,setState]=useState('ready');const data=state==='empty'?[]:[{x:state==='replacement'?'Replacement':'NorthAmericaEnterpriseSubscriptions',y:-2},{x:'Repeated',y:0}];return <section id="integrated-narrow"><button onClick={()=>setState('empty')}>Empty integrated charts</button><button onClick={()=>setState('replacement')}>Replace integrated data</button>{[LineChart,AreaChart,BarChart].map((Chart,i)=><div key={i} data-narrow={i} style={{width:320}}><Chart data={data} xKey="x" yKey="y" height={state==='unusable'?0:280} accessibility={{label:'Narrow '+i,dataTable:'visible'}}/></div>)}<button onClick={()=>setState('unusable')}>Unusable integrated charts</button></section>;}`;
 const tsconfig = {
   compilerOptions: {
     target: 'ES2022',
@@ -242,7 +243,7 @@ async function start(dir, kind, port, major) {
           .evaluate((el) => getComputedStyle(el).height),
         '280px',
       );
-      assert.equal(await staticPage.getByRole('table').count(), 18);
+      assert.equal(await staticPage.getByRole('table').count(), 21);
       await file(
         dir,
         'evidence/before.html',
@@ -253,7 +254,7 @@ async function start(dir, kind, port, major) {
     await page.goto(url);
     await page.waitForFunction(() => window.__observers.length >= 2);
     assert.equal(await page.locator('#responsive svg').count(), 0);
-    assert.equal(await page.getByRole('table').count(), 18);
+    assert.equal(await page.getByRole('table').count(), 21);
     if (responsiveBefore)
       assert.equal(
         await page.locator('#responsive').innerHTML(),
@@ -582,6 +583,40 @@ async function start(dir, kind, port, major) {
     }
     assert.equal(await page.locator('#bar-clipped [data-bar]').count(), 3);
     assert.equal(await page.locator('#bar-clipped [role=button]').count(), 1);
+    for (const chart of await page.locator('[data-narrow]').all()) {
+      await chart.locator('svg').waitFor();
+      await chart.locator('[role=button]').first().focus();
+      assert(
+        await chart.evaluate((el) => {
+          const t = el.querySelector('[role=tooltip]');
+          const table = el.querySelector('table');
+          return (
+            t.scrollWidth <= t.clientWidth + 1 &&
+            table.getBoundingClientRect().width <= 321
+          );
+        }),
+        'Installed package wraps long tooltip and table values',
+      );
+      await page.keyboard.press('Escape');
+    }
+    for (const [button, state] of [
+      ['Empty integrated charts', 'empty'],
+      ['Unusable integrated charts', 'unusable'],
+      ['Replace integrated data', 'replacement'],
+    ]) {
+      await page.getByRole('button', { name: button, exact: true }).click();
+      assert.equal(await page.locator('#integrated-narrow table').count(), 3);
+      assert.equal(
+        await page.locator('#integrated-narrow svg').count(),
+        state === 'replacement' ? 3 : 0,
+      );
+      if (state === 'replacement')
+        assert(
+          (await page.locator('#integrated-narrow').textContent()).includes(
+            'Replacement',
+          ),
+        );
+    }
     const ax = await page.locator('main').ariaSnapshot();
     assert(ax.includes('rowheader "Q4"') && ax.includes('Responsive — data'));
     await file(dir, 'evidence/accessibility.txt', ax);
@@ -602,7 +637,7 @@ async function start(dir, kind, port, major) {
       await page.waitForFunction(() => window.__observers.length >= 2);
       await page.evaluate(() => window.__release());
       await page.locator('#responsive svg').waitFor();
-      assert.equal(await page.getByRole('table').count(), 18);
+      assert.equal(await page.getByRole('table').count(), 21);
       assert.deepEqual(errors, []);
     } else {
       await page.evaluate(() => window.__unmount());
@@ -748,20 +783,20 @@ for(const path of ['src/internal/RenderingProbe','dist/index.js','internal']) { 
         await file(
           dir,
           'roots-server.mjs',
-          `import {createElement} from 'react';
+          `import {createElement,StrictMode} from 'react';
 import {renderToString} from 'react-dom/server';
-import {LineChart,AreaChart} from 'react-simple-charts';
+import {LineChart,AreaChart,BarChart} from 'react-simple-charts';
 import {writeFileSync} from 'node:fs';
-const parts=['alpha-','beta-'].map((prefix,i)=>'<div id="root'+i+'">'+renderToString(createElement(i===0?LineChart:AreaChart,{width:640,data:[{x:'A',y:1}],xKey:'x',yKey:'y'}),{identifierPrefix:prefix})+'</div>');
+const parts=['alpha-','beta-','gamma-'].map((prefix,i)=>'<div id="root'+i+'">'+renderToString(createElement(StrictMode,null,createElement([LineChart,AreaChart,BarChart][i],{width:640,data:[{x:new Date('2026-01-01T00:00:00Z'),y:1}],xKey:'x',yKey:'y'})),{identifierPrefix:prefix})+'</div>');
 writeFileSync('roots.html','<!doctype html><html lang="en"><head><title>Separate roots</title><link rel="icon" href="data:,"></head><body>'+parts.join('')+'<script type="module" src="/roots.tsx"></script></body></html>');`,
         );
         await run('node', ['roots-server.mjs'], dir);
         await file(
           dir,
           'roots.tsx',
-          `import {hydrateRoot} from 'react-dom/client';
-import {LineChart,AreaChart} from 'react-simple-charts';
-['alpha-','beta-'].forEach((identifierPrefix,i)=>{const Chart=i===0?LineChart:AreaChart;hydrateRoot(document.getElementById('root'+i)!,<Chart width={640} data={[{x:'A',y:1}]} xKey="x" yKey="y"/>,{identifierPrefix,onRecoverableError: error=>console.error(error)});});`,
+          `import {StrictMode} from 'react'; import {hydrateRoot} from 'react-dom/client';
+import {LineChart,AreaChart,BarChart} from 'react-simple-charts';
+['alpha-','beta-','gamma-'].forEach((identifierPrefix,i)=>{const Chart=[LineChart,AreaChart,BarChart][i]!;hydrateRoot(document.getElementById('root'+i)!,<StrictMode><Chart width={640} data={[{x:new Date('2026-01-01T00:00:00Z'),y:1}]} xKey="x" yKey="y"/></StrictMode>,{identifierPrefix,onRecoverableError: error=>console.error(error)});});`,
         );
         await file(
           dir,

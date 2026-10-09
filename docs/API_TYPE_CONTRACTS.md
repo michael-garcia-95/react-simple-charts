@@ -176,25 +176,21 @@ grid, x-scale, or Cartesian series configuration.
 
 Accessibility options are `label`, `description`, and `dataTable` with only
 `visible` and `visually-hidden`. There is no mode that removes the accessible
-data alternative. LineChart and AreaChart implement source tables and roving point inspection.
+data alternative. LineChart and AreaChart implement source tables and roving point inspection; BarChart implements source tables and roving rectangle inspection.
 
 ## Intended defaults and runtime responsibilities
 
-These are implementation intentions, not runtime behavior supplied by this task:
+This section began as M01-T02 implementation intentions. Cartesian defaults are now implemented in M03; polar defaults remain intentions:
 width `100%`, height `280` (280px), animation disabled for LineChart, axes visible, grid enabled for
 Cartesian charts, legend enabled, tooltip enabled (Line/Area shared, Bar item, Pie/Donut segment inspection), category
 x-scale, vertical Bar orientation, segment labels hidden, accessible table
-visually hidden, Donut inner radius ratio `0.6`. Palette, automatic series label
-resolution, default formatting, accessible naming fallback, and tick generation
-still need implementation decisions. No default is encoded by making a property required.
+visually hidden, Donut inner radius ratio `0.6`. Cartesian palette fallbacks, automatic series labels, default formatting, accessible naming and pure tick generation are implemented; see the public chart documents. Polar presentation decisions remain open. No default is encoded by making a property required.
 
 Runtime must validate dimensions, ratios, finite numbers, min/max ordering,
 tick counts, empty data/series, and label/color resolution. Null/undefined numeric
 fields are valid mappings, not valid numbers for inspection: emitted datum values
 are numbers, and runtime must decide how missing/invalid records are handled.
-Negative values, zero totals, percentage calculation, ordering, scale domains,
-date validity, normalization, and missing categories remain deferred; this file
-must not be read as a normalization algorithm. Inputs are preserved in payloads. LineChart runtime normalization and rendering
+Cartesian signed values, ordering, scale domains, date validity, normalization and missing categories are implemented in the pure engine; this file is not its algorithm specification. Polar negative values, zero totals and percentages remain deferred. Inputs are preserved in payloads. LineChart runtime normalization and rendering
 now implement these Cartesian responsibilities; polar families remain deferred.
 
 TypeScript is structurally typed: excess-property checks protect fresh literals
@@ -238,4 +234,4 @@ and corrected gesture handling also serve Line/Area. Item inspection is the Bar
 default; visible rectangle intersections and in-plot zero targets determine
 eligibility. Exact decorative extents, stable missing slots, source tables and
 SSR policy are preserved. No public props, dependencies, core math changes or
-subpaths are added. See [BarChart](BAR_CHART.md). M03-T05 remains deferred.
+subpaths are added. See [BarChart](BAR_CHART.md). M03-T05 preserves these contracts and validates integration; see [integration hardening](M03_INTEGRATION_HARDENING.md).

@@ -27,7 +27,7 @@ export function Revenue() {
 
 TypeScript infers the record from `data`; `NoInfer` keeps keys and callbacks from
 widening it. Use `yKey="actual"` instead of `series` for one series. Exactly one
-mapping is required. AreaChart is also public; Bar, Pie and Donut remain type contracts only.
+mapping is required. AreaChart is also public; BarChart is also public; Pie and Donut remain type contracts only.
 
 ## Every public prop
 
@@ -140,7 +140,7 @@ retains a built `use client` boundary, and externalizes React peers (18.2/19).
 ## Limits
 
 No nearest-path search, decimation, zoom, pan, interactive legend, portals or
-Bar/Pie/Donut public charts are included. Rendering and lookup construction scale with
+Pie/Donut public charts are included. Rendering and lookup construction scale with
 valid points; each point has an SVG marker/control, so large datasets incur DOM
 and sorting costs. Pointer handlers use precomputed identities rather than
 normalization or DOM measurements. Overlapping points can obscure pointer targets;
@@ -150,3 +150,5 @@ content. Inline styles may conflict with strict CSP/host styles. Chromium/automa
 accessibility checks do not establish screen-reader or all-browser conformance.
 See [consumer compatibility](CONSUMER_COMPATIBILITY.md) for exact tested versions
 and evidence. The package remains private 0.0.0; no release is claimed.
+
+M03-T05 adds shared long-text wrapping and cross-family validation; see [integration hardening](M03_INTEGRATION_HARDENING.md).
