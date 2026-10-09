@@ -1,5 +1,6 @@
 import type {
   NormalizedCartesianData,
+  NormalizedSegmentData,
   ValueState,
 } from '../../core/data/types';
 import type {
@@ -94,10 +95,10 @@ export function SourceDataTable({
   label: string;
   visible: boolean;
 }) {
-  if (!Array.isArray(data)) return null;
+  const records: readonly object[] = Array.isArray(data) ? data : [];
   const fields = [
     ...new Set(
-      data.flatMap((record) =>
+      records.flatMap((record) =>
         record && typeof record === 'object' ? Object.keys(record) : [],
       ),
     ),
@@ -135,7 +136,7 @@ export function SourceDataTable({
         </tr>
       </thead>
       <tbody>
-        {Array.from(data, (record, index) => (
+        {Array.from(records, (record, index) => (
           <tr key={index}>
             <th scope="row">{index + 1}</th>
             {fields.map((field) => (
@@ -151,5 +152,70 @@ export function SourceDataTable({
         ))}
       </tbody>
     </table>
+  );
+}
+
+/** All normalized source rows, including unsupported negatives, remain available. */
+export function SegmentDataTable<T>({
+  model,
+  label,
+  visible,
+  formatValue,
+}: {
+  model: NormalizedSegmentData<T>;
+  label: string;
+  visible: boolean;
+  formatValue: ValueFormatter | undefined;
+}) {
+  return (
+    <div style={visible ? undefined : visuallyHidden}>
+      <table
+        style={
+          visible
+            ? {
+                width: '100%',
+                tableLayout: 'fixed',
+                textAlign: 'left',
+                borderCollapse: 'collapse',
+                overflowWrap: 'anywhere',
+              }
+            : visuallyHidden
+        }
+      >
+        <caption style={{ textAlign: 'left', paddingBlock: 8 }}>
+          {label} — data
+        </caption>
+        <colgroup>
+          <col style={{ width: '65%' }} />
+          <col style={{ width: '35%' }} />
+        </colgroup>
+        <thead>
+          <tr>
+            <th scope="col">{readableKey(model.nameKey)}</th>
+            <th scope="col">{readableKey(model.valueKey)}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {model.segments.map((segment) => (
+            <tr key={segment.segmentId}>
+              <th scope="row">{display(segment.label)}</th>
+              <td>
+                {segment.value.status === 'unsupported'
+                  ? display(
+                      {
+                        status: 'valid',
+                        value: segment.value.raw,
+                        raw: segment.value.raw,
+                        present: true,
+                      },
+                      formatValue,
+                    )
+                  : display(segment.value, formatValue)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
