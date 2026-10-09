@@ -147,8 +147,9 @@ rows only, retaining source-index identity and order; invalid-X rows remain in
 this model but occupy no bands. A value contributes to a renderable numerical
 domain only when both its X and its series value are explicitly valid.
 
-Timezone-sensitive formatting, layout, SVG paths/arcs,
-percentages and zero-total geometry policy, missing-point gap/filtering policy,
+M02-T03 implements internal layout; M02-T04 implements Cartesian paths and
+missing-point gaps in [geometry foundations](GEOMETRY_FOUNDATIONS.md).
+Renderer timezone strategy, polar arcs, percentages and zero-total polar geometry policy,
 colors, CSS, tooltips, animations, hooks, keyboard navigation, accessible names,
 and construction of public callback payloads remain later work. Negative
 segments are identified here; final user-visible fallback behavior needs later
