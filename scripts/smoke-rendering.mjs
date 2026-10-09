@@ -36,9 +36,9 @@ try {
   await explicit.waitFor({ state: 'visible' });
   await responsive.waitFor({ state: 'visible' });
   assert.equal(await explicit.getAttribute('viewBox'), '0 0 640 280');
-  assert.equal(await page.getByRole('table').count(), 2);
+  assert.equal(await page.getByRole('table').count(), 10);
   checks.push(
-    'Initial explicit and measured responsive SVG; two semantic data tables',
+    'Initial explicit and measured responsive SVG; ten semantic data tables',
   );
 
   const initialWidth = Number(await responsive.getAttribute('width'));
@@ -177,10 +177,66 @@ try {
       name: /Responsive quarterly sample — awaiting container measurement/,
     })
     .waitFor();
-  assert.equal(await fallbackPage.locator('svg').count(), 1);
-  assert.equal(await fallbackPage.getByRole('table').count(), 2);
+  assert.equal(await fallbackPage.locator('svg').count(), 6);
+  assert.equal(await fallbackPage.getByRole('table').count(), 10);
   checks.push(
-    'Missing ResizeObserver keeps the accessible placeholder and both tables',
+    'Missing ResizeObserver keeps the accessible placeholder and all tables',
+  );
+
+  const engine = page.getByRole('img', {
+    name: 'Monthly revenue',
+    exact: true,
+  });
+  assert.equal(await engine.locator('path').count(), 1);
+  assert.equal(await engine.locator('circle').count(), 3);
+  assert(
+    (await engine.locator('[data-axis="x"] text').allTextContents()).includes(
+      'Jan',
+    ),
+  );
+  const clipped = page.getByRole('img', {
+    name: 'Linear measurements',
+    exact: true,
+  });
+  const clipId = await clipped.locator('clipPath').getAttribute('id');
+  assert.equal(
+    await clipped.locator('[data-layer="marks"]').getAttribute('clip-path'),
+    `url(#${clipId})`,
+  );
+  const plotWidth = Number(
+    await clipped.locator('clipPath rect').getAttribute('width'),
+  );
+  assert(plotWidth > 0 && plotWidth < 640);
+  const responsiveEngine = page.getByRole('img', {
+    name: 'Responsive engine preview',
+    exact: true,
+  });
+  const engineWidth = Number(await responsiveEngine.getAttribute('width'));
+  await page.setViewportSize({ width: 650, height: 1200 });
+  await page.waitForFunction(
+    (previous) =>
+      Number(
+        document
+          .querySelector('svg[aria-labelledby] title')
+          ?.parentElement?.getAttribute('width'),
+      ) > 0 &&
+      [...document.querySelectorAll('svg')].some(
+        (svg) =>
+          svg.querySelector('title')?.textContent ===
+            'Responsive engine preview' &&
+          Number(svg.getAttribute('width')) < previous,
+      ),
+    engineWidth,
+  );
+  assert(Number(await responsiveEngine.getAttribute('width')) < engineWidth);
+  const engineSnapshot = await page.locator('main').ariaSnapshot();
+  assert(engineSnapshot.includes('Monthly revenue — data'));
+  assert(engineSnapshot.includes('Responsive engine preview — data'));
+  await fallbackPage
+    .getByRole('img', { name: /Responsive engine preview — awaiting/ })
+    .waitFor();
+  checks.push(
+    'Engine paths and markers, visible selected category labels, plot clip references/rectangle, responsive width change and source tables in the accessibility snapshot',
   );
 
   assert.deepEqual(errors, []);

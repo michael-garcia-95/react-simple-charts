@@ -41,3 +41,10 @@ See [architecture](docs/ARCHITECTURE.md), [open decisions](docs/OPEN_DECISIONS.m
 ## License
 
 Licensed under the MIT License. Copyright (c) 2026 Michael Garcia. The copyright holder has been approved by the Development Lead; see `LICENSE` for the standard terms.
+
+M03-T01 includes a source-internal, data-driven Line preview in the development
+playground, backed by the merged Cartesian engine. It supports multiple series,
+gaps, category/linear/UTC/local-time X, axes/grid, clipping and accessible source
+tables. It is **not** a publicly importable LineChart; package exports remain
+TypeScript contracts only. See [SVG rendering foundation](docs/SVG_RENDERING_FOUNDATION.md)
+for sizing, SSR policy and remaining production work.

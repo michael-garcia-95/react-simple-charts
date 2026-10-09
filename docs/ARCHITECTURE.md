@@ -55,3 +55,14 @@ M01-T02 implements RSC-026/RSC-027 as types, with data-driven generic inference,
 ## Internal geometry foundation — M02-T04
 
 `src/core/geometry/` separates readonly result types, shared datum mapping and gap runs, d3-shape Line/Area paths, grouped Bar slots/rectangles, numerical diagnostics, and orchestration. `buildCartesianGeometry` calls layout internally from the same normalized input, preventing unrelated model/layout pairs. It preserves source and series references, handles independent gaps and singleton points, uses physical zero baselines, and flags finite geometry outside explicit bounds for future plot clipping. Unsafe mappings/slots/paths expose no partial marks. See [geometry foundations](GEOMETRY_FOUNDATIONS.md). Milestone 02's planned internal foundation tasks are implemented, subject to M02-T04 PR review and merge. Public components, SVG rendering, stacking and polar geometry remain future work; package runtime exports remain unchanged.
+
+## Internal SVG rendering — M03-T01
+
+Milestone 02 is merged. The source-internal `LinePreview` now consumes actual
+normalization and Cartesian geometry, using focused shared frame, axes/grid,
+color and table modules under `src/internal/svg/`. React/DOM presentation stays
+outside the pure core. Explicit category/linear/UTC dimensions support SSR;
+responsive widths and local-time mode use accessible initial placeholders.
+See [SVG rendering foundation](SVG_RENDERING_FOUNDATION.md). No public runtime
+component is exported; tooltip/activation/animation are excluded from the internal
+contract. M03-T02 is not implemented.
