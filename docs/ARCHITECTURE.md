@@ -106,3 +106,11 @@ subpaths are added. See [BarChart](BAR_CHART.md). M03-T05 integration hardening 
 ## M03-T05 integration hardening
 
 The shared inspection tooltip uses a 220px border-box matching its positioning estimate and wraps long text. Visible normalized/raw source tables wrap long fields without changing semantic data or hidden-table exposure. Cross-family tests and the playground/browser matrix verify independent lifecycle and state transitions. Genuine consumers add narrow text and three separately hydrated Strict Mode roots. No pure-core math or public contract changes. See [integration hardening](M03_INTEGRATION_HARDENING.md).
+
+## Internal polar geometry — M04-T01
+
+`src/core/geometry/polar*.ts` consumes the existing segment normalization result
+for pure Pie/Donut eligibility, scaled proportions, source-ordered d3-shape angles,
+centered radii and validated arc paths. Ready/empty/unusable results preserve
+normalization provenance; negatives reject the complete chart. Public Pie/Donut
+renderers remain deferred. See [polar geometry foundations](POLAR_GEOMETRY_FOUNDATIONS.md).

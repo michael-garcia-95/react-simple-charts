@@ -155,3 +155,11 @@ and construction of public callback payloads remain later work. Negative
 segments are identified here; final user-visible fallback behavior needs later
 Development Lead decisions. No public contracts, package subpaths, client
 boundary, dependencies, or packaged consumer strategy change in this task.
+
+## M04-T01 polar integration
+
+Unchanged segment normalization now feeds the internal polar engine. Valid labels
+with positive values alone contribute to totals; zero/missing/invalid entries stay
+traceable in the retained normalized model. Any unsupported negative makes the
+complete geometry unusable. See [polar geometry foundations](POLAR_GEOMETRY_FOUNDATIONS.md)
+for implemented calculation policies and deferred presentation decisions.
