@@ -4,7 +4,30 @@ A lightweight, customizable React charting library built with TypeScript.
 
 ## Status
 
-Milestone 01 is complete. M02-T02 adds internal [scales and domains](docs/SCALES_AND_DOMAINS.md), including duplicate-preserving category positions, linear/UTC/local-time scales, series-aware domains, and typed ticks. M02-T03 adds internal [layout and axes](docs/LAYOUT_AND_AXES.md): adaptive plot bounds, physical axis orientation, estimated label selection, value gridlines, and Area/Bar zero-baseline coordinates. M02-T04 adds internal [geometry foundations](docs/GEOMETRY_FOUNDATIONS.md): ordered Line/Area runs with missing-data gaps and path data, and grouped vertical/horizontal Bar rectangles with source identity and clipping metadata. Milestone 02’s planned internal foundation tasks are implemented, subject to M02-T04 PR review and merge. M02-T01 added internal, framework-independent [data normalization](docs/DATA_NORMALIZATION.md) with source preservation and structured validation. M01-T03 added an internal SVG rendering prototype to validate explicit/responsive dimensions, SSR, hydration, accessibility, and self-contained styling. No public runtime chart components exist yet. See [rendering compatibility](docs/RENDERING_COMPATIBILITY.md) and [API type contracts](docs/API_TYPE_CONTRACTS.md). M01-T04 packaged-consumer verification is documented in [consumer compatibility](docs/CONSUMER_COMPATIBILITY.md); its runtime tests use a temporary test-only distribution. The provisional package name is `react-simple-charts`; it remains private and is not ready for installation from npm.
+M03-T02 implements the public `LineChart` on the merged Cartesian engine.
+It supports multiple series, independent gaps, category/linear/UTC/local-time X,
+responsive and explicit dimensions, accessible tables, tooltips, point inspection,
+activation and optional reduced-motion-aware animation. Area/Bar/Pie/Donut remain
+unimplemented runtime APIs. The package stays private at 0.0.0; no npm release is
+available. See [LineChart usage and every prop](docs/LINE_CHART.md).
+
+```tsx
+import { LineChart } from 'react-simple-charts';
+
+export function Sales() {
+  return (
+    <LineChart
+      data={[
+        { month: 'Jan', revenue: 12 },
+        { month: 'Feb', revenue: 24 },
+      ]}
+      xKey="month"
+      yKey="revenue"
+      accessibility={{ label: 'Monthly revenue' }}
+    />
+  );
+}
+```
 
 ## Development
 
@@ -15,7 +38,7 @@ npm ci
 npm run dev
 ```
 
-Vite serves the React playground and prints its local URL. The page identifies the internal architecture prototype and shows explicit/responsive examples with accessible data tables. Its CSS belongs to the playground only; the prototype's essential styles are self-contained. The optional real-browser smoke workflow is documented in [rendering compatibility](docs/RENDERING_COMPATIBILITY.md).
+Vite serves the React playground and prints its local URL. The page shows public LineChart examples alongside historical rendering fixtures. Its CSS belongs to the playground only; the prototype's essential styles are self-contained. The optional real-browser smoke workflow is documented in [rendering compatibility](docs/RENDERING_COMPATIBILITY.md).
 
 | Command                    | Purpose                                                                   |
 | -------------------------- | ------------------------------------------------------------------------- |
@@ -34,7 +57,7 @@ Vite serves the React playground and prints its local URL. The page identifies t
 
 ## Architecture
 
-The library targets React 18.2+ and React 19.x. Planned Line, Bar, Area, Pie, and Donut components will share infrastructure, use SVG rendering, and use d3-scale/d3-shape for pure calculations. Consumers supply React and React DOM as peers. Distribution is ESM-only, with declarations and a single root entry; future APIs use named exports. No internal subpaths are public.
+The library targets React 18.2+ and React 19.x. Planned Line, Bar, Area, Pie, and Donut components will share infrastructure, use SVG rendering, and use d3-scale/d3-shape for pure calculations. Consumers supply React and React DOM as peers. Distribution is ESM-only, with declarations and a single root entry; LineChart is a named runtime export. No internal subpaths are public.
 
 See [architecture](docs/ARCHITECTURE.md), [open decisions](docs/OPEN_DECISIONS.md), and [contributor rules](AGENTS.md). CI checks Node 22/24 with React 18.2/19. The baseline uses React 18 definitions; CI also checks matching React 19 definitions.
 
@@ -42,9 +65,4 @@ See [architecture](docs/ARCHITECTURE.md), [open decisions](docs/OPEN_DECISIONS.m
 
 Licensed under the MIT License. Copyright (c) 2026 Michael Garcia. The copyright holder has been approved by the Development Lead; see `LICENSE` for the standard terms.
 
-M03-T01 includes a source-internal, data-driven Line preview in the development
-playground, backed by the merged Cartesian engine. It supports multiple series,
-gaps, category/linear/UTC/local-time X, axes/grid, clipping and accessible source
-tables. It is **not** a publicly importable LineChart; package exports remain
-TypeScript contracts only. See [SVG rendering foundation](docs/SVG_RENDERING_FOUNDATION.md)
-for sizing, SSR policy and remaining production work.
+The historical RenderingProbe and source-internal LinePreview remain available only in the repository. Genuine packaged Vite/Next validation uses the public LineChart; see [consumer compatibility](docs/CONSUMER_COMPATIBILITY.md).

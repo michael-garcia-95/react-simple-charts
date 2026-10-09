@@ -27,9 +27,7 @@ interface Row {
   impossible: never;
 }
 export const data: readonly Row[] = [];
-declare function LineChart<T extends object>(
-  props: LineChartProps<T>,
-): ReactElement;
+import { LineChart } from 'react-simple-charts';
 declare function AreaChart<T extends object>(
   props: AreaChartProps<T>,
 ): ReactElement;
@@ -251,8 +249,8 @@ export const boolKey: CategoricalFieldKey<Row> = 'flag';
 
 // @ts-expect-error Internal package subpaths are not public.
 import type { LineChartProps as InternalProps } from 'react-simple-charts/types/contracts';
-// @ts-expect-error The package has no runtime chart exports yet.
-import { LineChart as RuntimeChart } from 'react-simple-charts';
+// @ts-expect-error Future chart families remain types only.
+import { AreaChart as RuntimeChart } from 'react-simple-charts';
 export type RejectedInternalImport = InternalProps<Row>;
 export const rejectedRuntimeImport = RuntimeChart;
 

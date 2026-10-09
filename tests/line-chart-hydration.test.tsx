@@ -1,0 +1,90 @@
+import { StrictMode } from 'react';
+import { act } from '@testing-library/react';
+import { renderToString } from 'react-dom/server';
+import { hydrateRoot } from 'react-dom/client';
+import type { Root } from 'react-dom/client';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { LineChart } from '../src/charts/LineChart';
+import { installResizeObserver, latestObserver } from './resize-observer';
+let root: Root | undefined;
+beforeEach(installResizeObserver);
+afterEach(async () => {
+  if (root) await act(async () => root!.unmount());
+  root = undefined;
+  document.body.replaceChildren();
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
+it.each(['explicit', 'responsive', 'time'] as const)(
+  'hydrates %s without warnings or recoverable errors',
+  async (mode) => {
+    const errors = vi.spyOn(console, 'error');
+    const warnings = vi.spyOn(console, 'warn');
+    const recoverable = vi.fn();
+    const data = [
+      { x: new Date('2026-03-07T00:00:00Z'), y: 1 },
+      { x: new Date('2026-03-10T00:00:00Z'), y: 3 },
+    ];
+    const element = (
+      <StrictMode>
+        <LineChart
+          data={data}
+          xKey="x"
+          yKey="y"
+          xScale={mode === 'time' ? 'time' : 'utc'}
+          {...(mode === 'responsive' ? {} : { width: 640 })}
+        />
+      </StrictMode>
+    );
+    const container = document.createElement('div');
+    container.innerHTML = renderToString(element);
+    document.body.append(container);
+    const initial = container.innerHTML;
+    const table = container.querySelector('table');
+    expect(container.querySelector('svg') !== null).toBe(mode === 'explicit');
+    await act(async () => {
+      root = hydrateRoot(container, element, {
+        onRecoverableError: recoverable,
+      });
+    });
+    if (mode !== 'time') expect(container.innerHTML).toBe(initial);
+    if (mode === 'responsive') act(() => latestObserver().emit(500));
+    expect(container.querySelector('svg')).not.toBeNull();
+    expect(container.querySelector('table')).toBe(table);
+    expect(errors).not.toHaveBeenCalled();
+    expect(warnings).not.toHaveBeenCalled();
+    expect(recoverable).not.toHaveBeenCalled();
+  },
+);
+
+it('hydrates independent sibling charts with unique title and plot references', async () => {
+  const errors = vi.spyOn(console, 'error');
+  const recoverable = vi.fn();
+  const element = (
+    <>
+      <LineChart data={[{ x: 'A', y: 1 }]} xKey="x" yKey="y" width={400} />
+      <LineChart data={[{ x: 'B', y: 2 }]} xKey="x" yKey="y" width={600} />
+    </>
+  );
+  const container = document.createElement('div');
+  container.innerHTML = renderToString(element);
+  document.body.append(container);
+  const initial = container.innerHTML;
+  await act(async () => {
+    root = hydrateRoot(container, element, { onRecoverableError: recoverable });
+  });
+  expect(container.innerHTML).toBe(initial);
+  const ids = [...container.querySelectorAll('[id]')].map((node) => node.id);
+  expect(new Set(ids).size).toBe(ids.length);
+  for (const svg of container.querySelectorAll('svg')) {
+    expect(svg.getAttribute('aria-labelledby')).toBe(
+      svg.querySelector('title')!.id,
+    );
+    expect(svg.querySelector('[data-layer="marks"]')).toHaveAttribute(
+      'clip-path',
+      `url(#${svg.querySelector('clipPath')!.id})`,
+    );
+  }
+  expect(recoverable).not.toHaveBeenCalled();
+  expect(errors).not.toHaveBeenCalled();
+});

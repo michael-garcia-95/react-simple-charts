@@ -1,39 +1,11 @@
-# Packaged consumer integration — M01-T04
+# Packaged public LineChart consumers — M03-T02
 
-The genuine public package exports TypeScript contracts only. It has **no public
-chart components**. The rendering results below concern a separately named,
-disposable architecture fixture; they do not establish a final public runtime API.
-
-## Package boundaries and test strategy
-
-`scripts/verify-consumers.mjs` runs `npm pack` against the genuine repository.
-Its prepack hook invokes the production tsdown configuration. Each independent
-consumer installs that tarball with a `file:/absolute/path/package.tgz` dependency.
-This is an archive installation, not a workspace link, source alias, or source
-import. Node imports the installed root and asserts an empty runtime namespace;
-it rejects source, dist, and internal subpaths with `ERR_PACKAGE_PATH_NOT_EXPORTED`.
-The installed manifest must remain private, with React/React DOM peers and only
-one export (`.`). The full existing contracts suite is copied into each consumer
-and compiled against its installed package. Generated declarations are checked
-with `skipLibCheck: false`, independently of framework declarations.
-
-For runtime tests, the runner copies `src`, the production `tsdown.config.ts`,
-TypeScript configuration, license, and README into ignored `work/consumers/test-package`.
-The copied lockfile keeps the production tool versions; only its root package
-identity changes. The package is named `rsc-rendering-test-only@0.0.0-test-only`
-and remains private. Its replacement root entry exports the internal
-`RenderingProbe` and its props. That is the only build-input change; the tsdown
-configuration is copied unchanged: ESM, ES2022, neutral platform, declarations,
-sourcemaps, React/React DOM externalization, and client banner all match production.
-The generated declaration is necessarily the probe contract rather than the
-public type barrel. The genuine root exports and manifest are never modified.
-
-This copy is packed separately, installed beside the genuine tarball, and excluded
-from source control. It must never become the release artifact. The current
-README inside the disposable archive comes from the genuine package and describes
-the genuine API; its experimental name and this document identify its test purpose.
-Testing it proves the packaging approach and rendering architecture, not that
-LineChart or any other production chart can be imported.
+The genuine private `react-simple-charts@0.0.0` tarball now exports LineChart.
+The consumer runner packs the actual repository and independently installs the
+archive in Vite/Next applications. There are no source aliases, workspace links,
+modified roots or temporary rendering exports. Root runtime is exactly LineChart;
+source/dist/internal subpaths remain blocked. The full contract suite imports the
+real component and verifies generic inference through installed declarations.
 
 ## Tested versions
 
@@ -63,115 +35,106 @@ No library contract was changed, no SSR disabled, and no broad type assertion wa
 used to suppress a package defect. Compatibility with Next 14's entire declaration
 surface under strict dependency checking remains a framework gap.
 
-## SSR, client boundaries, and browser checks
+## Public runtime checks
 
-The App Router page and Sample are Server Components. Sample imports the probe
-from the installed test package root without a local `use client` wrapper.
-The production banner makes that import a client boundary. Next builds and serves
-its real SSR output on every request (`force-dynamic` for App Router,
-`getServerSideProps` for Pages Router); no `transpilePackages`, dynamic import, source transpilation,
-or client-only SSR workaround is configured. A Pages Router route exercises the
-same installed component. Next 16 uses its supported Webpack production builder
-(`next build --webpack`); Turbopack is not tested. The tracing root is explicitly the independent consumer directory, avoiding
-Next inferring the repository root from an ancestor lockfile. Two build workers limit runner
-resource usage; that setting does not alter module resolution or SSR behavior.
+Next App Router Server Components directly import the installed LineChart without
+a local client wrapper; client-reference manifests identify the genuine package.
+Pages Router also renders it. Explicit category charts render complete SVG and
+source tables with JavaScript disabled. Responsive charts retain the measurement
+placeholder until gated native ResizeObserver delivery; initial hydrated explicit
+SVG and responsive section markup match server DOM. Local time starts with its
+safe server placeholder and renders with client timezone after hydration.
 
-HTTP response HTML is saved before opening Chromium. A JavaScript-disabled
-Chromium page verifies that explicit width 640 yields SVG with viewBox
-`0 0 640 280`, accessible title/description references, and table markup.
-Responsive server markup has no SVG, reserves 280px graphical height, and
-contains the named placeholder and structured data table. Server rendering
-therefore does not require browser layout or ResizeObserver.
+Vite validates public root rendering, measured responsive and independent widths,
+shrinking viewport updates, observer cleanup, and separately prefixed SSR roots
+hydrated in real Chromium. All applications compile installed package declarations
+with strict dependency checking, build production assets, reject internal imports,
+and report deduplicated React peers. No external stylesheet is needed.
 
-The hydration page wraps native ResizeObserver solely to delay delivery. Native
-measurements still supply every width. This exposes the initial hydrated DOM
-before measurement: the explicit SVG's entire serialized structure must equal
-the server DOM, and responsive placeholders and tables must remain present.
-Releasing observations replaces placeholders with SVG. Shrinking the viewport
-changes the 80%-width chart while a separately observed 320px container retains
-its width. Tables remain available. All IDs are unique, and every label/description
-reference resolves. Console and uncaught page errors fail the run, including
-React hydration/recoverable errors reported by the framework.
+Browser checks cover one roving point Tab entry, End/Arrow navigation, tooltip
+inspection/Escape, keyboard and pointer activation, real touch selection and
+exactly-once activation (including synthetic click suppression), and dismissal.
+All title/description references resolve, IDs are unique, semantic source tables
+remain accessible, and CSS variables resolve. Axe analyzes main and requires zero
+violations. Console, page and hydration errors fail the suite. Public source tests
+add motion, datum-reference, formatter-failure, missing-value and state-transition
+coverage that the browser suite does not replace.
 
-Vite also tests unmount observer disconnection. A separate served `roots.html`
-contains two `renderToString` roots, each hydrated with its matching distinct
-`identifierPrefix` (`alpha-`, `beta-`). Initial body markup must remain identical,
-IDs must be unique, and `onRecoverableError` explicitly reports failures.
-No global ID registry is required. This is real Chromium hydration of React SSR,
-separate from the Next framework checks and earlier jsdom tests.
-
-## Accessibility and styling
-
-Installed probe checks cover names/descriptions, column and row headers, visible
-and clipped tables, native Tab focus with a 3px outline, and resolved CSS variable
-series color. Chromium accessibility snapshots expose the visually hidden table
-and Q4 row header. Focused axe checks include `main` and require zero violations.
-No application stylesheet or mandatory package CSS import is supplied.
-These checks do not certify complete WCAG 2.2 AA compliance.
-
-Manual screen-reader table navigation/announcements, forced colors, browser zoom,
-strict CSP, custom theme contrast, Firefox/WebKit, and aggressive host CSS remain
-release risks. The fixture has no production interaction or tooltip behavior.
-Inline styling needs explicit evaluation under the eventual consumer CSP policy.
-
-## Artifact and bundle evidence
-
-Measurements are bytes, with gzip calculated using Node's gzipSync. Tarball sizes
-include metadata/docs and can change with README edits. The public JavaScript
-entry is only a client directive and empty module; genuine type-only imports
-are erased and contribute no chart runtime. Its approved d3 dependencies are
-still installed transitively but are unused and absent from Vite bundle sources.
-The temporary probe bundles no React implementation and needs no CSS file.
-
-The runner records tarball, ESM and gzip sizes separately for the genuine and
-test-only packages. Vite measurements sum all generated JavaScript assets for
-both its main and separate-root test pages, including React and test application
-code. They are total consumer sizes, **not isolated package contribution**.
-Sourcemap source lists identify the installed probe and exclude development React
-and d3 modules. `npm ls react react-dom` shows deduplicated installed peers.
-Next naturally includes its own framework runtime; its client reference manifests
-and server/client bundles must be interpreted in that context rather than treating
-all repeated React strings across server and browser targets as duplicate runtimes.
-No final production chart size is inferred from this experimental fixture.
-
-## Reproduction and release gate
+## Reproduction and evidence
 
 ```sh
 npm ci
-# Install Chromium separately using your platform's supported mechanism.
-# Driver and axe install automatically into ignored work/, not library dependencies.
 RSC_BROWSER_PATH=/usr/bin/chromium node scripts/verify-consumers.mjs
 ```
 
-Use a writable npm cache in restricted environments. The integration runner sets
-its cache to `work/consumers/npm-cache`. It generates and installs four independent
-applications, builds each, serves production HTTP, runs browser checks, and shuts
-down servers/browser. Ports 4318 and 4319 must be available. To force a clean
-repeat, remove only generated `work/consumers` first. Do not run simultaneous
-copies. Each consumer uses its own node_modules and has no repository aliases.
+The script provisions Playwright Core 1.64.0 and axe 4.13.0 in ignored work,
+uses a writable `work/consumers/npm-cache`, builds independent pinned consumers,
+serves ports 4318/4319 and closes servers/browser. Native observer callbacks are
+gated only to inspect pre-measurement hydration; measurements stay native.
+Next 16 uses `--webpack`; Turbopack is not tested. Next dependency declarations use
+framework-standard skipLibCheck; a separate package compilation keeps it false.
 
-Evidence lives under ignored `work/consumers/<consumer>/evidence`: HTTP response,
-server DOM, hydrated pre-measurement DOM, measured DOM, screenshot, accessibility
-snapshot, and Vite bundle source list. Separate-root evidence is saved for Vite.
-`work/consumers/results.json` records completed checks and measurements; the runner
-exits nonzero on failure. A missing browser or failed build is not silently skipped.
-Consumer installation lockfiles are generated in ignored work; exact direct
-versions are pinned, but future transitive dependency resolution can differ.
+`work/consumers/results.json` records exact versions, completed checks and package
+sizes. Each consumer's evidence folder contains server/hydrated/measured HTML,
+accessibility snapshot, screenshot, and relevant bundle source/client manifests.
+Vite asset totals include React and both test pages; Next totals include both
+routers and framework/fallback chunks. These application totals are not isolated
+library contributions. The genuine ESM now includes approved D3 engine code and
+external React imports. No development React or global CSS is bundled.
 
-Underlying commands per consumer are `npm install --no-audit --no-fund`,
-`node package-check.mjs`, `npm ls react react-dom`, and
-`node node_modules/typescript/bin/tsc --project tsconfig.package.json`.
-Vite also compiles its complete app with `tsc --noEmit`.
-Vite uses `node node_modules/vite/bin/vite.js build` and `vite preview`.
-Next uses `node node_modules/next/dist/bin/next build` (plus `--webpack` for 16),
-then `next start`; the script includes all HTTP/Chromium assertions.
+## Limits
 
-This heavier optional suite is a **release gate** for packaging/client-boundary
-changes. It is deliberately separate from the Node 22/24 × React 18/19 CI matrix:
-four framework installations, production builds, browser provisioning, and axe
-would multiply costs in every matrix job. Permanent CI and library dependencies
-are unchanged. Run the gate on a browser-capable release runner before accepting
-future runtime packaging changes.
+This heavyweight suite stays separate from unchanged Node 22/24 × React 18/19 CI.
+Real Chromium checks and axe do not establish WCAG conformance or screen-reader,
+Firefox/WebKit, forced-colors, browser-zoom, strict CSP, or arbitrary host-style
+compatibility. Custom tooltip content and large datasets have the limits in
+[LineChart](LINE_CHART.md). Transitive dependency resolution may vary on future
+runs despite pinned direct versions. Existing Rolldown directive warnings remain;
+actual artifact and Next manifest checks establish the client boundary.
+
+## M03-T02 verified outcomes
+
+All four genuine public consumers passed installed-root/type checks, production
+builds, native browser interactions, accessibility checks and ID validation.
+Both Next App/Pages routes passed; App Router explicit/responsive SSR initial
+hydration comparisons passed. Local-time SSR remained a placeholder. Both Vite
+consumers passed separate-root hydration and observer cleanup. Real Chromium
+151.0.7922.173 recorded zero axe violations and no console/page/hydration errors.
+Every installed ESM file matched the packed build bytes.
+
+| Genuine public package |  Bytes |
+| ---------------------- | -----: |
+| Tarball (six files)    | 57,480 |
+| ESM                    | 68,867 |
+| ESM gzip               | 17,003 |
+
+| Consumer (all JS assets) |     Bytes | Sum of per-file gzip bytes |
+| ------------------------ | --------: | -------------------------: |
+| Vite / React 18.2.0      |   220,932 |                     72,421 |
+| Vite / React 19.3.0      |   300,481 |                     95,158 |
+| Next 14.2.35             |   835,414 |                    263,041 |
+| Next 16.4.0              | 1,083,046 |                    339,136 |
+
+The source suite passed 451 tests (417 baseline plus 34 new public tests).
+Typecheck, public type tests, lint, formatting, package verification, playground
+build, dry-run packing with writable cache, and diff checks passed on Node
+24.19.0 / React 19.3.0. The focused public suite passed all 34 tests separately.
+
+Repeated same-version consumer runs now delete generated application installations
+and lockfiles before installing, then compare installed ESM bytes to the packed
+build. This prevents stale `0.0.0` archives from masquerading as current tests.
+Strict Vite ports prevent verification against another running server. Real touch
+checks exposed fractional endpoint clipping and delayed synthetic-click focus;
+unclipped point controls and tracked pointer focus intent fixed both, with source
+regression tests. Earlier failed checks were rerun and are not reported as passes.
+The default npm cache was unwritable; dry-run packing passed with the documented
+writable task cache. Browser source and consumer artifacts remain in ignored work.
+
+## Historical M01-T04 evidence
+
+The earlier contracts-only/probe measurements below are retained as historical
+evidence. They concern a temporary RenderingProbe archive and cannot be used as
+public LineChart runtime results. M03-T02 has removed that archive from the runner.
 
 ## Local outcomes
 
@@ -209,45 +172,3 @@ Next 14's entry CSS lists are empty; neither fixture supplies a stylesheet.
 Vite sourcemaps identify one installed React family per consumer and the installed
 probe. Framework-owned server/browser React modules are expected in Next; the
 package adds no bundled React and npm shows deduplicated peer instances.
-
-The following required local checks all passed on Node 24.19.0 with the foundation
-React 19.3.0 dependencies:
-
-```sh
-npm run typecheck
-npm run test:types
-npm run lint
-npm run format:check
-npm test                         # 28 tests, 5 files
-npm run verify:package
-npm run build:playground
-npm_config_cache=/workspace/work/npm-cache npm pack --dry-run
-git diff --check
-RSC_BROWSER_PATH=/usr/bin/chromium node scripts/verify-consumers.mjs
-```
-
-Initial registry-version queries failed because the default npm cache was not
-writable; they passed after selecting the writable cache. Packing used the
-writable cache. Initial
-network-denied shell attempts were rerun with command network access, preserving
-the configured proxy. The first axe attempt needed an explicit Playwright browser
-context; the runner now supplies one. A Pages measurement-gate timeout and a
-Next 16 Pages favicon 404 were fixture issues, corrected and rerun. None is
-silently treated as a passing check. The existing Rolldown directive warnings
-remain, but assertions and Next client manifests prove the installed boundary.
-
-No public M01-T02 type changes, production source changes, new library dependencies,
-or CI matrix changes were required. This task does not establish unrestricted
-Next 14 declaration checking, Next 16 Turbopack, other browsers, manual accessibility
-compliance, or production chart integration. Those limits do not invalidate the
-verified package/probe paths.
-
-For `next-18`, captured DOM evidence shows explicit server/hydrated viewBox
-`0 0 640 280`, no responsive server SVG, and measured/resized responsive
-viewBox `0 0 547.1875 280`. The server and initially hydrated responsive
-section serializations are equal; the table remains after measurement.
-
-For `next-19`, captured DOM evidence shows explicit server/hydrated viewBox
-`0 0 640 280`, no responsive server SVG, and measured/resized responsive
-viewBox `0 0 547.1875 280`. The server and initially hydrated responsive
-section serializations are equal; the table remains after measurement.

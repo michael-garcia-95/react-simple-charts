@@ -36,9 +36,9 @@ try {
   await explicit.waitFor({ state: 'visible' });
   await responsive.waitFor({ state: 'visible' });
   assert.equal(await explicit.getAttribute('viewBox'), '0 0 640 280');
-  assert.equal(await page.getByRole('table').count(), 10);
+  assert.equal(await page.getByRole('table').count(), 13);
   checks.push(
-    'Initial explicit and measured responsive SVG; ten semantic data tables',
+    'Initial explicit and measured responsive SVG; thirteen semantic data tables',
   );
 
   const initialWidth = Number(await responsive.getAttribute('width'));
@@ -177,8 +177,8 @@ try {
       name: /Responsive quarterly sample — awaiting container measurement/,
     })
     .waitFor();
-  assert.equal(await fallbackPage.locator('svg').count(), 6);
-  assert.equal(await fallbackPage.getByRole('table').count(), 10);
+  assert.equal(await fallbackPage.locator('svg').count(), 8);
+  assert.equal(await fallbackPage.getByRole('table').count(), 13);
   checks.push(
     'Missing ResizeObserver keeps the accessible placeholder and all tables',
   );

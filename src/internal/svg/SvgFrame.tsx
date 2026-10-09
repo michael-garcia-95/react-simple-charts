@@ -12,6 +12,8 @@ export function SvgFrame({
   grid,
   axes,
   children,
+  interactive = false,
+  inspection,
 }: {
   id: string;
   width: number;
@@ -22,12 +24,14 @@ export function SvgFrame({
   grid: ReactNode;
   axes: ReactNode;
   children: ReactNode;
+  interactive?: boolean;
+  inspection?: ReactNode;
 }) {
   const [focused, setFocused] = useState(false);
   return (
     <svg
-      role="img"
-      tabIndex={0}
+      role={interactive ? 'group' : 'img'}
+      tabIndex={interactive ? undefined : 0}
       width={width}
       height={height}
       viewBox={`0 0 ${width} ${height}`}
@@ -56,15 +60,18 @@ export function SvgFrame({
           />
         </clipPath>
       </defs>
-      <g aria-hidden="true">
-        <g data-layer="grid" pointerEvents="none">
+      <g aria-hidden={interactive ? undefined : true}>
+        <g aria-hidden="true" data-layer="grid" pointerEvents="none">
           {grid}
         </g>
-        <g data-layer="axes">{axes}</g>
+        <g aria-hidden="true" data-layer="axes">
+          {axes}
+        </g>
         <g data-layer="marks" clipPath={`url(#${id}-plot)`}>
           {children}
         </g>
       </g>
+      {inspection && <g data-layer="inspection">{inspection}</g>}
     </svg>
   );
 }
