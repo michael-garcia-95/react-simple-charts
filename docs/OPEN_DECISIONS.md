@@ -16,3 +16,12 @@ Milestone 01 and Milestone 02's planned M02-T01 through M02-T04 internal foundat
 M02-T03 documents bounded margin estimates, greedy tick selection, single-line formatting failures, hidden-axis title suppression, horizontal Bar mappings, and independent value grids in [layout and axes](LAYOUT_AND_AXES.md). These engine policies are explicit; future decisions concern final renderer font/title styling and fitting, diagnostic presentation, local-time SSR strategy, and final renderer visual spacing.
 
 M02-T04 documents independent missing-point runs, singleton retention, Area baseline closure, stable grouped Bar slots (80% groups/90% slots), and unclamped out-of-plot metadata in [geometry foundations](GEOMETRY_FOUNDATIONS.md). These are implemented internal calculation policies. Development Lead review remains for final visual spacing, clipping/marker presentation, diagnostic UI, performance budgets and future extreme-number support. Actual SVG clipping and public rendering are deferred.
+
+M03-T01 adds the internal engine-based Line preview and actual SVG plot clipping.
+Its local-time policy is an initial placeholder followed by client-timezone
+geometry; responsive charts reuse per-container observation. Review its documented
+conservative title omission, endpoint marker clipping, internal color tokens and
+empty/unavailable presentation before promoting production behavior. M03-T02 must
+validate tooltips, activation and point keyboard navigation before public LineChart,
+and repeat genuine packaged-consumer verification when runtime exports change.
+See [SVG rendering foundation](SVG_RENDERING_FOUNDATION.md).
