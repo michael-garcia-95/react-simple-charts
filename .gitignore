@@ -1,0 +1,11 @@
+node_modules/
+dist/
+playground-dist/
+coverage/
+work/
+*.tgz
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+.DS_Store
