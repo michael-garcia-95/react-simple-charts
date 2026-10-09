@@ -16,9 +16,14 @@ assert.match(code, /^\s*["']use client["'];/);
 assert.doesNotMatch(code, /\brequire\(|module\.exports/);
 assert.match(await readFile('dist/index.d.ts', 'utf8'), /export/);
 const api = await import('react-simple-charts');
-assert.deepEqual(Object.keys(api).sort(), ['AreaChart', 'LineChart']);
+assert.deepEqual(Object.keys(api).sort(), [
+  'AreaChart',
+  'BarChart',
+  'LineChart',
+]);
 assert.equal(typeof api.LineChart, 'function');
 assert.equal(typeof api.AreaChart, 'function');
+assert.equal(typeof api.BarChart, 'function');
 const { createElement } = await import('react');
 const { renderToString } = await import('react-dom/server');
 assert.match(

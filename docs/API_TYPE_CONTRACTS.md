@@ -1,7 +1,7 @@
 # Public TypeScript contracts — M01-T02
 
 RSC-026/RSC-027 contracts are preserved. LineChart is a public runtime component
-as of M03-T02; AreaChart is public as of M03-T03. BarChart, PieChart and DonutChart remain types only.
+as of M03-T02; AreaChart is public as of M03-T03. BarChart is public as of M03-T04; PieChart and DonutChart remain types only.
 See [LineChart behavior](LINE_CHART.md) for runnable examples and runtime defaults. Import every public type from the package root.
 
 ```ts
@@ -75,7 +75,7 @@ non-distributive conditional to reject partially incompatible unions:
 
 `NoInfer<T>` on field mappings and callback contexts keeps inference anchored to
 `data`. This prevents an invalid field or callback from influencing the inferred
-record type. The real LineChart and AreaChart imports demonstrate JSX inference; future families use
+record type. The real LineChart, AreaChart and BarChart imports demonstrate JSX inference; future families use
 compile-only declarations. `satisfies ChartProps<Record>` is convenient
 for validating reusable prop objects; plain object literals may widen string
 keys before assignment, so annotate them or use `satisfies` at construction.
@@ -229,3 +229,13 @@ and dry-run packing passed. Runtime tests used React 19.3.0; the full Node
 
 M03-T03 preserves AreaChartProps without changes. Actual packaged AreaChart JSX
 now exercises the contract; see [AreaChart behavior](AREA_CHART.md).
+
+## M03-T04 public BarChart
+
+BarChart now consumes existing grouped rectangle geometry in both orientations.
+Physical formatter routing preserves semantic xKey categories; shared presentation
+and corrected gesture handling also serve Line/Area. Item inspection is the Bar
+default; visible rectangle intersections and in-plot zero targets determine
+eligibility. Exact decorative extents, stable missing slots, source tables and
+SSR policy are preserved. No public props, dependencies, core math changes or
+subpaths are added. See [BarChart](BAR_CHART.md). M03-T05 remains deferred.

@@ -80,7 +80,7 @@ const browser = await chromium.launch({
   args: ['--no-sandbox'],
 });
 report.browser = browser.version();
-const sample = `import { LineChart, AreaChart } from 'react-simple-charts';
+const sample = `import { LineChart, AreaChart, BarChart } from 'react-simple-charts';
 const data = [{quarter:'Q1',value:12},{quarter:'Q2',value:24},{quarter:'Q3',value:18},{quarter:'Q4',value:32}];
 export default function Sample() {return <main><h1>Packaged public LineChart</h1>
 <section id="explicit"><LineChart data={data} xKey="quarter" yKey="value" width={640} accessibility={{label:'Explicit',description:'Quarterly values',dataTable:'visible'}} /></section>
@@ -93,12 +93,17 @@ export default function Sample() {return <main><h1>Packaged public LineChart</h1
 <section id="area-gaps"><AreaChart data={[{x:'A',a:1,b:-1},{x:'A',a:2,b:-2},{x:'C',a:null,b:-3},{x:'D',a:4,b:null}]} xKey="x" series={[{key:'a',color:'#2563eb'},{key:'b',color:'#0d9488'}]} width={640} accessibility={{label:'Independent Area gaps'}} /></section>
 <section id="area-responsive"><AreaChart data={data} xKey="quarter" yKey="value" accessibility={{label:'Responsive Area'}} /></section>
 <section id="area-time"><AreaChart data={[{x:new Date('2026-01-01'),y:1}]} xKey="x" xScale="time" yKey="y" width={640} accessibility={{label:'Local time Area'}} /></section>
+<section id="bar-vertical"><BarChart width={640} data={[{x:'A',a:-2,b:2},{x:'A',a:3,b:-3},{x:'C',a:0,b:null}]} xKey="x" series={[{key:'a'},{key:'b'}]} accessibility={{label:'Vertical Bar',dataTable:'visible'}} /></section>
+<section id="bar-horizontal"><BarChart width={640} orientation="horizontal" data={[{x:'A',a:-2,b:2},{x:'A',a:3,b:-3},{x:'C',a:0,b:null}]} xKey="x" series={[{key:'a'},{key:'b'}]} tooltip={{mode:'shared'}} accessibility={{label:'Horizontal Bar'}} /></section>
+<section id="bar-clipped"><BarChart width={640} data={[{x:'A',a:5,b:-1},{x:'B',a:-5,b:null}]} xKey="x" series={[{key:'a'},{key:'b'}]} yAxis={{min:0,max:4}} accessibility={{label:'Clipped Bar'}} /></section>
+<section id="bar-responsive"><BarChart data={data} xKey="quarter" yKey="value" accessibility={{label:'Responsive Bar'}} /></section>
 <Interactive/></main>;}
 import Interactive from './Interactive';`;
 const interactive = `'use client';
-import {useState} from 'react'; import {LineChart, AreaChart} from 'react-simple-charts';
+import {useState} from 'react'; import {LineChart, AreaChart, BarChart} from 'react-simple-charts';
 function Inspection({area=false}:{area?:boolean}){const Chart=area?AreaChart:LineChart;const [result,setResult]=useState(''); const [count,setCount]=useState(0);return <section id={area?'area-interactive':'interactive'}><Chart width={640} data={[{x:'A',y:1},{x:'A',y:2}]} xKey="x" yKey="y" onDataActivate={p=>{setCount(n=>n+1);setResult(p.index+':'+p.inputMethod);}} accessibility={{label:area?'Interactive Area':'Interactive'}}/><output>{result}:{count}</output></section>;}
-export default function Interactive(){return <><Inspection/><Inspection area/></>;}`;
+function BarInspection({horizontal=false}:{horizontal?:boolean}){const [result,setResult]=useState('');const [count,setCount]=useState(0);return <section id={horizontal?'bar-horizontal-interactive':'bar-interactive'}><BarChart width={640} orientation={horizontal?'horizontal':'vertical'} data={[{x:'A',y:-2},{x:'A',y:0}]} xKey="x" yKey="y" onDataActivate={p=>{setCount(n=>n+1);setResult(p.index+':'+p.inputMethod);}} accessibility={{label:'Interactive Bar'}}/><output>{result}:{count}</output></section>;}
+export default function Interactive(){return <><Inspection/><Inspection area/><BarInspection/><BarInspection horizontal/></>;}`;
 const tsconfig = {
   compilerOptions: {
     target: 'ES2022',
@@ -197,6 +202,8 @@ async function start(dir, kind, port, major) {
         });
       };
     });
+    let barBefore;
+    let barResponsiveBefore;
     let before;
     let responsiveBefore;
     let areaBefore;
@@ -204,6 +211,12 @@ async function start(dir, kind, port, major) {
     if (kind === 'next') {
       const staticPage = await browser.newPage({ javaScriptEnabled: false });
       await staticPage.goto(url);
+      barBefore = await staticPage
+        .locator('#bar-horizontal svg')
+        .evaluate((el) => el.outerHTML);
+      barResponsiveBefore = await staticPage
+        .locator('#bar-responsive')
+        .innerHTML();
       responsiveBefore = await staticPage.locator('#responsive').innerHTML();
       areaBefore = await staticPage
         .locator('#area-explicit svg')
@@ -229,7 +242,7 @@ async function start(dir, kind, port, major) {
           .evaluate((el) => getComputedStyle(el).height),
         '280px',
       );
-      assert.equal(await staticPage.getByRole('table').count(), 12);
+      assert.equal(await staticPage.getByRole('table').count(), 18);
       await file(
         dir,
         'evidence/before.html',
@@ -240,7 +253,7 @@ async function start(dir, kind, port, major) {
     await page.goto(url);
     await page.waitForFunction(() => window.__observers.length >= 2);
     assert.equal(await page.locator('#responsive svg').count(), 0);
-    assert.equal(await page.getByRole('table').count(), 12);
+    assert.equal(await page.getByRole('table').count(), 18);
     if (responsiveBefore)
       assert.equal(
         await page.locator('#responsive').innerHTML(),
@@ -266,6 +279,18 @@ async function start(dir, kind, port, major) {
       'evidence/hydrated-before-measurement.html',
       await page.locator('main').innerHTML(),
     );
+    if (barBefore)
+      assert.equal(
+        await page
+          .locator('#bar-horizontal svg')
+          .evaluate((el) => el.outerHTML),
+        barBefore,
+      );
+    if (barResponsiveBefore)
+      assert.equal(
+        await page.locator('#bar-responsive').innerHTML(),
+        barResponsiveBefore,
+      );
     await page.evaluate(() => window.__release());
     await page.locator('#responsive svg').waitFor();
     assert.equal(
@@ -274,6 +299,10 @@ async function start(dir, kind, port, major) {
     );
     const width = Number(
       await page.locator('#responsive svg').getAttribute('width'),
+    );
+    await page.locator('#bar-responsive svg').waitFor();
+    const barWidth = Number(
+      await page.locator('#bar-responsive svg').getAttribute('width'),
     );
     await page.setViewportSize({ width: 700, height: 1200 });
     await page.waitForFunction(
@@ -286,6 +315,13 @@ async function start(dir, kind, port, major) {
     assert.equal(
       await page.locator('#independent svg').getAttribute('width'),
       '320',
+    );
+    await page.waitForFunction(
+      (previous) =>
+        Number(
+          document.querySelector('#bar-responsive svg')?.getAttribute('width'),
+        ) < previous,
+      barWidth,
     );
     const ids = await page
       .locator('[id]')
@@ -317,7 +353,12 @@ async function start(dir, kind, port, major) {
     assert.equal(await page.getByRole('tooltip').count(), 1);
     await page.keyboard.press('Escape');
     assert.equal(await page.getByRole('tooltip').count(), 0);
-    for (const section of ['#interactive', '#area-interactive']) {
+    for (const section of [
+      '#interactive',
+      '#area-interactive',
+      '#bar-interactive',
+      '#bar-horizontal-interactive',
+    ]) {
       await page.locator(`${section} [role=button]`).first().focus();
       await page.keyboard.press('ArrowRight');
       await page.keyboard.press('Enter');
@@ -480,6 +521,67 @@ async function start(dir, kind, port, major) {
           }, sign),
       );
     }
+    await page.locator('#bar-responsive svg').waitFor();
+    for (const [section, horizontal] of [
+      ['bar-vertical', false],
+      ['bar-horizontal', true],
+    ]) {
+      assert.equal(await page.locator(`#${section} [data-bar]`).count(), 5);
+      assert.equal(await page.locator(`#${section} [role=button]`).count(), 5);
+      assert(
+        await page
+          .locator(`#${section} [data-bar]`)
+          .evaluateAll((nodes, horizontal) => {
+            const start = horizontal ? 'x' : 'y',
+              extent = horizontal ? 'width' : 'height';
+            const n = (el, attr) => Number(el.getAttribute(attr));
+            const zero = nodes.find(
+              (el) => el.getAttribute('data-source-index') === '2',
+            );
+            const baseline = n(zero, start);
+            return (
+              n(zero, extent) === 0 &&
+              nodes.every((el) => {
+                const row = Number(el.getAttribute('data-source-index'));
+                const key = el.getAttribute('data-series');
+                const value = key === 'a' ? [-2, 3, 0][row] : [2, -3][row];
+                const positive = horizontal ? value < 0 : value > 0;
+                return (
+                  value === 0 ||
+                  (positive
+                    ? n(el, start) < baseline &&
+                      Math.abs(n(el, start) + n(el, extent) - baseline) < 1e-8
+                    : Math.abs(n(el, start) - baseline) < 1e-8)
+                );
+              })
+            );
+          }, horizontal),
+      );
+      assert(
+        (
+          await page
+            .locator(`#${section} [data-axis="${horizontal ? 'x' : 'y'}"]`)
+            .textContent()
+        ).includes('0'),
+      );
+      assert(
+        (
+          await page
+            .locator(`#${section} [data-axis="${horizontal ? 'y' : 'x'}"]`)
+            .textContent()
+        ).includes('C'),
+      );
+      await page.locator(`#${section} [role=button]`).first().focus();
+      const tooltip = await page.getByRole('tooltip').textContent();
+      assert(tooltip.includes('A: -2'));
+      assert.equal(tooltip.includes('B: 2'), horizontal);
+      await page.keyboard.press('Escape');
+      await page
+        .locator(`#${section}`)
+        .screenshot({ path: join(dir, `evidence/${section}.png`) });
+    }
+    assert.equal(await page.locator('#bar-clipped [data-bar]').count(), 3);
+    assert.equal(await page.locator('#bar-clipped [role=button]').count(), 1);
     const ax = await page.locator('main').ariaSnapshot();
     assert(ax.includes('rowheader "Q4"') && ax.includes('Responsive — data'));
     await file(dir, 'evidence/accessibility.txt', ax);
@@ -500,7 +602,7 @@ async function start(dir, kind, port, major) {
       await page.waitForFunction(() => window.__observers.length >= 2);
       await page.evaluate(() => window.__release());
       await page.locator('#responsive svg').waitFor();
-      assert.equal(await page.getByRole('table').count(), 12);
+      assert.equal(await page.getByRole('table').count(), 18);
       assert.deepEqual(errors, []);
     } else {
       await page.evaluate(() => window.__unmount());
@@ -587,7 +689,7 @@ try {
         `import assert from 'node:assert/strict';
 import * as api from 'react-simple-charts';
 import {readFileSync} from 'node:fs';
-assert.deepEqual(Object.keys(api).sort(), ['AreaChart','LineChart']); assert.equal(typeof api.LineChart,'function'); assert.equal(typeof api.AreaChart,'function');
+assert.deepEqual(Object.keys(api).sort(), ['AreaChart','BarChart','LineChart']); assert.equal(typeof api.LineChart,'function'); assert.equal(typeof api.AreaChart,'function'); assert.equal(typeof api.BarChart,'function');
 const p=JSON.parse(readFileSync('node_modules/react-simple-charts/package.json'));
 assert.equal(p.private,true); assert.deepEqual(Object.keys(p.exports),['.']);
 assert(p.peerDependencies.react && p.peerDependencies['react-dom']);

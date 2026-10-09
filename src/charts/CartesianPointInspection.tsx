@@ -3,9 +3,11 @@ import type { CartesianGeometryResult } from '../core/geometry/types';
 import type {
   CartesianDatum,
   CartesianTooltipContext,
-  LineChartProps,
   NumericFieldKey,
 } from '../types/contracts';
+import type { RendererProps } from '../internal/CartesianPointRenderer';
+import { barHitRegion } from '../internal/svg/bar-hit-region';
+import { BarMarks } from '../internal/svg/BarMarks';
 import { AreaMarks } from '../internal/svg/AreaMarks';
 import { LineMarks } from '../internal/svg/LineMarks';
 import { SvgFrame } from '../internal/svg/SvgFrame';
@@ -13,40 +15,56 @@ import { CartesianAxes, Gridlines } from '../internal/svg/CartesianAxes';
 import { display } from '../internal/svg/DataTable';
 import { seriesColor, seriesLabel } from '../internal/svg/presentation';
 
-type Ready<T> = Extract<CartesianGeometryResult<T>, { status: 'ready' }> & {
-  family: 'line' | 'area';
-};
+type Ready<T> = Extract<CartesianGeometryResult<T>, { status: 'ready' }>;
 export function CartesianPointInspection<T extends object>({
   props,
   geometry,
   id,
   label,
 }: {
-  props: LineChartProps<T>;
+  props: RendererProps<T>;
   geometry: Ready<T>;
   id: string;
   label: string;
 }) {
   const observations = useMemo(
     () =>
-      geometry.series
-        .flatMap(({ points }) =>
-          points
-            .filter((p) => !p.outOfPlot)
-            .map((point) => ({
-              point,
-              key: `${point.index}:${point.seriesIndex}`,
-              datum: {
-                record: point.record,
-                index: point.index,
-                value: point.value,
-                category: point.category,
-                seriesKey: point.seriesKey as NumericFieldKey<T>,
-                seriesLabel: seriesLabel(point.series),
-                color: seriesColor(point.series, props.colors),
-              } satisfies CartesianDatum<T>,
-            })),
-        )
+      (geometry.family === 'bar'
+        ? geometry.bars.flatMap((bar) => {
+            const hit = barHitRegion(bar, geometry.plot, geometry.orientation);
+            return hit
+              ? [
+                  {
+                    point: {
+                      ...bar,
+                      x: hit.x + hit.width / 2,
+                      y: hit.y + hit.height / 2,
+                    },
+                    hit,
+                  },
+                ]
+              : [];
+          })
+        : geometry.series.flatMap(({ points }) =>
+            points
+              .filter((p) => !p.outOfPlot)
+              .map((point) => ({ point, hit: null })),
+          )
+      )
+        .map(({ point, hit }) => ({
+          point,
+          hit,
+          key: `${point.index}:${point.seriesIndex}`,
+          datum: {
+            record: point.record,
+            index: point.index,
+            value: point.value,
+            category: point.category,
+            seriesKey: point.seriesKey as NumericFieldKey<T>,
+            seriesLabel: seriesLabel(point.series),
+            color: seriesColor(point.series, props.colors),
+          } satisfies CartesianDatum<T>,
+        }))
         .sort(
           (a, b) =>
             a.point.index - b.point.index ||
@@ -57,21 +75,22 @@ export function CartesianPointInspection<T extends object>({
   const byRow = useMemo(() => {
     const rows = new Map<number, CartesianDatum<T>[]>();
     // Include valid row values even when a configured bound clips another series.
-    for (const { series, points } of geometry.series)
-      for (const p of points) {
-        const datum: CartesianDatum<T> = {
-          record: p.record,
-          index: p.index,
-          value: p.value,
-          category: p.category,
-          seriesKey: p.seriesKey as NumericFieldKey<T>,
-          seriesLabel: seriesLabel(series),
-          color: seriesColor(series, props.colors),
-        };
-        const row = rows.get(p.index) ?? [];
-        row.push(datum);
-        rows.set(p.index, row);
-      }
+    for (const p of geometry.family === 'bar'
+      ? geometry.bars
+      : geometry.series.flatMap((s) => s.points)) {
+      const datum: CartesianDatum<T> = {
+        record: p.record,
+        index: p.index,
+        value: p.value,
+        category: p.category,
+        seriesKey: p.seriesKey as NumericFieldKey<T>,
+        seriesLabel: seriesLabel(p.series),
+        color: seriesColor(p.series, props.colors),
+      };
+      const row = rows.get(p.index) ?? [];
+      row.push(datum);
+      rows.set(p.index, row);
+    }
     return rows;
   }, [geometry, props.colors]);
   const [selection, setSelection] = useState<{
@@ -97,7 +116,7 @@ export function CartesianPointInspection<T extends object>({
       ? candidate
       : undefined;
   const roving = active ?? observations[0];
-  const controls = useRef(new Map<string, SVGCircleElement>());
+  const controls = useRef(new Map<string, SVGElement>());
   const marks = useRef<SVGGElement>(null);
   const focused = useRef(false);
   const [focusedKey, setFocusedKey] = useState<string | null>(null);
@@ -161,7 +180,8 @@ export function CartesianPointInspection<T extends object>({
     typeof props.tooltip === 'object' ? props.tooltip : undefined;
   const context: CartesianTooltipContext<T> | undefined =
     active &&
-    (tooltipConfig?.mode === 'item'
+    ((tooltipConfig?.mode ??
+      (geometry.family === 'bar' ? 'item' : 'shared')) === 'item'
       ? { mode: 'item', item: active.datum }
       : {
           mode: 'shared',
@@ -200,205 +220,211 @@ export function CartesianPointInspection<T extends object>({
         label={label}
         description={props.accessibility?.description}
         interactive
-        inspection={observations.map(({ point, datum, key }, index) => (
-          <circle
-            key={key}
-            ref={(node) => {
-              if (node) controls.current.set(key, node);
-              else controls.current.delete(key);
-            }}
-            cx={point.x}
-            cy={point.y}
-            r={10}
-            fill="transparent"
-            stroke={
-              focusedKey === key && selection?.keyboard
-                ? 'var(--rsc-focus-color, #075985)'
-                : 'transparent'
-            }
-            strokeWidth={2}
-            role="button"
-            tabIndex={roving?.key === key ? 0 : -1}
-            aria-label={text(datum)}
-            aria-describedby={
-              visible && active?.key === key ? `${id}-tooltip` : undefined
-            }
-            onFocus={() => {
-              focused.current = true;
-              setFocusedKey(key);
-              inspect(key, pointerFocus.current !== key);
-              pointerFocus.current = null;
-            }}
-            onBlur={() => {
-              focused.current = false;
-              setFocusedKey(null);
-              if (pointerFocus.current === key) pointerFocus.current = null;
-              if (clickSource.current?.key === key) clearClickSource();
-              if (keyboardPress.current?.key === key)
-                keyboardPress.current = null;
-              dismiss();
-            }}
-            onPointerEnter={(e) => {
-              if (e.pointerType !== 'touch') inspect(key, false);
-            }}
-            onPointerMove={(e) => {
-              if (e.pointerType !== 'touch' && active?.key !== key)
-                inspect(key, false);
-            }}
-            onPointerLeave={(e) => {
-              if (
-                clickSource.current?.key === key &&
-                !clickSource.current.suppress
-              )
-                clearClickSource();
-              if (e.pointerType !== 'touch' && !focused.current) dismiss();
-            }}
-            onPointerDown={(e) => {
-              clearClickSource();
-              keyboardPress.current = null;
-              releasedTouch.current = null;
-              clickSource.current = {
-                key,
-                data: props.data,
-                record: datum.record,
-                seriesKey: datum.seriesKey,
-                method: e.pointerType === 'touch' ? 'touch' : 'pointer',
-                suppress: false,
-              };
-              pointerFocus.current = key;
-            }}
-            onPointerCancel={() => {
-              clearClickSource();
-              pointerFocus.current = null;
-            }}
-            onPointerUp={(e) => {
-              const source = clickSource.current;
-              if (
-                source?.key !== key ||
-                source.data !== props.data ||
-                source.record !== datum.record ||
-                source.seriesKey !== datum.seriesKey
-              )
-                return;
-              if (e.pointerType === 'touch' && source.method === 'touch') {
-                e.preventDefault();
-                source.suppress = true;
-                if (typeof e.pointerId === 'number')
-                  releasedTouch.current = e.pointerId;
-                inspect(key, false);
-                props.onDataActivate?.({ ...datum, inputMethod: 'touch' });
+        inspection={observations.map(({ point, hit, datum, key }, index) => {
+          const Target = hit ? 'rect' : 'circle';
+          return (
+            <Target
+              key={key}
+              ref={(node: SVGRectElement | SVGCircleElement | null) => {
+                if (node) controls.current.set(key, node);
+                else controls.current.delete(key);
+              }}
+              {...(hit ? hit : { cx: point.x, cy: point.y, r: 10 })}
+              fill="transparent"
+              stroke={
+                focusedKey === key && selection?.keyboard
+                  ? 'var(--rsc-focus-color, #075985)'
+                  : 'transparent'
               }
-              expireClickSource();
-            }}
-            onClick={(e) => {
-              const source = clickSource.current;
-              const matches =
-                source?.key === key &&
-                source.data === props.data &&
-                source.record === datum.record &&
-                source.seriesKey === datum.seriesKey;
-              const nativeType = (
-                e.nativeEvent as MouseEvent & {
-                  pointerType?: string;
-                  pointerId?: number;
-                }
-              ).pointerType;
-              if (
-                nativeType === 'touch' &&
-                releasedTouch.current !== null &&
-                releasedTouch.current ===
-                  (e.nativeEvent as PointerEvent).pointerId
-              ) {
-                releasedTouch.current = null;
-                if (source?.method === 'touch') clearClickSource();
-                return;
+              strokeWidth={2}
+              role="button"
+              tabIndex={roving?.key === key ? 0 : -1}
+              aria-label={text(datum)}
+              aria-describedby={
+                visible && active?.key === key ? `${id}-tooltip` : undefined
               }
-              const duplicate =
-                source?.key === key &&
-                source.suppress &&
-                (source.method === 'keyboard'
-                  ? e.detail === 0
-                  : nativeType === 'touch' || e.detail > 0);
-              clearClickSource();
-              if (duplicate) return;
-              const method =
-                (matches && source.method === 'pointer') ||
-                nativeType === 'mouse' ||
-                nativeType === 'pen'
-                  ? 'pointer'
-                  : nativeType === 'touch'
-                    ? 'touch'
-                    : 'keyboard';
-              inspect(key, method === 'keyboard');
-              props.onDataActivate?.({ ...datum, inputMethod: method });
-            }}
-            onKeyUp={(e) => {
-              if (
-                keyboardPress.current?.key === key &&
-                keyboardPress.current.button === e.key
-              ) {
-                keyboardPress.current = null;
-                clickSource.current = {
-                  key,
-                  data: props.data,
-                  record: datum.record,
-                  seriesKey: datum.seriesKey,
-                  method: 'keyboard',
-                  suppress: true,
-                };
-                expireClickSource();
-              }
-            }}
-            onKeyDown={(e) => {
-              pointerFocus.current = null;
-              if (e.key === 'Escape') {
-                clearClickSource();
-                keyboardPress.current = null;
-                e.preventDefault();
+              onFocus={() => {
+                focused.current = true;
+                setFocusedKey(key);
+                inspect(key, pointerFocus.current !== key);
+                pointerFocus.current = null;
+              }}
+              onBlur={() => {
+                focused.current = false;
+                setFocusedKey(null);
+                if (pointerFocus.current === key) pointerFocus.current = null;
+                if (clickSource.current?.key === key) clearClickSource();
+                if (keyboardPress.current?.key === key)
+                  keyboardPress.current = null;
                 dismiss();
-                return;
-              }
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
+              }}
+              onPointerEnter={(e) => {
+                if (e.pointerType !== 'touch') inspect(key, false);
+              }}
+              onPointerMove={(e) => {
+                if (e.pointerType !== 'touch' && active?.key !== key)
+                  inspect(key, false);
+              }}
+              onPointerLeave={(e) => {
+                if (
+                  clickSource.current?.key === key &&
+                  !clickSource.current.suppress
+                )
+                  clearClickSource();
+                if (e.pointerType !== 'touch' && !focused.current) dismiss();
+              }}
+              onPointerDown={(e) => {
                 clearClickSource();
-                keyboardPress.current = { key, button: e.key };
+                keyboardPress.current = null;
+                releasedTouch.current = null;
                 clickSource.current = {
                   key,
                   data: props.data,
                   record: datum.record,
                   seriesKey: datum.seriesKey,
-                  method: 'keyboard',
-                  suppress: true,
+                  method: e.pointerType === 'touch' ? 'touch' : 'pointer',
+                  suppress: false,
                 };
+                pointerFocus.current = key;
+              }}
+              onPointerCancel={() => {
+                clearClickSource();
+                pointerFocus.current = null;
+              }}
+              onPointerUp={(e) => {
+                const source = clickSource.current;
+                if (
+                  source?.key !== key ||
+                  source.data !== props.data ||
+                  source.record !== datum.record ||
+                  source.seriesKey !== datum.seriesKey
+                )
+                  return;
+                if (e.pointerType === 'touch' && source.method === 'touch') {
+                  e.preventDefault();
+                  source.suppress = true;
+                  if (typeof e.pointerId === 'number')
+                    releasedTouch.current = e.pointerId;
+                  inspect(key, false);
+                  props.onDataActivate?.({ ...datum, inputMethod: 'touch' });
+                }
                 expireClickSource();
-                if (!e.repeat)
-                  props.onDataActivate?.({ ...datum, inputMethod: 'keyboard' });
-                return;
-              }
-              const target =
-                e.key === 'Home'
-                  ? 0
-                  : e.key === 'End'
-                    ? observations.length - 1
-                    : e.key === 'ArrowRight' || e.key === 'ArrowDown'
-                      ? Math.min(index + 1, observations.length - 1)
-                      : e.key === 'ArrowLeft' || e.key === 'ArrowUp'
-                        ? Math.max(index - 1, 0)
-                        : null;
-              if (target !== null) {
-                e.preventDefault();
-                const next = observations[target]!;
-                inspect(next.key, true);
-                controls.current.get(next.key)?.focus();
-              }
-            }}
-          />
-        ))}
+              }}
+              onClick={(e) => {
+                const source = clickSource.current;
+                const matches =
+                  source?.key === key &&
+                  source.data === props.data &&
+                  source.record === datum.record &&
+                  source.seriesKey === datum.seriesKey;
+                const nativeType = (
+                  e.nativeEvent as MouseEvent & {
+                    pointerType?: string;
+                    pointerId?: number;
+                  }
+                ).pointerType;
+                if (
+                  nativeType === 'touch' &&
+                  releasedTouch.current !== null &&
+                  releasedTouch.current ===
+                    (e.nativeEvent as PointerEvent).pointerId
+                ) {
+                  releasedTouch.current = null;
+                  if (source?.method === 'touch') clearClickSource();
+                  return;
+                }
+                const duplicate =
+                  source?.key === key &&
+                  source.suppress &&
+                  (source.method === 'keyboard'
+                    ? e.detail === 0
+                    : nativeType === 'touch' || e.detail > 0);
+                clearClickSource();
+                if (duplicate) return;
+                const method =
+                  (matches && source.method === 'pointer') ||
+                  nativeType === 'mouse' ||
+                  nativeType === 'pen'
+                    ? 'pointer'
+                    : nativeType === 'touch'
+                      ? 'touch'
+                      : 'keyboard';
+                inspect(key, method === 'keyboard');
+                props.onDataActivate?.({ ...datum, inputMethod: method });
+              }}
+              onKeyUp={(e) => {
+                if (
+                  keyboardPress.current?.key === key &&
+                  keyboardPress.current.button === e.key
+                ) {
+                  keyboardPress.current = null;
+                  clickSource.current = {
+                    key,
+                    data: props.data,
+                    record: datum.record,
+                    seriesKey: datum.seriesKey,
+                    method: 'keyboard',
+                    suppress: true,
+                  };
+                  expireClickSource();
+                }
+              }}
+              onKeyDown={(e) => {
+                pointerFocus.current = null;
+                if (e.key === 'Escape') {
+                  clearClickSource();
+                  keyboardPress.current = null;
+                  e.preventDefault();
+                  dismiss();
+                  return;
+                }
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  clearClickSource();
+                  keyboardPress.current = { key, button: e.key };
+                  clickSource.current = {
+                    key,
+                    data: props.data,
+                    record: datum.record,
+                    seriesKey: datum.seriesKey,
+                    method: 'keyboard',
+                    suppress: true,
+                  };
+                  expireClickSource();
+                  if (!e.repeat)
+                    props.onDataActivate?.({
+                      ...datum,
+                      inputMethod: 'keyboard',
+                    });
+                  return;
+                }
+                const target =
+                  e.key === 'Home'
+                    ? 0
+                    : e.key === 'End'
+                      ? observations.length - 1
+                      : e.key === 'ArrowRight' || e.key === 'ArrowDown'
+                        ? Math.min(index + 1, observations.length - 1)
+                        : e.key === 'ArrowLeft' || e.key === 'ArrowUp'
+                          ? Math.max(index - 1, 0)
+                          : null;
+                if (target !== null) {
+                  e.preventDefault();
+                  const next = observations[target]!;
+                  inspect(next.key, true);
+                  controls.current.get(next.key)?.focus();
+                }
+              }}
+            />
+          );
+        })}
         grid={<Gridlines lines={geometry.layout.gridlines} />}
         axes={<CartesianAxes layout={geometry.layout} />}
       >
         <g ref={marks} aria-hidden="true" pointerEvents="none">
-          {geometry.family === 'area' ? (
+          {geometry.family === 'bar' ? (
+            <BarMarks bars={geometry.bars} colors={props.colors} />
+          ) : geometry.family === 'area' ? (
             <AreaMarks series={geometry.series} colors={props.colors} />
           ) : (
             <LineMarks series={geometry.series} colors={props.colors} />

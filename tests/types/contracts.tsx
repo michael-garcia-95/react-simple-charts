@@ -1,7 +1,6 @@
 import type { ReactElement } from 'react';
 import type {
   LineChartProps,
-  BarChartProps,
   PieChartProps,
   DonutChartProps,
   SeriesConfig,
@@ -26,10 +25,7 @@ interface Row {
   impossible: never;
 }
 export const data: readonly Row[] = [];
-import { LineChart, AreaChart } from 'react-simple-charts';
-declare function BarChart<T extends object>(
-  props: BarChartProps<T>,
-): ReactElement;
+import { LineChart, AreaChart, BarChart } from 'react-simple-charts';
 declare function PieChart<T extends object>(
   props: PieChartProps<T>,
 ): ReactElement;
@@ -245,7 +241,6 @@ export const boolKey: CategoricalFieldKey<Row> = 'flag';
 
 // @ts-expect-error Internal package subpaths are not public.
 import type { LineChartProps as InternalProps } from 'react-simple-charts/types/contracts';
-// @ts-expect-error Future chart families remain types only.
 import { BarChart as RuntimeChart } from 'react-simple-charts';
 export type RejectedInternalImport = InternalProps<Row>;
 export const rejectedRuntimeImport = RuntimeChart;
@@ -279,3 +274,32 @@ import { PieChart as RuntimePie } from 'react-simple-charts';
 // @ts-expect-error Donut remains a future runtime component.
 import { DonutChart as RuntimeDonut } from 'react-simple-charts';
 export const rejectedPolarRuntimeImports = [RuntimePie, RuntimeDonut];
+
+// Actual root Bar JSX preserves exclusive mappings and physical axis contracts.
+// prettier-ignore
+export const barDate = <BarChart data={data} xKey="when" yKey="nullable" />;
+// prettier-ignore
+export const barNumber = <BarChart data={data} xKey="amount" yKey="optional" />;
+// prettier-ignore
+export const barActivation = ( <BarChart data={data} xKey="name" yKey="amount" onDataActivate={(p) => p.record.when.toISOString()} /> );
+// @ts-expect-error Unknown category mapping.
+// prettier-ignore
+export const barUnknown = <BarChart data={data} xKey="missing" yKey="amount" />;
+// @ts-expect-error Nonnumeric values.
+// prettier-ignore
+export const barString = <BarChart data={data} xKey="name" yKey="name" />;
+// @ts-expect-error Exactly one value mapping.
+// prettier-ignore
+export const barBoth = ( <BarChart data={data} xKey="name" yKey="amount" series={series} /> );
+// @ts-expect-error A value mapping is required.
+// prettier-ignore
+export const barNeither = <BarChart data={data} xKey="name" />;
+// @ts-expect-error Vertical category axis has no numerical bounds.
+// prettier-ignore
+export const barVerticalMin = ( <BarChart data={data} xKey="name" yKey="amount" xAxis={{ min: 0 }} /> );
+// @ts-expect-error Numeric vertical tick requires a number.
+// prettier-ignore
+export const barWrongVerticalTick = ( <BarChart data={data} xKey="name" yKey="amount" yAxis={{ formatTick: (v: Date) => v.toISOString() }} /> );
+// @ts-expect-error Activation record remains data-inferred.
+// prettier-ignore
+export const barWrongRecord = ( <BarChart data={data} xKey="name" yKey="amount" onDataActivate={(p: CartesianActivation<{ other: number }>) => p.record.other.toFixed() } /> );

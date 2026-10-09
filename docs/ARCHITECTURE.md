@@ -2,7 +2,7 @@
 
 ## Approved direction
 
-React Simple Charts is a single npm package, a TypeScript-first React component library supporting React 18.2+ and React 19.x. Rendering is SVG-first. Planned chart families are Line, Bar, Area, Pie, and Donut; LineChart and AreaChart are implemented; Bar/Pie/Donut remain deferred.
+React Simple Charts is a single npm package, a TypeScript-first React component library supporting React 18.2+ and React 19.x. Rendering is SVG-first. Planned chart families are Line, Bar, Area, Pie, and Donut; LineChart, AreaChart and BarChart are implemented; Pie/Donut remain deferred.
 
 ## Module responsibilities
 
@@ -11,7 +11,7 @@ React Simple Charts is a single npm package, a TypeScript-first React component 
 - `src/internal/`: implementation details unavailable through package subpaths.
 - `src/styles/`: self-contained styling based on CSS variables. Future components must work without a mandatory external stylesheet.
 - `src/types/`: shared TypeScript contracts. `contracts.ts` contains focused chart-family unions and shared data, axis, tooltip, activation, and accessibility types. See [API type contracts](API_TYPE_CONTRACTS.md).
-- `src/index.ts`: the sole public barrel. It exports approved M01-T02 contracts as types and LineChart and AreaChart as the only runtime chart exports.
+- `src/index.ts`: the sole public barrel. It exports approved M01-T02 contracts as types and LineChart, AreaChart and BarChart as the only runtime chart exports.
 - `playground/`: a Vite React application, excluded from the npm package.
 - `tests/`: foundation contract and accessible playground tests.
 - `scripts/verify-package.mjs`: verifies built artifacts and probes runtime externalization using the real build configuration.
@@ -75,7 +75,7 @@ interaction disabled. `LineInspection.tsx` consumes exact engine results and
 adds source-row/series lookup maps, roving SVG buttons, tooltips, activation and
 optional client opacity animation. Interactive SvgFrame is a named group;
 noninteractive fixtures remain named images. Decorative layers are hidden,
-point controls are exposed. Root imports now contain exactly LineChart and AreaChart plus existing
+point controls are exposed. Root imports now contain exactly LineChart, AreaChart and BarChart plus existing
 type exports. Genuine consumer verification now installs that real tarball.
 See [LineChart](LINE_CHART.md) for behavioral defaults and limitations.
 
@@ -92,3 +92,13 @@ run field from the existing linePath using the same mapped points, without new
 mapping/segmentation. Singletons have null fill and outline paths. No public
 contract, dependency, subpath or future-family abstraction is added.
 See [AreaChart](AREA_CHART.md).
+
+## M03-T04 public BarChart
+
+BarChart now consumes existing grouped rectangle geometry in both orientations.
+Physical formatter routing preserves semantic xKey categories; shared presentation
+and corrected gesture handling also serve Line/Area. Item inspection is the Bar
+default; visible rectangle intersections and in-plot zero targets determine
+eligibility. Exact decorative extents, stable missing slots, source tables and
+SSR policy are preserved. No public props, dependencies, core math changes or
+subpaths are added. See [BarChart](BAR_CHART.md). M03-T05 remains deferred.

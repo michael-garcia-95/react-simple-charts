@@ -39,3 +39,5 @@ export type {
 export { LineChart } from './charts/LineChart';
 
 export { AreaChart } from './charts/AreaChart';
+
+export { BarChart } from './charts/BarChart';

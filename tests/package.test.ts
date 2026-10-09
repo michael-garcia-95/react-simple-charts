@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { readFileSync } from 'node:fs';
-import { AreaChart, LineChart } from '../src';
+import { AreaChart, BarChart, LineChart } from '../src';
 import * as api from '../src';
 import { describe, expect, it } from 'vitest';
 
@@ -9,8 +9,13 @@ const pkg = JSON.parse(
 );
 
 describe('package safety contract', () => {
-  it('exports exactly the two approved runtime charts in deterministic order', () => {
-    expect(Object.keys(api).sort()).toEqual(['AreaChart', 'LineChart']);
+  it('exports exactly the three approved runtime charts in deterministic order', () => {
+    expect(Object.keys(api).sort()).toEqual([
+      'AreaChart',
+      'BarChart',
+      'LineChart',
+    ]);
+    expect(typeof BarChart).toBe('function');
     expect(typeof AreaChart).toBe('function');
     expect(typeof LineChart).toBe('function');
   });
