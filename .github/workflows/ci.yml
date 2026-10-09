@@ -19,6 +19,11 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm install --no-save --package-lock=false react@${{ matrix.react }} react-dom@${{ matrix.react }} @types/react@${{ startsWith(matrix.react, '18') && '18' || '19' }} @types/react-dom@${{ startsWith(matrix.react, '18') && '18' || '19' }}
+      - name: Report resolved compatibility versions
+        run: |
+          node --version
+          npm --version
+          npm ls react react-dom @types/react @types/react-dom
       - run: npm run typecheck
       - run: npm run test:types
       - run: npm run lint
