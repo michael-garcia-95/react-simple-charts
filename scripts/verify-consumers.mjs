@@ -312,6 +312,47 @@ async function start(dir, kind, port, major) {
     assert.equal(await page.getByRole('tooltip').count(), 1);
     await page.getByRole('button', { name: 'Dismiss inspection' }).click();
     assert.equal(await page.getByRole('tooltip').count(), 0);
+    await page
+      .locator('#interactive [role=button]')
+      .last()
+      .evaluate((el) =>
+        el.dispatchEvent(
+          new window.MouseEvent('click', { bubbles: true, detail: 0 }),
+        ),
+      );
+    await page.waitForFunction(
+      () => document.querySelector('output')?.textContent === '1:keyboard:4',
+    );
+    await page.locator('#interactive [role=button]').first().click();
+    await page.waitForFunction(
+      () => document.querySelector('output')?.textContent === '0:pointer:5',
+    );
+    await page
+      .locator('#interactive [role=button]')
+      .first()
+      .evaluate((el) => {
+        el.dispatchEvent(
+          new window.KeyboardEvent('keydown', {
+            key: 'Enter',
+            bubbles: true,
+            cancelable: true,
+          }),
+        );
+        el.dispatchEvent(
+          new window.KeyboardEvent('keyup', {
+            key: 'Enter',
+            bubbles: true,
+            cancelable: true,
+          }),
+        );
+        el.dispatchEvent(
+          new window.MouseEvent('click', { bubbles: true, detail: 0 }),
+        );
+      });
+    await page.waitForFunction(
+      () => document.querySelector('output')?.textContent === '0:keyboard:6',
+    );
+
     await page.keyboard.press('Escape');
     assert.equal(
       await page

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import type { CartesianTooltipContext, CategoryValue } from '../src';
@@ -402,3 +403,239 @@ it('unsupported animation APIs preserve the fully visible chart', () => {
   expect(screen.getByRole('group', { name: 'Line chart' })).toBeVisible();
   expect(screen.getByRole('table')).toBeInTheDocument();
 });
+
+function installPointerEvents() {
+  class Pointer extends MouseEvent {
+    pointerType: string;
+    constructor(type: string, init: PointerEventInit) {
+      super(type, init);
+      this.pointerType = init.pointerType ?? 'mouse';
+    }
+  }
+  vi.stubGlobal('PointerEvent', Pointer);
+}
+it.each([0, 1])(
+  'standalone accessibility click (detail %s) activates once as keyboard with original datum',
+  (detail) => {
+    const activate = vi.fn();
+    render(chart({ tooltip: false, onDataActivate: activate }));
+    fireEvent.click(points()[0]!, { detail });
+    expect(activate).toHaveBeenCalledTimes(1);
+    expect(activate.mock.calls[0]![0]).toEqual({
+      record: data[0],
+      index: 0,
+      value: 10,
+      seriesKey: 'a',
+      seriesLabel: 'Actual',
+      color: '#123456',
+      category: 'Jan',
+      inputMethod: 'keyboard',
+    });
+    expect(activate.mock.calls[0]![0].record).toBe(data[0]);
+  },
+);
+it.each(['mouse', 'pen'])(
+  'tracked %s click with detail zero is still pointer input',
+  (pointerType) => {
+    installPointerEvents();
+    const activate = vi.fn();
+    render(chart({ onDataActivate: activate }));
+    fireEvent.pointerDown(points()[0]!, { pointerType });
+    fireEvent.pointerUp(points()[0]!, { pointerType });
+    fireEvent.click(points()[0]!, { detail: 0 });
+    expect(activate).toHaveBeenCalledTimes(1);
+    expect(activate.mock.calls[0]![0].inputMethod).toBe('pointer');
+  },
+);
+it.each(['Enter', ' '])(
+  '%s plus synthesized click activates once; a subsequent mouse gesture is independent',
+  (key) => {
+    installPointerEvents();
+    const activate = vi.fn();
+    render(chart({ onDataActivate: activate }));
+    fireEvent.keyDown(points()[0]!, { key });
+    fireEvent.keyUp(points()[0]!, { key });
+    fireEvent.click(points()[0]!, { detail: 0 });
+    expect(activate).toHaveBeenCalledTimes(1);
+    expect(activate.mock.calls[0]![0].inputMethod).toBe('keyboard');
+    fireEvent.pointerDown(points()[0]!, { pointerType: 'mouse' });
+    fireEvent.pointerUp(points()[0]!, { pointerType: 'mouse' });
+    fireEvent.click(points()[0]!, { detail: 1 });
+    expect(activate).toHaveBeenCalledTimes(2);
+    expect(activate.mock.calls[1]![0].inputMethod).toBe('pointer');
+  },
+);
+it('touch compatibility click is consumed without suppressing the next pen activation', () => {
+  installPointerEvents();
+  const activate = vi.fn();
+  render(chart({ onDataActivate: activate }));
+  fireEvent.pointerDown(points()[0]!, { pointerType: 'touch' });
+  fireEvent.pointerUp(points()[0]!, { pointerType: 'touch' });
+  fireEvent.click(points()[0]!, { detail: 1 });
+  fireEvent.pointerDown(points()[0]!, { pointerType: 'pen' });
+  fireEvent.pointerUp(points()[0]!, { pointerType: 'pen' });
+  fireEvent.click(points()[0]!, { detail: 1 });
+  expect(activate.mock.calls.map((call) => call[0].inputMethod)).toEqual([
+    'touch',
+    'pointer',
+  ]);
+});
+it.each(['keyboard', 'touch'])(
+  'unused %s suppression expires before a later accessibility activation',
+  async (method) => {
+    vi.useFakeTimers();
+    installPointerEvents();
+    const activate = vi.fn();
+    const { unmount } = render(chart({ onDataActivate: activate }));
+    try {
+      if (method === 'keyboard')
+        fireEvent.keyDown(points()[0]!, { key: 'Enter' });
+      else {
+        fireEvent.pointerDown(points()[0]!, { pointerType: 'touch' });
+        fireEvent.pointerUp(points()[0]!, { pointerType: 'touch' });
+      }
+      act(() => vi.runOnlyPendingTimers());
+      fireEvent.click(points()[0]!, { detail: 0 });
+      expect(activate.mock.calls.map((call) => call[0].inputMethod)).toEqual([
+        method,
+        'keyboard',
+      ]);
+      unmount();
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  },
+);
+it.each(['cancel', 'blur', 'escape', 'leave'])(
+  'aborted pointer gesture clears evidence on %s',
+  (cancellation) => {
+    installPointerEvents();
+    const activate = vi.fn();
+    render(chart({ onDataActivate: activate }));
+    fireEvent.pointerDown(points()[0]!, { pointerType: 'touch' });
+    if (cancellation === 'cancel')
+      fireEvent.pointerCancel(points()[0]!, { pointerType: 'touch' });
+    else if (cancellation === 'blur') fireEvent.blur(points()[0]!);
+    else if (cancellation === 'leave')
+      fireEvent.pointerLeave(points()[0]!, { pointerType: 'touch' });
+    else fireEvent.keyDown(points()[0]!, { key: 'Escape' });
+    fireEvent.pointerUp(points()[0]!, { pointerType: 'touch' });
+    expect(activate).not.toHaveBeenCalled();
+    fireEvent.click(points()[0]!, { detail: 0 });
+    expect(activate).toHaveBeenCalledTimes(1);
+    expect(activate.mock.calls[0]![0].inputMethod).toBe('keyboard');
+  },
+);
+it('suppression for one observation cannot consume an accessibility click on another', () => {
+  const activate = vi.fn();
+  render(chart({ onDataActivate: activate }));
+  fireEvent.keyDown(points()[0]!, { key: 'Enter' });
+  fireEvent.click(points()[1]!, { detail: 0 });
+  expect(
+    activate.mock.calls.map((call) => [call[0].seriesKey, call[0].inputMethod]),
+  ).toEqual([
+    ['a', 'keyboard'],
+    ['b', 'keyboard'],
+  ]);
+});
+it('focus handoff from an old point preserves the new pointer gesture evidence', () => {
+  installPointerEvents();
+  const activate = vi.fn();
+  render(chart({ onDataActivate: activate }));
+  fireEvent.focus(points()[0]!);
+  fireEvent.pointerDown(points()[1]!, { pointerType: 'pen' });
+  fireEvent.blur(points()[0]!);
+  fireEvent.focus(points()[1]!);
+  fireEvent.pointerUp(points()[1]!, { pointerType: 'pen' });
+  fireEvent.click(points()[1]!, { detail: 0 });
+  expect(activate).toHaveBeenCalledTimes(1);
+  expect(activate.mock.calls[0]![0].inputMethod).toBe('pointer');
+  expect(activate.mock.calls[0]![0].record).toBe(data[0]);
+});
+it('native touch click metadata suppresses a duplicate even with detail zero', () => {
+  installPointerEvents();
+  const activate = vi.fn();
+  render(chart({ onDataActivate: activate }));
+  fireEvent.pointerDown(points()[0]!, { pointerType: 'touch' });
+  fireEvent.pointerUp(points()[0]!, { pointerType: 'touch' });
+  const click = new MouseEvent('click', { bubbles: true, detail: 0 });
+  Object.defineProperty(click, 'pointerType', { value: 'touch' });
+  fireEvent(points()[0]!, click);
+  expect(activate).toHaveBeenCalledTimes(1);
+  expect(activate.mock.calls[0]![0].inputMethod).toBe('touch');
+});
+it('delayed native touch click is deduplicated by pointer identity after an unrelated accessibility click', () => {
+  vi.useFakeTimers();
+  installPointerEvents();
+  const activate = vi.fn();
+  const { unmount } = render(chart({ onDataActivate: activate }));
+  const pointer = (type: string) => {
+    const event = new MouseEvent(type, { bubbles: true });
+    Object.defineProperties(event, {
+      pointerType: { value: 'touch' },
+      pointerId: { value: 9 },
+    });
+    fireEvent(points()[0]!, event);
+  };
+  try {
+    pointer('pointerdown');
+    pointer('pointerup');
+    act(() => vi.runOnlyPendingTimers());
+    fireEvent.click(points()[0]!, { detail: 0 });
+    pointer('click');
+    expect(activate.mock.calls.map((call) => call[0].inputMethod)).toEqual([
+      'touch',
+      'keyboard',
+    ]);
+    unmount();
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+it.each(['keyboard', 'touch'])(
+  'activation-triggered parent rerender does not duplicate the %s gesture',
+  (method) => {
+    installPointerEvents();
+    const activate = vi.fn();
+    function Consumer() {
+      const [count, setCount] = useState(0);
+      return (
+        <>
+          <LineChart
+            width={640}
+            data={[{ x: 'A', y: 1 }]}
+            xKey="x"
+            yKey="y"
+            onDataActivate={(p) => {
+              activate(p);
+              setCount((n) => n + 1);
+            }}
+          />
+          <output>{count}</output>
+        </>
+      );
+    }
+    render(<Consumer />);
+    if (method === 'keyboard') {
+      fireEvent.keyDown(points()[0]!, { key: 'Enter' });
+      fireEvent.click(points()[0]!, { detail: 0 });
+    } else {
+      const event = (type: string) => {
+        const e = new MouseEvent(type, { bubbles: true, detail: 1 });
+        Object.defineProperties(e, {
+          pointerType: { value: 'touch' },
+          pointerId: { value: 9 },
+        });
+        fireEvent(points()[0]!, e);
+      };
+      event('pointerdown');
+      event('pointerup');
+      event('click');
+    }
+    expect(activate).toHaveBeenCalledTimes(1);
+    expect(activate.mock.calls[0]![0].inputMethod).toBe(method);
+    expect(screen.getByRole('status')).toHaveTextContent('1');
+  },
+);

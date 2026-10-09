@@ -96,6 +96,15 @@ Mouse/pen enter or movement inspects a point; leave dismisses unless keyboard
 focus remains. A 10px transparent hit radius leaves coordinates unchanged. Controls and focus
 rings sit outside the decorative plot clip so endpoint rounding does not lose hits.
 Touch release selects and activates once; synthesized clicks are suppressed.
+Standalone accessibility-style clicks without mouse/pen gesture evidence are
+classified as `keyboard`, using the unchanged InputMethod union. Tracked pointer
+gestures remain `pointer` even with `detail=0`; native click pointer metadata is
+also honored. Duplicate-click evidence is scoped to the source observation,
+consumed once, and expires after the event task. Cancellation, blur, Escape and
+new gestures clear stale evidence. A delayed native touch compatibility click
+is deduplicated by its released pointer ID even if activation rerenders data, without
+suppressing unrelated accessibility clicks.
+
 Touch inspection persists until another selection, Escape, the local Dismiss
 inspection button, or data replacement. Hover/focus/resize never activate.
 

@@ -101,7 +101,33 @@ export function LineInspection<T extends object>({
   const focused = useRef(false);
   const [focusedKey, setFocusedKey] = useState<string | null>(null);
   const pointerFocus = useRef<string | null>(null);
-  const suppressClick = useRef(false);
+  // Evidence belongs to one source observation and expires after its click task.
+  const clickSource = useRef<{
+    key: string;
+    data: readonly T[];
+    record: T;
+    seriesKey: string;
+    method: 'pointer' | 'keyboard' | 'touch';
+    suppress: boolean;
+  } | null>(null);
+  // Native touch clicks can arrive in a later task. Match the released pointer,
+  // rather than keeping a blanket suppression flag that could eat an AT click.
+  const releasedTouch = useRef<number | null>(null);
+  const clickExpiry = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
+  const keyboardPress = useRef<{ key: string; button: string } | null>(null);
+  const clearClickSource = () => {
+    clearTimeout(clickExpiry.current);
+    clickSource.current = null;
+  };
+  const expireClickSource = () => {
+    clearTimeout(clickExpiry.current);
+    clickExpiry.current = setTimeout(() => {
+      clickSource.current = null;
+    }, 0);
+  };
+  useEffect(() => () => clearTimeout(clickExpiry.current), []);
   useEffect(() => {
     if (focused.current && !active) {
       if (roving) controls.current.get(roving.key)?.focus();
@@ -206,6 +232,9 @@ export function LineInspection<T extends object>({
               focused.current = false;
               setFocusedKey(null);
               if (pointerFocus.current === key) pointerFocus.current = null;
+              if (clickSource.current?.key === key) clearClickSource();
+              if (keyboardPress.current?.key === key)
+                keyboardPress.current = null;
               dismiss();
             }}
             onPointerEnter={(e) => {
@@ -216,37 +245,131 @@ export function LineInspection<T extends object>({
                 inspect(key, false);
             }}
             onPointerLeave={(e) => {
+              if (
+                clickSource.current?.key === key &&
+                !clickSource.current.suppress
+              )
+                clearClickSource();
               if (e.pointerType !== 'touch' && !focused.current) dismiss();
             }}
             onPointerDown={(e) => {
-              suppressClick.current = e.pointerType === 'touch';
+              clearClickSource();
+              keyboardPress.current = null;
+              releasedTouch.current = null;
+              clickSource.current = {
+                key,
+                data: props.data,
+                record: datum.record,
+                seriesKey: datum.seriesKey,
+                method: e.pointerType === 'touch' ? 'touch' : 'pointer',
+                suppress: false,
+              };
               pointerFocus.current = key;
             }}
+            onPointerCancel={() => {
+              clearClickSource();
+              pointerFocus.current = null;
+            }}
             onPointerUp={(e) => {
-              if (e.pointerType === 'touch') {
+              const source = clickSource.current;
+              if (
+                source?.key !== key ||
+                source.data !== props.data ||
+                source.record !== datum.record ||
+                source.seriesKey !== datum.seriesKey
+              )
+                return;
+              if (e.pointerType === 'touch' && source.method === 'touch') {
                 e.preventDefault();
+                source.suppress = true;
+                if (typeof e.pointerId === 'number')
+                  releasedTouch.current = e.pointerId;
                 inspect(key, false);
                 props.onDataActivate?.({ ...datum, inputMethod: 'touch' });
               }
+              expireClickSource();
             }}
-            onClick={() => {
-              if (suppressClick.current) {
-                suppressClick.current = false;
+            onClick={(e) => {
+              const source = clickSource.current;
+              const matches =
+                source?.key === key &&
+                source.data === props.data &&
+                source.record === datum.record &&
+                source.seriesKey === datum.seriesKey;
+              const nativeType = (
+                e.nativeEvent as MouseEvent & {
+                  pointerType?: string;
+                  pointerId?: number;
+                }
+              ).pointerType;
+              if (
+                nativeType === 'touch' &&
+                releasedTouch.current !== null &&
+                releasedTouch.current ===
+                  (e.nativeEvent as PointerEvent).pointerId
+              ) {
+                releasedTouch.current = null;
+                if (source?.method === 'touch') clearClickSource();
                 return;
               }
-              inspect(key, false);
-              props.onDataActivate?.({ ...datum, inputMethod: 'pointer' });
+              const duplicate =
+                source?.key === key &&
+                source.suppress &&
+                (source.method === 'keyboard'
+                  ? e.detail === 0
+                  : nativeType === 'touch' || e.detail > 0);
+              clearClickSource();
+              if (duplicate) return;
+              const method =
+                (matches && source.method === 'pointer') ||
+                nativeType === 'mouse' ||
+                nativeType === 'pen'
+                  ? 'pointer'
+                  : nativeType === 'touch'
+                    ? 'touch'
+                    : 'keyboard';
+              inspect(key, method === 'keyboard');
+              props.onDataActivate?.({ ...datum, inputMethod: method });
+            }}
+            onKeyUp={(e) => {
+              if (
+                keyboardPress.current?.key === key &&
+                keyboardPress.current.button === e.key
+              ) {
+                keyboardPress.current = null;
+                clickSource.current = {
+                  key,
+                  data: props.data,
+                  record: datum.record,
+                  seriesKey: datum.seriesKey,
+                  method: 'keyboard',
+                  suppress: true,
+                };
+                expireClickSource();
+              }
             }}
             onKeyDown={(e) => {
               pointerFocus.current = null;
               if (e.key === 'Escape') {
+                clearClickSource();
+                keyboardPress.current = null;
                 e.preventDefault();
                 dismiss();
                 return;
               }
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
-                suppressClick.current = true;
+                clearClickSource();
+                keyboardPress.current = { key, button: e.key };
+                clickSource.current = {
+                  key,
+                  data: props.data,
+                  record: datum.record,
+                  seriesKey: datum.seriesKey,
+                  method: 'keyboard',
+                  suppress: true,
+                };
+                expireClickSource();
                 if (!e.repeat)
                   props.onDataActivate?.({ ...datum, inputMethod: 'keyboard' });
                 return;
