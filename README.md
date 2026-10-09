@@ -4,7 +4,7 @@ A lightweight, customizable React charting library built with TypeScript.
 
 ## Status
 
-M01-T02 adds public TypeScript contracts to the repository foundation. No runtime chart components exist yet. See [API type contracts](docs/API_TYPE_CONTRACTS.md). The provisional package name is `react-simple-charts`; it remains private and is not ready for installation from npm.
+M01-T03 adds an internal SVG rendering prototype to validate explicit/responsive dimensions, SSR, hydration, accessibility, and self-contained styling. No public runtime chart components exist yet. See [rendering compatibility](docs/RENDERING_COMPATIBILITY.md) and [API type contracts](docs/API_TYPE_CONTRACTS.md). The provisional package name is `react-simple-charts`; it remains private and is not ready for installation from npm.
 
 ## Development
 
@@ -15,7 +15,7 @@ npm ci
 npm run dev
 ```
 
-Vite serves the React playground and prints its local URL. The page states the foundation status; it does not simulate charts. Its CSS belongs to the playground only.
+Vite serves the React playground and prints its local URL. The page identifies the internal architecture prototype and shows explicit/responsive examples with accessible data tables. Its CSS belongs to the playground only; the prototype's essential styles are self-contained. The optional real-browser smoke workflow is documented in [rendering compatibility](docs/RENDERING_COMPATIBILITY.md).
 
 | Command                    | Purpose                                                                   |
 | -------------------------- | ------------------------------------------------------------------------- |
