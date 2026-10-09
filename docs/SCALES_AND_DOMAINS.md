@@ -246,10 +246,11 @@ not a deep snapshot; freezing a Date does not prevent application code changing
 its internal timestamp. D3 closures copy domains/ranges at construction, while
 observed endpoints and category labels preserve source references.
 
-Missing-point gaps, interpolation between data, clipping, public error/empty
-presentation, padding choices, baseline geometry, stacked charts, grouped bars,
-React components, SVG/Canvas, hooks, interactions, and segment percentages are
-later responsibilities. M02-T03 implements estimated tick label selection,
+M02-T04 implements missing-point gaps, linear path data, zero-baseline Area
+geometry and grouped Bar rectangles; see [geometry foundations](GEOMETRY_FOUNDATIONS.md).
+Actual visual clipping, public error/empty presentation, final renderer spacing,
+stacked charts, React components, SVG/Canvas elements, hooks, interactions and
+segment percentages remain later responsibilities. M02-T03 implements estimated tick label selection,
 collision prevention, margins, and orientation-specific axes. Layout and geometry
 must continue narrowing normalized
 states before constructing points; a ready scale is not permission to plot an

@@ -3,7 +3,7 @@
 Milestone 01 and M02-T01 through M02-T03 are implemented. The public library
 still has **no implemented chart components**. `src/core/layout/` is internal,
 framework-independent math. It produces no SVG, React elements, hooks, DOM
-measurements, or mark geometry. M02-T04 has not begun.
+measurements, or mark geometry. M02-T04 consumes layout for internal [geometry foundations](GEOMETRY_FOUNDATIONS.md).
 
 ## Pipeline and contracts
 
@@ -224,12 +224,12 @@ With `orientation: 'horizontal'`, the same Bar data uses margins
 30/205/380. The baseline is X 30 and gridlines are vertical. Neither original
 record nor normalized category/value semantics changes.
 
-Future M02-T04 consumers can narrow `layout.status === 'ready'`, map original
+M02-T04's geometry builder constructs layout internally from the same input, checks `layout.status === 'ready'`, and maps original
 category indices through `scales.semanticX.position()` or continuous X values
-through its typed `map()`, and map classified numerical values through
+through its typed `map()`, and maps classified numerical values through
 `scales.value.map()`. Every mapping still requires checking `status: 'mapped'`.
-Bar rectangles, Area fills, line paths, clipping and missing-point gaps remain
-future work, not part of this task.
+M02-T04 implements Bar rectangles, Area fills, line paths and missing-point gaps.
+It flags finite out-of-plot marks; actual visual clipping remains a renderer responsibility.
 
 ## SSR, timezone evidence, and limitations
 
@@ -247,7 +247,7 @@ hydration strategy. Named timezone configuration is not a public contract.
 
 Known approximations are font estimates, bounded strips, and greedy suppression.
 No rotated ticks, wrapped text, exact measurement, title fitting, sophisticated
-collisions, responsive measurement, grouped/stacked placement, paths/arcs,
+collisions, responsive measurement, stacked placement, polar arcs,
 interactions, animation, or production accessibility UI is implemented. Development
 Lead decisions remain for user-facing diagnostics, local-time SSR presentation,
-final font/title styling, and category/group spacing in later geometry.
+final font/title styling, and renderer visual spacing. Grouped placement and Cartesian paths now belong to M02-T04 geometry.
