@@ -139,9 +139,15 @@ Ordinary record data is expected: getters/proxies can execute user code or throw
 when read, and such exceptions are not swallowed. Normalization cannot guarantee
 purity of caller-defined accessors. No browser globals or React runtime are used.
 
-## Deferred responsibilities
+## Scale integration and deferred responsibilities
 
-Domains, scales, ticks, timezone-sensitive formatting, layout, SVG paths/arcs,
+M02-T02 now implements internal domains, scales, and typed ticks; see
+[scales and domains](SCALES_AND_DOMAINS.md). Category positions include valid-X
+rows only, retaining source-index identity and order; invalid-X rows remain in
+this model but occupy no bands. A value contributes to a renderable numerical
+domain only when both its X and its series value are explicitly valid.
+
+Timezone-sensitive formatting, layout, SVG paths/arcs,
 percentages and zero-total geometry policy, missing-point gap/filtering policy,
 colors, CSS, tooltips, animations, hooks, keyboard navigation, accessible names,
 and construction of public callback payloads remain later work. Negative

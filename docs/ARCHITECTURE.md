@@ -22,7 +22,7 @@ Directory README files preserve the intended structure in Git without prematurel
 
 TypeScript uses strict checking, exact optional properties, unchecked indexed access protection, and bundler resolution. Type-only imports remain explicit through verbatim module syntax. A single no-emit configuration checks the current codebase; tsdown separately emits library declarations.
 
-tsdown produces ESM and declarations from one entry. React and React DOM, including JSX and DOM client subpaths, stay external. They are peers for consumers and development dependencies for the playground/tests. d3-scale and d3-shape are the approved runtime math dependencies, installed now but unused until chart work. No animation runtime is included.
+tsdown produces ESM and declarations from one entry. React and React DOM, including JSX and DOM client subpaths, stay external. They are peers for consumers and development dependencies for the playground/tests. d3-scale and d3-shape are the approved runtime math dependencies. M02-T02 uses d3-scale internally for band, linear, UTC, and local-time calculations; d3-shape remains unused. No animation runtime is included.
 
 The package exposes only `.` with declaration and import conditions, and has no CommonJS output. A files allowlist excludes playground, tests, and source from packing. `sideEffects: false` is appropriate for the current empty entry; revisit it if future implementation introduces global effects or imported CSS.
 
@@ -42,4 +42,8 @@ M01-T02 implements RSC-026/RSC-027 as types, with data-driven generic inference,
 
 ## Internal data foundation — M02-T01
 
-`src/core/data/` separates mapping validation, value classification, structured diagnostics, Cartesian normalization, and shared Pie/Donut segment normalization. Results preserve source references, indices, order, and raw values. Configuration errors return no model; row issues retain classified records. No React runtime, DOM, scales, geometry, or public runtime exports are introduced. Milestone 01 is complete; M02-T02 has not begun.
+`src/core/data/` separates mapping validation, value classification, structured diagnostics, Cartesian normalization, and shared Pie/Donut segment normalization. Results preserve source references, indices, order, and raw values. Configuration errors return no model; row issues retain classified records. No React runtime, DOM, scales, geometry, or public runtime exports are introduced. Milestone 01 and M02-T01 are complete.
+
+## Internal scales foundation — M02-T02
+
+`src/core/scales/` consumes the normalization result union and separates domain policies, category identity, numerical and temporal interpolation, tick/range validation, and internal result types. Only valid-X rows occupy category bands; only valid-X rows with valid series values contribute value extents. Category indices preserve duplicate labels; continuous domains preserve exact observed extents separately from baseline, override, expansion, and fallback metadata. Empty scales expose no mapping, and unsafe arithmetic returns explicit diagnostics. No layout, geometry, rendering, or public exports are added. See [scales and domains](SCALES_AND_DOMAINS.md). M02-T03 has not begun.
