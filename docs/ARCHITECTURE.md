@@ -30,7 +30,7 @@ The package exposes only `.` with declaration and import conditions, and has no 
 
 The source barrel and tsdown banner preserve `"use client"` in built JavaScript. The banner also covers future shared output chunks. This prepares framework boundaries without introducing a component or DOM-dependent import. It does not prove SSR support.
 
-Later approved tasks must implement dimension-aware SSR and deterministic initial markup. Pure calculations must not read browser globals. Explicit dimensions and responsive measurement policies, stable identifiers, and hydration tests remain future work. A client boundary is compatible with server prerendering in frameworks, but full SSR/hydration integration has not been tested here.
+M01-T03 validates dimension-aware SSR in an internal rendering fixture. Positive finite numeric dimensions produce complete SVG; unknown responsive widths produce a stable accessible 280px-height placeholder until a per-container ResizeObserver reports a valid width. Pure layout calculations do not read browser globals. Node SSR and jsdom hydration tests cover deterministic initial markup, useId references, Strict Mode, observer cleanup, and multiple instances. Headless Chromium verifies responsive layout, focus, accessible table exposure, and self-contained inline/CSS-variable styling. See [rendering compatibility](RENDERING_COMPATIBILITY.md) for evidence and limitations. Framework and packaged-consumer integration remain M01-T04 work.
 
 ## Validation
 
