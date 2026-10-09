@@ -3,7 +3,7 @@
 The MIT copyright-holder decision is finalized: the Development Lead approved Michael Garcia. `LICENSE` includes Copyright (c) 2026 Michael Garcia.
 
 - Approve publication, final package name, initial version, and release process. Package remains private at version 0.0.0.
-- RSC-026/RSC-027 public prop and data contracts are implemented in M01-T02; see [API type contracts](API_TYPE_CONTRACTS.md). M02-T01 implements internal normalization and classification; see [data normalization](DATA_NORMALIZATION.md). M02-T04 implements internal Cartesian missing-point gaps and zero-baseline geometry. Cartesian invalid-data presentation, accessible naming and interaction are implemented in M03; negative segments and zero-total polar geometry remain deferred. M02-T02 implements internal domain/scale/tick policies; see [scales and domains](SCALES_AND_DOMAINS.md).
+- RSC-026/RSC-027 public prop and data contracts are implemented in M01-T02; see [API type contracts](API_TYPE_CONTRACTS.md). M02-T01 implements internal normalization and classification; see [data normalization](DATA_NORMALIZATION.md). M02-T04 implements internal Cartesian missing-point gaps and zero-baseline geometry. Cartesian invalid-data presentation, accessible naming and interaction are implemented in M03; M04-T01 implements internal negative rejection and explicit empty zero-total polar geometry; final polar presentation remains deferred. M02-T02 implements internal domain/scale/tick policies; see [scales and domains](SCALES_AND_DOMAINS.md).
 - M01-T03 proves explicit SVG SSR and responsive accessible placeholders with a 280px default, stable IDs, observer cleanup, and jsdom hydration. M01-T04 completes packaged Vite/Next consumer verification using a temporary probe; M03 implements positive finite explicit dimensions and accessible responsive/local-time placeholders; see [rendering compatibility](RENDERING_COMPATIBILITY.md).
 - M01-T03 proves self-contained inline styles and CSS variable fallbacks, visually hidden tables, and focus outlines. Public token API approval, strict CSP support and arbitrary host-style interactions remain open; public charts currently expose an outline on focus and keyboard target stroke.
 - Empty/unavailable messages and local-time client placeholders are implemented. Richer diagnostic UI, future spacing changes and safe rescaling for numerical spans that overflow D3 arithmetic remain design decisions. The M02-T02 rules for duplicate category identity, valid-X value eligibility, zero baselines, bounds, and constant/fallback domains are documented implementation choices, not unresolved engine behavior.
@@ -58,3 +58,14 @@ subpaths are added. See [BarChart](BAR_CHART.md). M03-T05 hardening is documente
 ## M03-T05 implemented and proposed decisions
 
 Implemented: shared text wrapping for visible source tables and tooltip content; tooltip outer box matches the existing anchor estimate. Public props and color behavior are unchanged. Proposed, requiring Development Lead review: broader browser policy and production performance budgets. Still open: native forced colors/zoom, manual screen-reader review, strict CSP and release approval. Chromium emulation is limited evidence, not complete compatibility.
+
+## M04-T01 polar foundation
+
+Implemented engine policies: source-order slices, exclusion of missing/invalid
+rows from totals, complete rejection of negatives, explicit zero-total states,
+scaled numerical weights, overflow metadata, centered circles and safe D3 arcs.
+See [polar geometry foundations](POLAR_GEOMETRY_FOUNDATIONS.md). Initial eight-pixel
+margin and Donut ratio 0.6 await Development Lead review as rendering policies.
+Public diagnostic wording, labels, legends, center content, tiny-slice interaction,
+source-table presentation, keyboard behavior and screen-reader validation remain
+open. No public PieChart/DonutChart renderer is approved by this task.
