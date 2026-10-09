@@ -127,4 +127,6 @@ tooltip content may exceed approximate positioning. Host CSS/strict CSP can affe
 inline styling. Chromium and focused axe checks do not certify WCAG compliance,
 real screen-reader behavior or Firefox/WebKit compatibility. Broader browser
 policy, performance budgets, theme tokens and release approval remain Development
-Lead decisions. Bar/Pie/Donut remain types only. The package stays private 0.0.0.
+Lead decisions. BarChart is public; Pie/Donut remain types only. The package stays private 0.0.0.
+
+M03-T05 adds shared long-text wrapping and cross-family validation; see [integration hardening](M03_INTEGRATION_HARDENING.md).

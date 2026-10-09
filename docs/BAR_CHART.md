@@ -135,4 +135,6 @@ and offers no wrapping or scrolling. Tooltip positioning uses the existing bound
 appearance, and inline styling requires compatible CSP. Chromium/axe coverage does
 not establish WCAG certification, screen-reader, Firefox/WebKit, forced-colors or
 zoom coverage. Broader accessibility/browser review, performance budgets and final
-visual tokens remain for hardening. Pie, Donut, stacking and M03-T05 remain deferred.
+visual tokens remain for hardening. Pie, Donut and stacking remain deferred.
+
+M03-T05 adds shared long-text wrapping and cross-family validation; see [integration hardening](M03_INTEGRATION_HARDENING.md).

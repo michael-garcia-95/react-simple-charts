@@ -11,7 +11,7 @@ describe('rendering proof playground', () => {
     ).toBeVisible();
     expect(
       screen.getByRole('region', {
-        name: 'Public LineChart and internal rendering fixtures',
+        name: 'Public Cartesian charts and internal rendering fixtures',
       }),
     ).toHaveTextContent('LineChart is publicly importable.');
   });
@@ -24,7 +24,7 @@ describe('rendering proof playground', () => {
     expect(
       screen.getByRole('img', { name: /Responsive quarterly sample/ }),
     ).toBeVisible();
-    expect(screen.getAllByRole('table')).toHaveLength(36);
+    expect(screen.getAllByRole('table')).toHaveLength(41);
     expect(screen.getByText(/Planned chart families:/)).toHaveTextContent(
       'Line, Bar, Area, Pie, and Donut',
     );

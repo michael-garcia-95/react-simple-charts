@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Integration } from './Integration';
 import { LineChart, AreaChart, BarChart } from '../src';
 import { LinePreview } from '../src/internal/LinePreview';
 import { RenderingProbe } from '../src/internal/RenderingProbe';
@@ -7,7 +8,7 @@ export function App() {
   const [activation, setActivation] = useState('No activation yet');
   return (
     <main>
-      <p className="eyebrow">Development playground · M03-T04</p>
+      <p className="eyebrow">Development playground · M03-T05</p>
       <h1>React Simple Charts</h1>
       <p>
         A lightweight, customizable React charting library built with
@@ -15,7 +16,7 @@ export function App() {
       </p>
       <section aria-labelledby="status-heading">
         <h2 id="status-heading">
-          Public LineChart and internal rendering fixtures
+          Public Cartesian charts and internal rendering fixtures
         </h2>
         <p>
           LineChart is publicly importable. AreaChart and BarChart are also
@@ -23,6 +24,7 @@ export function App() {
         </p>
         <p>Planned chart families: Line, Bar, Area, Pie, and Donut.</p>
       </section>
+      <Integration />
       <section aria-labelledby="explicit-heading">
         <h2 id="explicit-heading">Explicit dimensions · 640 × 280</h2>
         <p>

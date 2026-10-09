@@ -46,7 +46,12 @@ export function DataTable<T>({
     <table
       style={
         visible
-          ? { width: '100%', borderCollapse: 'collapse', textAlign: 'left' }
+          ? {
+              width: '100%',
+              borderCollapse: 'collapse',
+              textAlign: 'left',
+              overflowWrap: 'anywhere',
+            }
           : visuallyHidden
       }
     >
@@ -112,7 +117,11 @@ export function SourceDataTable({
   };
   return (
     <table
-      style={visible ? { width: '100%', textAlign: 'left' } : visuallyHidden}
+      style={
+        visible
+          ? { width: '100%', textAlign: 'left', overflowWrap: 'anywhere' }
+          : visuallyHidden
+      }
     >
       <caption>{label} — source data (chart mapping unavailable)</caption>
       <thead>
