@@ -1,0 +1,29 @@
+:root {
+  font-family: system-ui, sans-serif;
+  color: #182b38;
+  background: #f2f5f7;
+  --playground-accent: #086b62;
+}
+body {
+  margin: 0;
+}
+main {
+  max-width: 52rem;
+  margin: 8vh auto;
+  padding: 2rem;
+}
+h1 {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+}
+p {
+  line-height: 1.6;
+}
+.eyebrow {
+  color: var(--playground-accent);
+}
+section {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 1rem;
+}

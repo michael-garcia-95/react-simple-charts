@@ -1,0 +1,81 @@
+import assert from 'node:assert/strict';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { build } from 'tsdown';
+import ts from 'typescript';
+
+const pkg = JSON.parse(await readFile('package.json', 'utf8'));
+assert.equal(pkg.private, true);
+assert.equal(pkg.type, 'module');
+assert.deepEqual(pkg.exports, {
+  '.': { types: './dist/index.d.ts', import: './dist/index.js' },
+});
+const code = await readFile('dist/index.js', 'utf8');
+assert.match(code, /^\s*["']use client["'];/);
+assert.doesNotMatch(code, /\brequire\(|module\.exports/);
+assert.match(await readFile('dist/index.d.ts', 'utf8'), /export/);
+assert.deepEqual(Object.keys(await import('react-simple-charts')), []);
+await assert.rejects(import('react-simple-charts/internal'), {
+  code: 'ERR_PACKAGE_PATH_NOT_EXPORTED',
+});
+const declarations = ts.createProgram(['dist/index.d.ts'], {
+  strict: true,
+  noEmit: true,
+  skipLibCheck: false,
+  types: [],
+  target: ts.ScriptTarget.ES2022,
+  module: ts.ModuleKind.NodeNext,
+  moduleResolution: ts.ModuleResolutionKind.NodeNext,
+});
+const diagnostics = ts.getPreEmitDiagnostics(declarations);
+assert.equal(
+  diagnostics.length,
+  0,
+  diagnostics
+    .map((diagnostic) =>
+      ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n'),
+    )
+    .join('\n'),
+);
+
+// The empty foundation entry cannot exercise React imports. Build a disposable
+// probe with the actual configuration to verify all runtime subpaths stay external.
+const directory = await mkdtemp(join(tmpdir(), 'rsc-package-'));
+try {
+  const entry = join(directory, 'probe.ts');
+  await writeFile(
+    entry,
+    `
+    export { createElement } from 'react';
+    export { jsx } from 'react/jsx-runtime';
+    export { createPortal } from 'react-dom';
+    export { createRoot } from 'react-dom/client';
+  `,
+  );
+  await build({
+    config: 'tsdown.config.ts',
+    entry: [entry],
+    outDir: join(directory, 'dist'),
+    dts: false,
+  });
+  const probe = await readFile(join(directory, 'dist/probe.js'), 'utf8');
+  for (const specifier of [
+    'react',
+    'react/jsx-runtime',
+    'react-dom',
+    'react-dom/client',
+  ]) {
+    assert.ok(
+      probe.includes(`from "${specifier}"`) ||
+        probe.includes(`from '${specifier}'`),
+      `${specifier} must remain external`,
+    );
+  }
+  assert.match(probe, /^\s*["']use client["'];/);
+} finally {
+  await rm(directory, { recursive: true, force: true });
+}
+console.log(
+  'Package contract, declarations, client boundary, and React externalization verified.',
+);
