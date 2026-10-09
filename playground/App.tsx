@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LineChart, AreaChart } from '../src';
+import { LineChart, AreaChart, BarChart } from '../src';
 import { LinePreview } from '../src/internal/LinePreview';
 import { RenderingProbe } from '../src/internal/RenderingProbe';
 
@@ -7,7 +7,7 @@ export function App() {
   const [activation, setActivation] = useState('No activation yet');
   return (
     <main>
-      <p className="eyebrow">Development playground · M03-T03</p>
+      <p className="eyebrow">Development playground · M03-T04</p>
       <h1>React Simple Charts</h1>
       <p>
         A lightweight, customizable React charting library built with
@@ -18,8 +18,8 @@ export function App() {
           Public LineChart and internal rendering fixtures
         </h2>
         <p>
-          LineChart is publicly importable. AreaChart is also public; Bar, Pie
-          and Donut remain planned.
+          LineChart is publicly importable. AreaChart and BarChart are also
+          public; Pie and Donut remain planned.
         </p>
         <p>Planned chart families: Line, Bar, Area, Pie, and Donut.</p>
       </section>
@@ -231,6 +231,109 @@ export function App() {
           yKey="y"
           yAxis={{ min: 5, max: 1 }}
           accessibility={{ label: 'Unavailable Area' }}
+        />
+      </section>
+      <section aria-labelledby="bar-heading">
+        <h2 id="bar-heading">Public BarChart · exact grouped rectangles</h2>
+        {(['vertical', 'horizontal'] as const).map((orientation) => (
+          <div key={orientation}>
+            {[
+              ['Positive', [2, 5, 3]],
+              ['Negative', [-2, -5, -3]],
+              ['Mixed and zero', [-2, 0, 3]],
+            ].map(([name, values]) => (
+              <div key={String(name)}>
+                <h3>
+                  {String(name)} {orientation} Bars
+                </h3>
+                <BarChart
+                  width={640}
+                  orientation={orientation}
+                  data={(values as number[]).map((y, i) => ({
+                    x: String(i + 1),
+                    y,
+                  }))}
+                  xKey="x"
+                  yKey="y"
+                  accessibility={{
+                    label: `${name} ${orientation} Bars`,
+                    dataTable: 'visible',
+                  }}
+                  onDataActivate={(p) =>
+                    setActivation(`${p.value} (${p.inputMethod})`)
+                  }
+                />
+              </div>
+            ))}
+            <h3>
+              Grouped {orientation} · missing slots · duplicate categories ·
+              shared tooltip
+            </h3>
+            <BarChart
+              width={640}
+              orientation={orientation}
+              data={[
+                { x: 'Jan', a: 2, b: -2 },
+                { x: 'Jan', a: null, b: 4 },
+                { x: 'Mar', a: 0, b: null },
+              ]}
+              xKey="x"
+              series={[{ key: 'a' }, { key: 'b' }]}
+              tooltip={{ mode: 'shared' }}
+              accessibility={{
+                label: `Grouped ${orientation} Bars`,
+                dataTable: 'visible',
+              }}
+            />
+          </div>
+        ))}
+        <h3>Dense categories</h3>
+        <BarChart
+          width={640}
+          data={Array.from({ length: 200 }, (_, x) => ({ x, y: (x % 9) - 4 }))}
+          xKey="x"
+          yKey="y"
+          accessibility={{ label: 'Dense Bars' }}
+        />
+        <h3>Explicit bounds and clipping</h3>
+        <BarChart
+          width={640}
+          data={[
+            { x: 'A', y: -10 },
+            { x: 'B', y: 10 },
+            { x: 'C', y: 0 },
+          ]}
+          xKey="x"
+          yKey="y"
+          yAxis={{ min: -3, max: 3 }}
+          accessibility={{ label: 'Clipped Bars' }}
+        />
+        <h3>Responsive Bar</h3>
+        <BarChart
+          data={[
+            { x: 'A', y: 2 },
+            { x: 'B', y: -3 },
+          ]}
+          xKey="x"
+          yKey="y"
+          accessibility={{ label: 'Responsive Bar' }}
+        />
+        <h3>Empty Bar</h3>
+        <BarChart<{ x: string; y: number }>
+          width={640}
+          data={[]}
+          xKey="x"
+          yKey="y"
+          accessibility={{ label: 'Empty Bar' }}
+        />
+        <h3>Unavailable Bar</h3>
+        <BarChart
+          width={640}
+          data={[{ x: 'A', y: 2 }]}
+          xKey="x"
+          yKey="y"
+          yAxis={{ min: 3, max: 1 }}
+          accessibility={{ label: 'Unavailable Bar' }}
         />
       </section>
       <section aria-labelledby="line-heading">

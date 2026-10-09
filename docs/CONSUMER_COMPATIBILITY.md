@@ -1,3 +1,70 @@
+# Packaged public BarChart — M03-T04
+
+The genuine private 0.0.0 tarball now exports exactly AreaChart, BarChart and
+LineChart. The final freshly packed archive passed all four consumer combinations:
+
+| Framework             | React / DOM | TypeScript | Installed package types | Production / Chromium |
+| --------------------- | ----------- | ---------- | ----------------------- | --------------------- |
+| Vite 8.3.4            | 18.2.0      | 6.0.3      | Pass                    | Pass                  |
+| Vite 8.3.4            | 19.3.0      | 6.0.3      | Pass                    | Pass                  |
+| Next 14.2.35          | 18.2.0      | 5.4.5      | Pass                    | Pass                  |
+| Next 16.4.0 (Webpack) | 19.3.0      | 6.0.3      | Pass                    | Pass                  |
+
+Execution: Node 24.19.0, npm 11.9.0, Chromium 151.0.7922.173,
+Playwright Core 1.64.0, axe 4.13.0. React 18 definitions remain 18.3.31 / DOM
+18.3.7; React 19 definitions are 19.3.0 / DOM 19.3.0. Next 14 uses Node types
+20.19.0; the other consumers use 24.19.1. Installed package compilation retains
+skipLibCheck=false; Next application checking retains its established framework
+setting. Turbopack was not tested.
+
+Existing genuine Line/Area scenarios remain. Bar adds both orientations, grouped
+signed values, duplicate categories, stable missing slots, zero observations,
+clipping, default item and explicit shared inspection, keyboard/pointer/native
+touch/accessibility-click activation, and parent rerender deduplication. Responsive
+Bar shrinks after native measurement; horizontal explicit SSR and responsive
+initial markup match hydration. Both Next App/Pages routes render all families.
+All 18 source tables remain available; IDs are unique and relationships resolve.
+All four focused axe runs report zero violations with no console/page/hydration
+errors. Fresh consumer installations compare installed ESM bytes to the current
+archive, compile actual Bar generic JSX, check root-only exports and deduplicated
+React peers. No temporary package, alias or source import is used.
+
+Source validation passes 649 tests, 106 above the required 543-test baseline.
+All 106 focused Bar rendering, interaction (both orientations), SSR and hydration
+tests also pass separately. The Node 22/24 × React 18.2/19 remote CI matrix remains
+unchanged; its new feature-commit results could not be verified because GitHub
+reports the configured token as invalid. Local framework tests do not replace CI.
+
+| Genuine library artifact |  Bytes |
+| ------------------------ | -----: |
+| Tarball (six files)      | 62,379 |
+| ESM                      | 76,896 |
+| ESM gzip                 | 18,491 |
+
+| Complete application JS |     Bytes | Sum of per-file gzip bytes |
+| ----------------------- | --------: | -------------------------: |
+| Vite / React 18.2       |   227,555 |                     73,875 |
+| Vite / React 19         |   307,113 |                     96,645 |
+| Next 14                 |   847,096 |                    265,647 |
+| Next 16                 | 1,094,314 |                    341,695 |
+
+Application totals include React/framework and fixture routes/chunks; they are
+not isolated library transfer sizes. Reproduce with
+`node scripts/verify-consumers.mjs`, using its writable work npm cache.
+Results and consumer screenshots remain in ignored `work/consumers/`; playground
+captures are in `work/visual/`. Actual visual inspection covered positive/negative
+direction, mixed zero baselines, duplicate categories, grouped missing slots,
+dense narrow bars, clipping, and zero focus/tooltip placement. Automated DOM
+assertions separately verify extents and interaction outcomes.
+
+Known inherited build warnings concern Rolldown client directives and Next 14's
+outputFileTracingRoot option; actual built boundaries/manifests and browser tests
+pass. No WCAG certification, screen-reader, Firefox/WebKit, forced-color, zoom or
+strict CSP coverage is claimed. See [BarChart limitations](BAR_CHART.md).
+No publication, deployment, merge or M03-T05 work is included.
+
+The following sections retain historical M03-T03 and earlier evidence.
+
 # Packaged public LineChart and AreaChart — M03-T03
 
 The genuine private 0.0.0 tarball exports exactly AreaChart and LineChart, checked

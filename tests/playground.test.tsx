@@ -17,14 +17,14 @@ describe('rendering proof playground', () => {
   });
   it('demonstrates an internal SVG and responsive fallback with data alternatives', () => {
     const { container } = render(<App />);
-    expect(container.querySelectorAll('svg')).toHaveLength(15);
+    expect(container.querySelectorAll('svg')).toHaveLength(25);
     expect(
       screen.getByRole('img', { name: 'Explicit quarterly sample' }),
     ).toBeVisible();
     expect(
       screen.getByRole('img', { name: /Responsive quarterly sample/ }),
     ).toBeVisible();
-    expect(screen.getAllByRole('table')).toHaveLength(23);
+    expect(screen.getAllByRole('table')).toHaveLength(36);
     expect(screen.getByText(/Planned chart families:/)).toHaveTextContent(
       'Line, Bar, Area, Pie, and Donut',
     );

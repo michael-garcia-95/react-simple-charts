@@ -6,13 +6,16 @@ import type {
   CartesianValues,
   CartesianXScale,
   NumericAxisConfig,
+  CategoryAxisConfig,
   LineChartProps,
+  BarChartProps,
 } from '../types/contracts';
 import { normalizeCartesian } from '../core/data/cartesian';
 import { buildCartesianGeometry } from '../core/geometry/cartesian';
 import { usableDimension } from './probe-layout';
 import { useContainerWidth } from './use-container-width';
 import { LineMarks } from './svg/LineMarks';
+import { BarMarks } from './svg/BarMarks';
 import { AreaMarks } from './svg/AreaMarks';
 import { SvgFrame } from './svg/SvgFrame';
 import { CartesianAxes, Gridlines } from './svg/CartesianAxes';
@@ -28,71 +31,91 @@ export type LinePreviewProps<T extends object> = Omit<
   CartesianValues<NoInfer<T>> &
   CartesianXScale<NoInfer<T>> & { yAxis?: NumericAxisConfig };
 
+export type RendererProps<T extends object> =
+  | (LineChartProps<T> & { interactive?: boolean; family?: 'line' | 'area' })
+  | (BarChartProps<T> & { interactive?: boolean; family: 'bar' });
+
 function Graphic<T extends object>({
   props,
   width,
   id,
 }: {
-  props: LineChartProps<T> & {
-    interactive?: boolean;
-    family?: 'line' | 'area';
-  };
+  props: RendererProps<T>;
   width: number | null;
   id: string;
 }) {
+  const xScale = 'xScale' in props ? props.xScale : 'category';
   const mounted = useSyncExternalStore(
     subscribe,
     clientSnapshot,
-    props.xScale === 'time' ? serverSnapshot : clientSnapshot,
+    xScale === 'time' ? serverSnapshot : clientSnapshot,
   );
-  const normalized = normalizeCartesian(props);
+  // Physical Bar axes are irrelevant to semantic source normalization.
+  const { xAxis: normalizationAxis, ...mapping } = props;
+  void normalizationAxis;
+  const normalized = normalizeCartesian<T>(mapping);
   const label =
     props.accessibility?.label?.trim() ||
-    (props.family === 'area'
-      ? 'Area chart'
-      : props.interactive
-        ? 'Line chart'
-        : 'Line chart preview');
+    (props.family === 'bar'
+      ? 'Bar chart'
+      : props.family === 'area'
+        ? 'Area chart'
+        : props.interactive
+          ? 'Line chart'
+          : 'Line chart preview');
   const height = props.height === undefined ? 280 : props.height;
   const invalidDimensions =
     !usableDimension(height) ||
     (typeof props.width === 'number' && !usableDimension(props.width));
   const pending =
-    !invalidDimensions &&
-    (width === null || (props.xScale === 'time' && !mounted));
-  const xAxis =
-    props.xScale === undefined || props.xScale === 'category'
-      ? {
-          ...props.xAxis,
-          ...(props.xAxis?.formatTick === undefined && props.formatCategory
-            ? { formatTick: props.formatCategory }
-            : {}),
-        }
-      : props.xAxis;
+    !invalidDimensions && (width === null || (xScale === 'time' && !mounted));
+  const categoryAxis = (axis: CategoryAxisConfig | undefined) => ({
+    ...axis,
+    ...(axis?.formatTick === undefined && props.formatCategory
+      ? { formatTick: props.formatCategory }
+      : {}),
+  });
+  const valueAxis = (axis: NumericAxisConfig | undefined) => ({
+    ...axis,
+    ...(axis?.formatTick === undefined && props.formatValue
+      ? { formatTick: props.formatValue }
+      : {}),
+  });
+  const common = {
+    normalized,
+    width: width ?? NaN,
+    height,
+    ...(props.showGrid === undefined ? {} : { showGrid: props.showGrid }),
+  };
   const geometry = pending
     ? null
-    : buildCartesianGeometry({
-        normalized,
-        family: props.family ?? 'line',
-        width: width ?? NaN,
-        height,
-        ...(xAxis === undefined ? {} : { xAxis }),
-        ...(props.yAxis === undefined && props.formatValue === undefined
-          ? {}
-          : {
-              yAxis: {
-                ...props.yAxis,
-                ...(props.yAxis?.formatTick === undefined && props.formatValue
-                  ? { formatTick: props.formatValue }
-                  : {}),
-              },
-            }),
-        ...(props.showGrid === undefined ? {} : { showGrid: props.showGrid }),
-      });
-  const ready =
-    !invalidDimensions &&
-    geometry?.status === 'ready' &&
-    (geometry.family === 'line' || geometry.family === 'area');
+    : props.family === 'bar'
+      ? props.orientation === 'horizontal'
+        ? buildCartesianGeometry({
+            ...common,
+            family: 'bar',
+            orientation: 'horizontal',
+            xAxis: valueAxis(props.xAxis),
+            yAxis: categoryAxis(props.yAxis),
+          })
+        : buildCartesianGeometry({
+            ...common,
+            family: 'bar',
+            orientation: props.orientation ?? 'vertical',
+            xAxis: categoryAxis(props.xAxis),
+            yAxis: valueAxis(props.yAxis),
+          })
+      : buildCartesianGeometry({
+          ...common,
+          family: props.family ?? 'line',
+          ...(props.xScale === undefined || props.xScale === 'category'
+            ? { xAxis: categoryAxis(props.xAxis) }
+            : props.xAxis === undefined
+              ? {}
+              : { xAxis: props.xAxis }),
+          yAxis: valueAxis(props.yAxis),
+        });
+  const ready = !invalidDimensions && geometry?.status === 'ready';
   return (
     <>
       {ready ? (
@@ -114,7 +137,9 @@ function Graphic<T extends object>({
             grid={<Gridlines lines={geometry.layout.gridlines} />}
             axes={<CartesianAxes layout={geometry.layout} />}
           >
-            {geometry.family === 'area' ? (
+            {geometry.family === 'bar' ? (
+              <BarMarks bars={geometry.bars} colors={props.colors} />
+            ) : geometry.family === 'area' ? (
               <AreaMarks series={geometry.series} colors={props.colors} />
             ) : (
               <LineMarks series={geometry.series} colors={props.colors} />
@@ -204,10 +229,7 @@ function Responsive<T extends object>({
   props,
   id,
 }: {
-  props: LineChartProps<T> & {
-    interactive?: boolean;
-    family?: 'line' | 'area';
-  };
+  props: RendererProps<T>;
   id: string;
 }) {
   const { ref, width } = useContainerWidth();
@@ -218,10 +240,7 @@ function Responsive<T extends object>({
   );
 }
 export function CartesianPointRenderer<T extends object>(
-  props: LineChartProps<T> & {
-    interactive?: boolean;
-    family?: 'line' | 'area';
-  },
+  props: RendererProps<T>,
 ) {
   const id = useId();
   return (

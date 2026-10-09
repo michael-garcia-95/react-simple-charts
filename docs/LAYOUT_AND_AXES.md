@@ -251,3 +251,13 @@ collisions, responsive measurement, stacked placement, polar arcs,
 interactions, animation, or production accessibility UI is implemented. Development
 Lead decisions remain for user-facing diagnostics, local-time SSR presentation,
 final font/title styling, and renderer visual spacing. Grouped placement and Cartesian paths now belong to M02-T04 geometry.
+
+## M03-T04 public BarChart
+
+BarChart now consumes existing grouped rectangle geometry in both orientations.
+Physical formatter routing preserves semantic xKey categories; shared presentation
+and corrected gesture handling also serve Line/Area. Item inspection is the Bar
+default; visible rectangle intersections and in-plot zero targets determine
+eligibility. Exact decorative extents, stable missing slots, source tables and
+SSR policy are preserved. No public props, dependencies, core math changes or
+subpaths are added. See [BarChart](BAR_CHART.md). M03-T05 remains deferred.
