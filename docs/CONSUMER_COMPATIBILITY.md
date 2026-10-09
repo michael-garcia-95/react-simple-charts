@@ -1,4 +1,88 @@
-# Packaged public LineChart consumers — M03-T02
+# Packaged public LineChart and AreaChart — M03-T03
+
+The genuine private 0.0.0 tarball exports exactly AreaChart and LineChart, checked
+with sorted runtime names. Every consumer deletes its generated installation and
+lockfile, installs the actual npm archive, and checks installed ESM bytes against
+the packed build. No aliases, workspace links, temporary exports or source imports
+are used. Installed declarations compile actual generic AreaChart JSX. The built
+entry retains `use client`; React/React DOM remain external peers. Root-only export
+policy and private version remain unchanged.
+
+## M03-T03 verified versions and results
+
+| Consumer | React / React DOM | Framework                | Strict package types | Production/browser |
+| -------- | ----------------- | ------------------------ | -------------------- | ------------------ |
+| Vite 18  | 18.2.0            | Vite 8.3.4               | Pass                 | Pass               |
+| Vite 19  | 19.3.0            | Vite 8.3.4               | Pass                 | Pass               |
+| Next 14  | 18.2.0            | Next.js 14.2.35          | Pass                 | Pass               |
+| Next 16  | 19.3.0            | Next.js 16.4.0 (Webpack) | Pass                 | Pass               |
+
+Node 24.19.0, npm 11.9.0, Chromium 151.0.7922.173, Playwright Core 1.64.0 and axe
+4.13.0 were used. Vite/Next 16 use TypeScript 6.0.3 and Node types 24.19.1;
+Next 14 retains approved TypeScript 5.4.5 and Node types 20.19.0. React 18 types
+are 18.3.31 / DOM 18.3.7; React 19 types are 19.3.0 / DOM 19.3.0. Next dependency
+checking retains the framework-standard skipLibCheck setting, while the independent
+installed-package compilation uses false. Turbopack was not tested.
+
+Existing Line scenarios remain. Area adds positive, negative, mixed clipped,
+independent series/gaps/singleton, responsive and local-time examples. Both families
+run keyboard, mouse, native touch, standalone accessibility click and exactly-once
+synthetic-click checks. Real SVG assertions verify fill opacity, no closed polygon
+stroke, separate data boundary, clipping, gap counts and positive/negative direction.
+All 12 source tables remain available. Unique IDs and naming relationships pass.
+Both Next App/Pages routes render installed-root charts; App Router server imports
+retain genuine client references. Explicit Area SVG matches initial hydration;
+responsive initial markup matches its SSR placeholder and local time starts pending.
+Vite hydrates separate prefixed roots containing one Line and one Area, measures
+responsive containers and verifies observer cleanup. All four focused axe runs
+have zero violations; no console, page or hydration errors occurred.
+
+Source validation passes 543 tests, 73 above the 470-test merged baseline. The
+13 Area presentation tests passed separately; shared point/SSR/hydration suites
+run both families. Core tests also validate the internal outlinePath extension.
+The Node 22/24 × React 18.2/19 GitHub CI matrix is unchanged. Local heavyweight
+consumer results above are independent of remote CI.
+
+## Artifacts and reproduction
+
+```sh
+npm ci
+RSC_BROWSER_PATH=/usr/bin/chromium node scripts/verify-consumers.mjs
+```
+
+The writable cache is `work/consumers/npm-cache`. Results, server/hydrated/measured
+HTML, accessibility snapshots and full Chromium screenshots live in ignored
+`work/consumers/`. Screenshots show visible restrained fills, negative direction,
+independent gaps, singleton markers and clipping. Separate playground screenshots
+cover Area examples plus keyboard focus and tooltip placement.
+
+| Genuine package     |  Bytes |
+| ------------------- | -----: |
+| Tarball (six files) | 60,062 |
+| ESM                 | 73,727 |
+| ESM gzip            | 17,786 |
+
+| Consumer all JS assets |     Bytes | Sum of per-file gzip bytes |
+| ---------------------- | --------: | -------------------------: |
+| Vite / React 18.2      |   224,760 |                     73,256 |
+| Vite / React 19        |   304,314 |                     96,002 |
+| Next 14                |   842,231 |                    264,594 |
+| Next 16                | 1,089,532 |                    340,620 |
+
+Application totals include React/framework and all fixture routes/chunks; they are
+not isolated library transfer sizes. Existing Rolldown directive warnings remain,
+but artifact and Next client-manifest checks verify the boundary. Next 14 warns
+about its inherited outputFileTracingRoot option; production/browser checks pass.
+
+Chromium/axe does not establish WCAG certification, screen-reader or Firefox/WebKit
+coverage. Custom tooltip dimensions, host styles/CSP, overlapped points and large
+SVG datasets retain the documented public limitations. No package publication,
+deployment or M03-T04 work is included.
+
+The following sections retain historical M03-T02/M01 evidence and are not the
+M03-T03 package measurements.
+
+# Historical packaged public LineChart consumers — M03-T02
 
 The genuine private `react-simple-charts@0.0.0` tarball now exports LineChart.
 The consumer runner packs the actual repository and independently installs the

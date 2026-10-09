@@ -1,5 +1,7 @@
 // @vitest-environment node
 import { readFileSync } from 'node:fs';
+import { AreaChart, LineChart } from '../src';
+import * as api from '../src';
 import { describe, expect, it } from 'vitest';
 
 const pkg = JSON.parse(
@@ -7,6 +9,11 @@ const pkg = JSON.parse(
 );
 
 describe('package safety contract', () => {
+  it('exports exactly the two approved runtime charts in deterministic order', () => {
+    expect(Object.keys(api).sort()).toEqual(['AreaChart', 'LineChart']);
+    expect(typeof AreaChart).toBe('function');
+    expect(typeof LineChart).toBe('function');
+  });
   it('remains private and exposes only an ESM root entry with declarations', () => {
     expect(pkg.private).toBe(true);
     expect(pkg.type).toBe('module');

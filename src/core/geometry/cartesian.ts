@@ -149,12 +149,18 @@ export function buildCartesianGeometry<T>(
           );
         path = generated.data;
       }
+      const outline =
+        input.family === 'area' && points.length > 1 ? linePath(points) : null;
+      if (outline?.status === 'unusable') return unusable(outline.diagnostics);
       const outOfPlot = points.some((point) => point.outOfPlot);
       runs.push({
         points,
         startIndex: first.index,
         endIndex: last.index,
         path,
+        ...(input.family === 'area'
+          ? { outlinePath: outline?.status === 'ready' ? outline.data : null }
+          : {}),
         outOfPlot,
       });
       requiresClipping ||= outOfPlot;

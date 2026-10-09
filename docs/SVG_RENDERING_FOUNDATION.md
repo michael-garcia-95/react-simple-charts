@@ -1,8 +1,8 @@
 # Internal SVG rendering foundation — M03-T01
 
 `LinePreview` is a source-internal visual consumer, not a released LineChart.
-The package root still exports only approved TypeScript contracts. Milestone 02
-is merged; this task does not implement M03-T02 interactions or public exports.
+This document records the historical M03-T01 fixture. The package root now exports
+LineChart and AreaChart plus approved types; see their public behavior documents.
 
 ## Engine and structure
 

@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
+import { linePath } from '../../src/core/geometry/line';
 import { curves, input, pathCoordinates } from './helpers';
 
 describe('area zero-baseline fills', () => {
@@ -19,6 +20,11 @@ describe('area zero-baseline fills', () => {
     expect(series.points.map((point) => point.value)).toEqual(values);
     const path = series.runs[0]!.path;
     expect(path).toMatch(/Z$/);
+    const outline = linePath(series.runs[0]!.points);
+    expect(outline.status).toBe('ready');
+    if (outline.status === 'ready')
+      expect(series.runs[0]!.outlinePath).toBe(outline.data);
+    expect(series.runs[0]!.outlinePath).not.toContain('Z');
     expect(pathCoordinates(path)).toEqual([
       33,
       ys[0],
@@ -47,6 +53,11 @@ describe('area zero-baseline fills', () => {
       series.runs.map((run) => run.points.map((point) => point.index)),
     ).toEqual([[0], [2, 3], [5]]);
     expect(series.runs.map((run) => run.path === null)).toEqual([
+      true,
+      false,
+      true,
+    ]);
+    expect(series.runs.map((run) => run.outlinePath === null)).toEqual([
       true,
       false,
       true,

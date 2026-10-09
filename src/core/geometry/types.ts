@@ -44,6 +44,8 @@ export interface PointRun<T> {
   readonly endIndex: number;
   /** Null for singleton runs; these retain a future marker, not a segment/fill. */
   readonly path: string | null;
+  /** Area-only data boundary, derived from the same run via pure linePath. */
+  readonly outlinePath?: string | null;
   readonly outOfPlot: boolean;
 }
 export interface SeriesGeometry<T> {

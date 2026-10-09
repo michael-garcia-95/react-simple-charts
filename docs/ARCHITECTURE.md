@@ -2,7 +2,7 @@
 
 ## Approved direction
 
-React Simple Charts is a single npm package, a TypeScript-first React component library supporting React 18.2+ and React 19.x. Rendering is SVG-first. Planned chart families are Line, Bar, Area, Pie, and Donut; LineChart is now implemented; other public families remain deferred.
+React Simple Charts is a single npm package, a TypeScript-first React component library supporting React 18.2+ and React 19.x. Rendering is SVG-first. Planned chart families are Line, Bar, Area, Pie, and Donut; LineChart and AreaChart are implemented; Bar/Pie/Donut remain deferred.
 
 ## Module responsibilities
 
@@ -11,7 +11,7 @@ React Simple Charts is a single npm package, a TypeScript-first React component 
 - `src/internal/`: implementation details unavailable through package subpaths.
 - `src/styles/`: self-contained styling based on CSS variables. Future components must work without a mandatory external stylesheet.
 - `src/types/`: shared TypeScript contracts. `contracts.ts` contains focused chart-family unions and shared data, axis, tooltip, activation, and accessibility types. See [API type contracts](API_TYPE_CONTRACTS.md).
-- `src/index.ts`: the sole public barrel. It exports approved M01-T02 contracts as types and LineChart as the sole runtime chart export.
+- `src/index.ts`: the sole public barrel. It exports approved M01-T02 contracts as types and LineChart and AreaChart as the only runtime chart exports.
 - `playground/`: a Vite React application, excluded from the npm package.
 - `tests/`: foundation contract and accessible playground tests.
 - `scripts/verify-package.mjs`: verifies built artifacts and probes runtime externalization using the real build configuration.
@@ -54,7 +54,7 @@ M01-T02 implements RSC-026/RSC-027 as types, with data-driven generic inference,
 
 ## Internal geometry foundation — M02-T04
 
-`src/core/geometry/` separates readonly result types, shared datum mapping and gap runs, d3-shape Line/Area paths, grouped Bar slots/rectangles, numerical diagnostics, and orchestration. `buildCartesianGeometry` calls layout internally from the same normalized input, preventing unrelated model/layout pairs. It preserves source and series references, handles independent gaps and singleton points, uses physical zero baselines, and flags finite geometry outside explicit bounds for future plot clipping. Unsafe mappings/slots/paths expose no partial marks. See [geometry foundations](GEOMETRY_FOUNDATIONS.md). Milestone 02's planned internal foundation tasks are implemented, subject to M02-T04 PR review and merge. Public components, SVG rendering, stacking and polar geometry remain future work; package runtime exports remain unchanged.
+`src/core/geometry/` separates readonly result types, shared datum mapping and gap runs, d3-shape Line/Area paths, grouped Bar slots/rectangles, numerical diagnostics, and orchestration. `buildCartesianGeometry` calls layout internally from the same normalized input, preventing unrelated model/layout pairs. It preserves source and series references, handles independent gaps and singleton points, uses physical zero baselines, and flags finite geometry outside explicit bounds for future plot clipping. Unsafe mappings/slots/paths expose no partial marks. See [geometry foundations](GEOMETRY_FOUNDATIONS.md). Milestone 02 is complete and merged. Public Line/Area rendering now consumes this foundation; stacking and polar geometry remain future work.
 
 ## Internal SVG rendering — M03-T01
 
@@ -75,6 +75,20 @@ interaction disabled. `LineInspection.tsx` consumes exact engine results and
 adds source-row/series lookup maps, roving SVG buttons, tooltips, activation and
 optional client opacity animation. Interactive SvgFrame is a named group;
 noninteractive fixtures remain named images. Decorative layers are hidden,
-point controls are exposed. Root imports contain exactly LineChart plus existing
+point controls are exposed. Root imports now contain exactly LineChart and AreaChart plus existing
 type exports. Genuine consumer verification now installs that real tarball.
 See [LineChart](LINE_CHART.md) for behavioral defaults and limitations.
+
+## Public AreaChart — M03-T03
+
+AreaChart uses the unchanged approved generic contract. CartesianPointRenderer
+shares sizing, normalization, family dispatch, states, tables, legends and SSR
+policy. CartesianPointInspection shares corrected point interaction, tooltips,
+activation and animation for both families. Historical LineRenderer/LineInspection
+names delegate to these modules; LinePreview and RenderingProbe remain internal.
+AreaMarks presents exact core fills at 0.2 opacity without polygon stroke and
+separate pure-core `outlinePath` boundaries. Core derives that Area-only optional
+run field from the existing linePath using the same mapped points, without new
+mapping/segmentation. Singletons have null fill and outline paths. No public
+contract, dependency, subpath or future-family abstraction is added.
+See [AreaChart](AREA_CHART.md).
