@@ -1,9 +1,10 @@
 # Scales and domains — M02-T02
 
 Milestone 01 and M02-T01 are complete. M02-T02 adds pure internal Cartesian
-calculations under `src/core/scales/`. No public chart components, runtime
-exports, React hooks, layout, paths, or geometry are implemented. M02-T03 has
-not begun. These helpers are source-internal, not package imports.
+calculations under `src/core/scales/`. The scale layer adds no public chart
+components, runtime exports, React hooks, paths, or geometry. M02-T03 now consumes
+these helpers for internal [layout and axes](LAYOUT_AND_AXES.md). These helpers
+are source-internal, not package imports.
 
 ## Pipeline and internal contracts
 
@@ -247,9 +248,10 @@ observed endpoints and category labels preserve source references.
 
 Missing-point gaps, interpolation between data, clipping, public error/empty
 presentation, padding choices, baseline geometry, stacked charts, grouped bars,
-tick label selection, collision avoidance, margins, orientation-specific axes,
 React components, SVG/Canvas, hooks, interactions, and segment percentages are
-later responsibilities. Layout and geometry must continue narrowing normalized
+later responsibilities. M02-T03 implements estimated tick label selection,
+collision prevention, margins, and orientation-specific axes. Layout and geometry
+must continue narrowing normalized
 states before constructing points; a ready scale is not permission to plot an
 invalid row. Future Development Lead decisions include presentation of diagnostics,
 local-time SSR policy, precision support for unsafe extreme spans, and category

@@ -11,4 +11,6 @@ The MIT copyright-holder decision is finalized: the Development Lead approved Mi
 - Choose a broader browser support policy and document it when components exist. Current JS target is ES2022.
 - React 18/19 type-definition coverage is added for M01-T02; M01-T03 adds internal SSR, hydration, lifecycle, accessibility, and styling tests to the existing matrix. Future public runtime components still need consumer integration and interaction testing, real screen-reader review, and cross-browser validation.
 
-Milestone 01, M02-T01, and M02-T02 are complete. Normalization and scales remain internal. M02-T03 and production chart implementation have not begun.
+Milestone 01 and M02-T01 through M02-T03 are implemented. Normalization, scales, and layout remain internal. M02-T04 and production chart implementation have not begun. The public library still has no implemented chart components.
+
+M02-T03 documents bounded margin estimates, greedy tick selection, single-line formatting failures, hidden-axis title suppression, horizontal Bar mappings, and independent value grids in [layout and axes](LAYOUT_AND_AXES.md). These engine policies are explicit; future decisions concern final renderer font/title styling and fitting, diagnostic presentation, local-time SSR strategy, and grouped/category geometry spacing.
