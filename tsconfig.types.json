@@ -1,8 +1,11 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "paths": { "react-simple-charts": ["./src/index.ts"] },
+    "paths": {
+      "react-simple-charts": ["./src/index.ts"]
+    },
     "skipLibCheck": false
   },
-  "include": ["src", "tests/types"]
+  "include": ["src", "tests/types"],
+  "exclude": []
 }
