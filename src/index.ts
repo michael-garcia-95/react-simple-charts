@@ -35,3 +35,5 @@ export type {
   PieChartProps,
   DonutChartProps,
 } from './types/contracts';
+
+export { LineChart } from './charts/LineChart';

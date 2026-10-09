@@ -1,20 +1,24 @@
+import { useState } from 'react';
+import { LineChart } from '../src';
 import { LinePreview } from '../src/internal/LinePreview';
 import { RenderingProbe } from '../src/internal/RenderingProbe';
 
 export function App() {
+  const [activation, setActivation] = useState('No activation yet');
   return (
     <main>
-      <p className="eyebrow">Development playground · M03-T01</p>
+      <p className="eyebrow">Development playground · M03-T02</p>
       <h1>React Simple Charts</h1>
       <p>
         A lightweight, customizable React charting library built with
         TypeScript.
       </p>
       <section aria-labelledby="status-heading">
-        <h2 id="status-heading">Internal rendering prototype</h2>
+        <h2 id="status-heading">
+          Public LineChart and internal rendering fixtures
+        </h2>
         <p>
-          Architecture proof only. Public chart components have not been
-          implemented yet.
+          LineChart is publicly importable. Other chart families remain planned.
         </p>
         <p>Planned chart families: Line, Bar, Area, Pie, and Donut.</p>
       </section>
@@ -65,6 +69,58 @@ export function App() {
             }}
           />
         </div>
+      </section>
+      <section aria-labelledby="public-heading">
+        <h2 id="public-heading">
+          Public LineChart · keyboard, touch and tooltip inspection
+        </h2>
+        <p>
+          Tab enters point inspection. Arrows, Home and End navigate;
+          Enter/Space activate; Escape dismisses.
+        </p>
+        <LineChart
+          data={[
+            { month: 'Jan', actual: 10, forecast: 12 },
+            { month: 'Jan', actual: 20, forecast: 22 },
+            { month: 'Mar', actual: null, forecast: 18 },
+          ]}
+          xKey="month"
+          series={[
+            { key: 'actual', label: 'Actual' },
+            { key: 'forecast', label: 'Forecast' },
+          ]}
+          accessibility={{ label: 'Public revenue', dataTable: 'visible' }}
+          onDataActivate={(p) =>
+            setActivation(
+              `${p.seriesLabel}, source row ${p.index + 1}: ${p.value} (${p.inputMethod})`,
+            )
+          }
+        />
+        <output>{activation}</output>
+        <h3>Item tooltip · opt-in animation · linear X</h3>
+        <LineChart
+          width={640}
+          data={[
+            { x: 0, y: 2 },
+            { x: 2, y: 6 },
+          ]}
+          xScale="linear"
+          xKey="x"
+          yKey="y"
+          tooltip={{ mode: 'item' }}
+          animate
+          accessibility={{ label: 'Public linear example' }}
+        />
+        <h3>Tooltip disabled · activation available</h3>
+        <LineChart
+          width={640}
+          data={[{ x: 'A', y: 1 }]}
+          xKey="x"
+          yKey="y"
+          tooltip={false}
+          onDataActivate={(p) => setActivation(`${p.value} (${p.inputMethod})`)}
+          accessibility={{ label: 'Public activation only' }}
+        />
       </section>
       <section aria-labelledby="line-heading">
         <h2 id="line-heading">Actual engine-based internal Line previews</h2>

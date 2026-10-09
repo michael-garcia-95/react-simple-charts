@@ -1,9 +1,8 @@
 # Public TypeScript contracts — M01-T02
 
-RSC-026 and RSC-027 are implemented as public **types only**. No LineChart,
-BarChart, AreaChart, PieChart, or DonutChart runtime component exists yet.
-All examples below describe prop objects for future components; they do not
-claim that rendering is available. Import every public type from the package root.
+RSC-026/RSC-027 contracts are preserved. LineChart is a public runtime component
+as of M03-T02; AreaChart, BarChart, PieChart and DonutChart remain types only.
+See [LineChart behavior](LINE_CHART.md) for runnable examples and runtime defaults. Import every public type from the package root.
 
 ```ts
 import type {
@@ -76,8 +75,8 @@ non-distributive conditional to reject partially incompatible unions:
 
 `NoInfer<T>` on field mappings and callback contexts keeps inference anchored to
 `data`. This prevents an invalid field or callback from influencing the inferred
-record type. Test-only generic component declarations demonstrate JSX inference
-without implementing runtime charts. `satisfies ChartProps<Record>` is convenient
+record type. The real LineChart import demonstrates JSX inference; future families use
+compile-only declarations. `satisfies ChartProps<Record>` is convenient
 for validating reusable prop objects; plain object literals may widen string
 keys before assignment, so annotate them or use `satisfies` at construction.
 
@@ -139,7 +138,7 @@ duplicate labels without losing identity. No DOM event or SVG geometry is public
 These extend their inspection datum with
 `inputMethod: 'pointer' | 'keyboard' | 'touch'`. Pointer identifies mouse/pen
 activation; touch is reported separately. Consumers can branch on `inputMethod`
-in either activation callback. Runtime event detection remains deferred.
+in either activation callback. LineChart reports mouse/pen, keyboard and touch activation separately.
 No persistent selection is introduced.
 
 ```ts
@@ -177,12 +176,12 @@ grid, x-scale, or Cartesian series configuration.
 
 Accessibility options are `label`, `description`, and `dataTable` with only
 `visible` and `visually-hidden`. There is no mode that removes the accessible
-data alternative. Implementation of tables and keyboard behavior remains future work.
+data alternative. LineChart implements source tables and roving point inspection.
 
 ## Intended defaults and runtime responsibilities
 
 These are implementation intentions, not runtime behavior supplied by this task:
-width `100%`, height `280` (280px), animation enabled, axes visible, grid enabled for
+width `100%`, height `280` (280px), animation disabled for LineChart, axes visible, grid enabled for
 Cartesian charts, legend enabled, tooltip enabled (Line/Area shared, Bar item, Pie/Donut segment inspection), category
 x-scale, vertical Bar orientation, segment labels hidden, accessible table
 visually hidden, Donut inner radius ratio `0.6`. Palette, automatic series label
@@ -195,7 +194,8 @@ fields are valid mappings, not valid numbers for inspection: emitted datum value
 are numbers, and runtime must decide how missing/invalid records are handled.
 Negative values, zero totals, percentage calculation, ordering, scale domains,
 date validity, normalization, and missing categories remain deferred; this file
-must not be read as a normalization algorithm. Inputs are preserved in payloads.
+must not be read as a normalization algorithm. Inputs are preserved in payloads. LineChart runtime normalization and rendering
+now implement these Cartesian responsibilities; polar families remain deferred.
 
 TypeScript is structurally typed: excess-property checks protect fresh literals
 and JSX, but do not make object types exact. Extra fields on previously assigned

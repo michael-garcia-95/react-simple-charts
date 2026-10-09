@@ -15,7 +15,23 @@ const code = await readFile('dist/index.js', 'utf8');
 assert.match(code, /^\s*["']use client["'];/);
 assert.doesNotMatch(code, /\brequire\(|module\.exports/);
 assert.match(await readFile('dist/index.d.ts', 'utf8'), /export/);
-assert.deepEqual(Object.keys(await import('react-simple-charts')), []);
+const api = await import('react-simple-charts');
+assert.deepEqual(Object.keys(api), ['LineChart']);
+assert.equal(typeof api.LineChart, 'function');
+const { createElement } = await import('react');
+const { renderToString } = await import('react-dom/server');
+assert.match(
+  renderToString(
+    createElement(api.LineChart, {
+      data: [{ x: 'A', y: 2 }],
+      xKey: 'x',
+      yKey: 'y',
+      width: 640,
+    }),
+  ),
+  /<svg/,
+);
+assert.match(code, /from ["']react(?:\/jsx-runtime)?["']/);
 await assert.rejects(import('react-simple-charts/internal'), {
   code: 'ERR_PACKAGE_PATH_NOT_EXPORTED',
 });

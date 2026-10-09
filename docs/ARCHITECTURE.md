@@ -2,7 +2,7 @@
 
 ## Approved direction
 
-React Simple Charts is a single npm package, a TypeScript-first React component library supporting React 18.2+ and React 19.x. Rendering is SVG-first. Planned chart families are Line, Bar, Area, Pie, and Donut; none is implemented in this foundation task.
+React Simple Charts is a single npm package, a TypeScript-first React component library supporting React 18.2+ and React 19.x. Rendering is SVG-first. Planned chart families are Line, Bar, Area, Pie, and Donut; LineChart is now implemented; other public families remain deferred.
 
 ## Module responsibilities
 
@@ -11,7 +11,7 @@ React Simple Charts is a single npm package, a TypeScript-first React component 
 - `src/internal/`: implementation details unavailable through package subpaths.
 - `src/styles/`: self-contained styling based on CSS variables. Future components must work without a mandatory external stylesheet.
 - `src/types/`: shared TypeScript contracts. `contracts.ts` contains focused chart-family unions and shared data, axis, tooltip, activation, and accessibility types. See [API type contracts](API_TYPE_CONTRACTS.md).
-- `src/index.ts`: the sole public barrel. It exports approved M01-T02 contracts using type-only named exports; no runtime chart components exist.
+- `src/index.ts`: the sole public barrel. It exports approved M01-T02 contracts as types and LineChart as the sole runtime chart export.
 - `playground/`: a Vite React application, excluded from the npm package.
 - `tests/`: foundation contract and accessible playground tests.
 - `scripts/verify-package.mjs`: verifies built artifacts and probes runtime externalization using the real build configuration.
@@ -24,7 +24,7 @@ TypeScript uses strict checking, exact optional properties, unchecked indexed ac
 
 tsdown produces ESM and declarations from one entry. React and React DOM, including JSX and DOM client subpaths, stay external. They are peers for consumers and development dependencies for the playground/tests. d3-scale and d3-shape are the approved runtime math dependencies. M02-T02 uses d3-scale internally for band, linear, UTC, and local-time calculations; M02-T04 uses d3-shape internally for linear Line and zero-baseline Area path data. No animation runtime is included.
 
-The package exposes only `.` with declaration and import conditions, and has no CommonJS output. A files allowlist excludes playground, tests, and source from packing. `sideEffects: false` is appropriate for the current empty entry; revisit it if future implementation introduces global effects or imported CSS.
+The package exposes only `.` with declaration and import conditions, and has no CommonJS output. A files allowlist excludes playground, tests, and source from packing. `sideEffects: false` is appropriate for self-contained components with no imported/global CSS; revisit it if future implementation introduces global effects or imported CSS.
 
 ## React and server rendering
 
@@ -50,7 +50,7 @@ M01-T02 implements RSC-026/RSC-027 as types, with data-driven generic inference,
 
 ## Internal layout foundation — M02-T03
 
-`src/core/layout/` separates internal input/result types, estimated label formatting, bounded margins and plot bounds, physical axis dispatch, linear tick selection, value gridlines, and Cartesian composition. Two deterministic scale-construction passes reuse the existing domain policies and preserve duplicate category bands. Horizontal Bar maps semantic categories vertically and values horizontally without transposing records. Ready/empty/unusable results expose safe scales and finite metadata, with hidden axes omitted and required zero-baseline coordinates retained. Formatting has no browser measurement or additional timezone-sensitive defaults; local-time ticks still require consistent execution timezone for SSR. See [layout and axes](LAYOUT_AND_AXES.md). The public library still has no implemented chart components. M02-T04 now adds the geometry layer below.
+`src/core/layout/` separates internal input/result types, estimated label formatting, bounded margins and plot bounds, physical axis dispatch, linear tick selection, value gridlines, and Cartesian composition. Two deterministic scale-construction passes reuse the existing domain policies and preserve duplicate category bands. Horizontal Bar maps semantic categories vertically and values horizontally without transposing records. Ready/empty/unusable results expose safe scales and finite metadata, with hidden axes omitted and required zero-baseline coordinates retained. Formatting has no browser measurement or additional timezone-sensitive defaults; local-time ticks still require consistent execution timezone for SSR. See [layout and axes](LAYOUT_AND_AXES.md). The public LineChart now consumes this internal engine. M02-T04 now adds the geometry layer below.
 
 ## Internal geometry foundation — M02-T04
 
@@ -63,6 +63,18 @@ normalization and Cartesian geometry, using focused shared frame, axes/grid,
 color and table modules under `src/internal/svg/`. React/DOM presentation stays
 outside the pure core. Explicit category/linear/UTC dimensions support SSR;
 responsive widths and local-time mode use accessible initial placeholders.
-See [SVG rendering foundation](SVG_RENDERING_FOUNDATION.md). No public runtime
-component is exported; tooltip/activation/animation are excluded from the internal
-contract. M03-T02 is not implemented.
+See [SVG rendering foundation](SVG_RENDERING_FOUNDATION.md). The historical preview remains internal; tooltip/activation/animation are excluded from the internal
+contract. M03-T02 adds public LineChart below.
+
+## Public LineChart — M03-T02
+
+`src/charts/LineChart.tsx` preserves the approved generic contract and delegates
+shared dimensions, geometry assembly, axes, legend and source table to
+`src/internal/LineRenderer.tsx`. LinePreview delegates to the same renderer with
+interaction disabled. `LineInspection.tsx` consumes exact engine results and
+adds source-row/series lookup maps, roving SVG buttons, tooltips, activation and
+optional client opacity animation. Interactive SvgFrame is a named group;
+noninteractive fixtures remain named images. Decorative layers are hidden,
+point controls are exposed. Root imports contain exactly LineChart plus existing
+type exports. Genuine consumer verification now installs that real tarball.
+See [LineChart](LINE_CHART.md) for behavioral defaults and limitations.

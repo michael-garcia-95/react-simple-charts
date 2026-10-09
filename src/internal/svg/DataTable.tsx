@@ -10,7 +10,7 @@ import type {
 import { dateTimestamp } from './date-value';
 import { readableKey, seriesLabel, visuallyHidden } from './presentation';
 
-function display<V extends CategoryValue>(
+export function display<V extends CategoryValue>(
   state: ValueState<V>,
   formatter?: (value: V) => string,
 ) {

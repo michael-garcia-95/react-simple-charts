@@ -9,6 +9,7 @@ import {
   writeFile,
   readdir,
   stat,
+  rm,
 } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { resolve, join } from 'node:path';
@@ -52,48 +53,14 @@ const report = {
 };
 await mkdir(work, { recursive: true });
 const genuine = await pack(root);
-const temporary = join(work, 'test-package');
-for (const name of [
-  'src',
-  'tsdown.config.ts',
-  'tsconfig.json',
-  'LICENSE',
-  'README.md',
-]) {
-  await cp(join(root, name), join(temporary, name), { recursive: true });
-}
-const manifest = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
-manifest.name = 'rsc-rendering-test-only';
-manifest.version = '0.0.0-test-only';
-await json(temporary, 'package.json', manifest);
-await file(
-  temporary,
-  'src/index.ts',
-  `'use client';\nexport { RenderingProbe } from './internal/RenderingProbe';\nexport type { RenderingProbeProps } from './internal/RenderingProbe';\n`,
-);
-const lock = JSON.parse(
-  await readFile(join(root, 'package-lock.json'), 'utf8'),
-);
-lock.name = manifest.name;
-lock.version = manifest.version;
-lock.packages[''].name = manifest.name;
-lock.packages[''].version = manifest.version;
-await json(temporary, 'package-lock.json', lock);
-await run('npm', ['ci', '--no-audit', '--no-fund'], temporary);
-const runtime = await pack(temporary);
-for (const [label, dir, tarball] of [
-  ['genuine', root, genuine],
-  ['testOnly', temporary, runtime],
-]) {
-  const js = await readFile(join(dir, 'dist/index.js'));
-  assert(js.toString().startsWith('"use client";'));
-  assert(!/react.production|react.development|\.css["']/.test(js.toString()));
-  report.artifacts[label] = {
-    tarballBytes: (await stat(tarball)).size,
-    esmBytes: js.length,
-    esmGzipBytes: gzipSync(js).length,
-  };
-}
+const js = await readFile(join(root, 'dist/index.js'));
+assert(js.toString().startsWith('"use client";'));
+assert(!/react.production|react.development|\.css["']/.test(js.toString()));
+report.artifacts.genuine = {
+  tarballBytes: (await stat(genuine)).size,
+  esmBytes: js.length,
+  esmGzipBytes: gzipSync(js).length,
+};
 const driver = join(work, 'driver');
 await json(driver, 'package.json', {
   private: true,
@@ -113,13 +80,17 @@ const browser = await chromium.launch({
   args: ['--no-sandbox'],
 });
 report.browser = browser.version();
-const sample = `import { RenderingProbe } from 'rsc-rendering-test-only';
-import type { LineChartProps } from 'react-simple-charts';
-const contracts = { data: [{ quarter: 'Q1', value: 12 }], xKey: 'quarter', yKey: 'value' } satisfies LineChartProps<{quarter: string; value: number}>;
-export default function Sample() { return <main><h1>Packaged rendering proof</h1><p>{contracts.data.length} contract record</p>
-<section id="explicit"><RenderingProbe width={640} accessibility={{label:'Explicit',description:'Quarterly values',dataTable:'visible'}} /></section>
-<section id="responsive" style={{width:'80%','--rsc-series-color':'#086b62'} as import('react').CSSProperties}><RenderingProbe accessibility={{label:'Responsive',description:'Measured quarterly values'}} /></section>
-<section id="independent" style={{width:320}}><RenderingProbe accessibility={{label:'Independent'}} /></section></main>; }`;
+const sample = `import { LineChart } from 'react-simple-charts';
+const data = [{quarter:'Q1',value:12},{quarter:'Q2',value:24},{quarter:'Q3',value:18},{quarter:'Q4',value:32}];
+export default function Sample() {return <main><h1>Packaged public LineChart</h1>
+<section id="explicit"><LineChart data={data} xKey="quarter" yKey="value" width={640} accessibility={{label:'Explicit',description:'Quarterly values',dataTable:'visible'}} /></section>
+<section id="responsive" style={{width:'80%','--rsc-series-color':'#086b62'} as import('react').CSSProperties}><LineChart data={data} xKey="quarter" yKey="value" accessibility={{label:'Responsive'}} /></section>
+<section id="independent" style={{width:320}}><LineChart data={data} xKey="quarter" yKey="value" accessibility={{label:'Independent'}} /></section>
+<section id="local-time"><LineChart width={640} data={[{date:new Date('2026-03-07T00:00:00Z'),value:2}]} xScale="time" xKey="date" yKey="value" accessibility={{label:'Local time'}}/></section><Interactive/></main>;}
+import Interactive from './Interactive';`;
+const interactive = `'use client';
+import {useState} from 'react'; import {LineChart} from 'react-simple-charts';
+export default function Interactive(){const [result,setResult]=useState(''); const [count,setCount]=useState(0);return <section id="interactive"><LineChart width={640} data={[{x:'A',y:1},{x:'A',y:2}]} xKey="x" yKey="y" onDataActivate={p=>{setCount(n=>n+1);setResult(p.index+':'+p.inputMethod);}} accessibility={{label:'Interactive'}}/><output>{result}:{count}</output></section>;}`;
 const tsconfig = {
   compilerOptions: {
     target: 'ES2022',
@@ -139,7 +110,15 @@ const tsconfig = {
 async function start(dir, kind, port, major) {
   const args =
     kind === 'vite'
-      ? ['vite', 'preview', '--host', '127.0.0.1', '--port', String(port)]
+      ? [
+          'vite',
+          'preview',
+          '--host',
+          '127.0.0.1',
+          '--port',
+          String(port),
+          '--strictPort',
+        ]
       : ['next', 'start', '--hostname', '127.0.0.1', '--port', String(port)];
   const child = spawn(
     process.execPath,
@@ -171,6 +150,7 @@ async function start(dir, kind, port, major) {
     const errors = [];
     const context = await browser.newContext({
       viewport: { width: 1100, height: 1200 },
+      hasTouch: true,
     });
     const page = await context.newPage();
     page.on('console', (message) => {
@@ -223,13 +203,15 @@ async function start(dir, kind, port, major) {
         '0 0 640 280',
       );
       assert.equal(await staticPage.locator('#responsive svg').count(), 0);
+      assert.equal(await staticPage.locator('#local-time svg').count(), 0);
+      assert.equal(await staticPage.locator('[role=tooltip]').count(), 0);
       assert.equal(
         await staticPage
           .locator('#responsive [role=img]')
           .evaluate((el) => getComputedStyle(el).height),
         '280px',
       );
-      assert.equal(await staticPage.getByRole('table').count(), 3);
+      assert.equal(await staticPage.getByRole('table').count(), 5);
       await file(
         dir,
         'evidence/before.html',
@@ -240,7 +222,7 @@ async function start(dir, kind, port, major) {
     await page.goto(url);
     await page.waitForFunction(() => window.__observers.length >= 2);
     assert.equal(await page.locator('#responsive svg').count(), 0);
-    assert.equal(await page.getByRole('table').count(), 3);
+    assert.equal(await page.getByRole('table').count(), 5);
     if (responsiveBefore)
       assert.equal(
         await page.locator('#responsive').innerHTML(),
@@ -295,16 +277,45 @@ async function start(dir, kind, port, major) {
           ),
         ),
     );
-    await page.keyboard.press('Tab');
+    await page.locator('#explicit [role=button]').first().focus();
+    await page.keyboard.press('End');
     assert.equal(
       await page
-        .locator('#explicit svg')
-        .evaluate((el) => getComputedStyle(el).outlineWidth),
-      '3px',
+        .locator('#explicit [role=button]')
+        .last()
+        .getAttribute('tabindex'),
+      '0',
     );
+    assert.equal(await page.getByRole('tooltip').count(), 1);
+    await page.keyboard.press('Escape');
+    assert.equal(await page.getByRole('tooltip').count(), 0);
+    await page.locator('#interactive [role=button]').first().focus();
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('Enter');
+    assert.equal(await page.locator('output').textContent(), '1:keyboard:1');
+    await page.locator('#interactive [role=button]').first().click();
+    assert.equal(await page.locator('output').textContent(), '0:pointer:2');
+    await page
+      .locator('#interactive [role=button]')
+      .last()
+      .scrollIntoViewIfNeeded();
+    const hit = await page
+      .locator('#interactive [role=button]')
+      .last()
+      .boundingBox();
+    assert(hit);
+    await page.touchscreen.tap(hit.x + hit.width / 2, hit.y + hit.height / 2);
+    await page.waitForFunction(
+      () => document.querySelector('output')?.textContent === '1:touch:3',
+    );
+    assert.equal(await page.locator('output').textContent(), '1:touch:3');
+    assert.equal(await page.getByRole('tooltip').count(), 1);
+    await page.getByRole('button', { name: 'Dismiss inspection' }).click();
+    assert.equal(await page.getByRole('tooltip').count(), 0);
+    await page.keyboard.press('Escape');
     assert.equal(
       await page
-        .locator('#responsive polyline')
+        .locator('#responsive path')
         .evaluate((el) => getComputedStyle(el).stroke),
       'rgb(8, 107, 98)',
     );
@@ -334,7 +345,7 @@ async function start(dir, kind, port, major) {
       await page.waitForFunction(() => window.__observers.length >= 2);
       await page.evaluate(() => window.__release());
       await page.locator('#responsive svg').waitFor();
-      assert.equal(await page.getByRole('table').count(), 3);
+      assert.equal(await page.getByRole('table').count(), 5);
       assert.deepEqual(errors, []);
     } else {
       await page.evaluate(() => window.__unmount());
@@ -378,6 +389,8 @@ try {
   ]) {
     for (const kind of ['vite', 'next']) {
       const dir = join(work, `${kind}-${major}`);
+      // Same-version tarballs must never reuse a prior installation/lockfile.
+      await rm(dir, { recursive: true, force: true });
       const compiler = kind === 'next' && major === 18 ? '5.4.5' : '6.0.3';
       const nodeTypes = kind === 'next' && major === 18 ? '20.19.0' : '24.19.1';
       const deps = {
@@ -388,7 +401,6 @@ try {
         '@types/node': nodeTypes,
         typescript: compiler,
         'react-simple-charts': `file:${genuine}`,
-        'rsc-rendering-test-only': `file:${runtime}`,
         ...(kind === 'vite' ? { vite: '8.3.4' } : { next }),
       };
       await json(dir, 'package.json', {
@@ -406,9 +418,10 @@ try {
       });
       await json(dir, 'tsconfig.package.json', {
         compilerOptions: tsconfig.compilerOptions,
-        files: ['contracts.tsx', 'Sample.tsx'],
+        files: ['contracts.tsx', 'Sample.tsx', 'Interactive.tsx'],
       });
       await file(dir, 'Sample.tsx', sample);
+      await file(dir, 'Interactive.tsx', interactive);
       await cp(
         join(root, 'tests/types/contracts.tsx'),
         join(dir, 'contracts.tsx'),
@@ -419,7 +432,7 @@ try {
         `import assert from 'node:assert/strict';
 import * as api from 'react-simple-charts';
 import {readFileSync} from 'node:fs';
-assert.deepEqual(Object.keys(api), []);
+assert.deepEqual(Object.keys(api), ['LineChart']); assert.equal(typeof api.LineChart,'function');
 const p=JSON.parse(readFileSync('node_modules/react-simple-charts/package.json'));
 assert.equal(p.private,true); assert.deepEqual(Object.keys(p.exports),['.']);
 assert(p.peerDependencies.react && p.peerDependencies['react-dom']);
@@ -465,6 +478,13 @@ for(const path of ['src/internal/RenderingProbe','dist/index.js','internal']) { 
         );
       }
       await run('npm', ['install', '--no-audit', '--no-fund'], dir);
+      assert.deepEqual(
+        await readFile(
+          join(dir, 'node_modules/react-simple-charts/dist/index.js'),
+        ),
+        js,
+        'Installed genuine ESM must match the packed build',
+      );
       await run('node', ['package-check.mjs'], dir);
       await run('npm', ['ls', 'react', 'react-dom'], dir);
       if (kind === 'vite') {
@@ -473,9 +493,9 @@ for(const path of ['src/internal/RenderingProbe','dist/index.js','internal']) { 
           'roots-server.mjs',
           `import {createElement} from 'react';
 import {renderToString} from 'react-dom/server';
-import {RenderingProbe} from 'rsc-rendering-test-only';
+import {LineChart} from 'react-simple-charts';
 import {writeFileSync} from 'node:fs';
-const parts=['alpha-','beta-'].map((prefix,i)=>'<div id="root'+i+'">'+renderToString(createElement(RenderingProbe,{width:640}),{identifierPrefix:prefix})+'</div>');
+const parts=['alpha-','beta-'].map((prefix,i)=>'<div id="root'+i+'">'+renderToString(createElement(LineChart,{width:640,data:[{x:'A',y:1}],xKey:'x',yKey:'y'}),{identifierPrefix:prefix})+'</div>');
 writeFileSync('roots.html','<!doctype html><html lang="en"><head><title>Separate roots</title><link rel="icon" href="data:,"></head><body>'+parts.join('')+'<script type="module" src="/roots.tsx"></script></body></html>');`,
         );
         await run('node', ['roots-server.mjs'], dir);
@@ -483,8 +503,8 @@ writeFileSync('roots.html','<!doctype html><html lang="en"><head><title>Separate
           dir,
           'roots.tsx',
           `import {hydrateRoot} from 'react-dom/client';
-import {RenderingProbe} from 'rsc-rendering-test-only';
-['alpha-','beta-'].forEach((identifierPrefix,i)=>hydrateRoot(document.getElementById('root'+i)!,<RenderingProbe width={640}/>,{identifierPrefix,onRecoverableError: error=>console.error(error)}));`,
+import {LineChart} from 'react-simple-charts';
+['alpha-','beta-'].forEach((identifierPrefix,i)=>hydrateRoot(document.getElementById('root'+i)!,<LineChart width={640} data={[{x:'A',y:1}]} xKey="x" yKey="y"/>,{identifierPrefix,onRecoverableError: error=>console.error(error)}));`,
         );
         await file(
           dir,
@@ -522,7 +542,7 @@ import {RenderingProbe} from 'rsc-rendering-test-only';
         );
         assert(
           clientManifest.includes(
-            'node_modules/rsc-rendering-test-only/dist/index.js',
+            'node_modules/react-simple-charts/dist/index.js',
           ),
         );
         await file(
@@ -577,8 +597,8 @@ import {RenderingProbe} from 'rsc-rendering-test-only';
         }
         report.artifacts[`vite${major}`] = { jsBytes: total, gzipBytes: gzip };
         await json(dir, 'evidence/bundle-sources.json', sources);
-        assert(!sources.some((name) => /d3-|react\.development/.test(name)));
-        assert(sources.some((name) => /rsc-rendering-test-only/.test(name)));
+        assert(!sources.some((name) => /react\.development/.test(name)));
+        assert(sources.some((name) => /react-simple-charts/.test(name)));
       }
       await start(dir, kind, major === 18 ? 4318 : 4319, major);
       await json(work, 'results.json', report);
