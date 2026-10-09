@@ -10,8 +10,8 @@ React Simple Charts is a single npm package, a TypeScript-first React component 
 - `src/core/`: shared chart infrastructure. Data normalization, scales, layout, and geometry must be pure calculations separated from React lifecycle and DOM access.
 - `src/internal/`: implementation details unavailable through package subpaths.
 - `src/styles/`: self-contained styling based on CSS variables. Future components must work without a mandatory external stylesheet.
-- `src/types/`: shared TypeScript contracts.
-- `src/index.ts`: the sole public barrel. It currently exports nothing; approved APIs will be explicitly named exports.
+- `src/types/`: shared TypeScript contracts. `contracts.ts` contains focused chart-family unions and shared data, axis, tooltip, activation, and accessibility types. See [API type contracts](API_TYPE_CONTRACTS.md).
+- `src/index.ts`: the sole public barrel. It exports approved M01-T02 contracts using type-only named exports; no runtime chart components exist.
 - `playground/`: a Vite React application, excluded from the npm package.
 - `tests/`: foundation contract and accessible playground tests.
 - `scripts/verify-package.mjs`: verifies built artifacts and probes runtime externalization using the real build configuration.
@@ -35,3 +35,7 @@ Later approved tasks must implement dimension-aware SSR and deterministic initia
 ## Validation
 
 Vitest tests the foundation playground with React Testing Library and the package safety contract in Node. The package verification script checks actual output, typechecks generated declarations, rejects internal subpath imports, and builds a disposable React import probe because an empty entry alone cannot demonstrate externalization. CI runs formatting, linting, typechecking, tests, artifact verification, playground build, and dry-run packing for both React generations on Node 22/24.
+
+## Public contract milestone
+
+M01-T02 implements RSC-026/RSC-027 as types, with data-driven generic inference, exclusive single/multi-series mappings, scale-specific keys, and physical-axis typing for horizontal Bars. Compile-time tests use test-only generic declarations; they are not chart implementations. Dedicated source tests and package-root consumer verification exercise both JSX and props objects. React 18/19 type definitions now accompany the runtime CI matrix. All rendering, normalization, validation, interaction, and accessibility behavior remains deferred.

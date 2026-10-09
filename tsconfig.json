@@ -16,5 +16,6 @@
     "skipLibCheck": true,
     "types": ["node", "vite/client"]
   },
-  "include": ["src", "playground", "tests", "*.config.ts"]
+  "include": ["src", "playground", "tests", "*.config.ts"],
+  "exclude": ["tests/types"]
 }

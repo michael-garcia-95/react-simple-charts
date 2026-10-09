@@ -19,15 +19,43 @@ assert.deepEqual(Object.keys(await import('react-simple-charts')), []);
 await assert.rejects(import('react-simple-charts/internal'), {
   code: 'ERR_PACKAGE_PATH_NOT_EXPORTED',
 });
-const declarations = ts.createProgram(['dist/index.d.ts'], {
-  strict: true,
-  noEmit: true,
-  skipLibCheck: false,
-  types: [],
-  target: ts.ScriptTarget.ES2022,
-  module: ts.ModuleKind.NodeNext,
-  moduleResolution: ts.ModuleResolutionKind.NodeNext,
-});
+const declarations = ts.createProgram(
+  ['dist/index.d.ts', 'tests/types/contracts.tsx'],
+  {
+    strict: true,
+    exactOptionalPropertyTypes: true,
+    noUncheckedIndexedAccess: true,
+    jsx: ts.JsxEmit.ReactJSX,
+    noEmit: true,
+    skipLibCheck: false,
+    types: [],
+    target: ts.ScriptTarget.ES2022,
+    module: ts.ModuleKind.NodeNext,
+    moduleResolution: ts.ModuleResolutionKind.NodeNext,
+  },
+);
+const checker = declarations.getTypeChecker();
+const entrySource = declarations.getSourceFile('dist/index.d.ts');
+const moduleSymbol = checker.getSymbolAtLocation(entrySource);
+const exportedNames = checker
+  .getExportsOfModule(moduleSymbol)
+  .map((symbol) => symbol.name)
+  .sort();
+const sourceBarrel = ts.createSourceFile(
+  'src/index.ts',
+  await readFile('src/index.ts', 'utf8'),
+  ts.ScriptTarget.Latest,
+);
+const expectedNames = sourceBarrel.statements
+  .flatMap((statement) =>
+    ts.isExportDeclaration(statement) &&
+    statement.exportClause &&
+    ts.isNamedExports(statement.exportClause)
+      ? statement.exportClause.elements.map((element) => element.name.text)
+      : [],
+  )
+  .sort();
+assert.deepEqual(exportedNames, expectedNames);
 const diagnostics = ts.getPreEmitDiagnostics(declarations);
 assert.equal(
   diagnostics.length,

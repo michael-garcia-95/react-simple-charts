@@ -4,7 +4,7 @@ A lightweight, customizable React charting library built with TypeScript.
 
 ## Status
 
-M01-T01 establishes repository tooling only. No chart components or public APIs exist yet. The provisional package name is `react-simple-charts`; it remains private and is not ready for installation from npm.
+M01-T02 adds public TypeScript contracts to the repository foundation. No runtime chart components exist yet. See [API type contracts](docs/API_TYPE_CONTRACTS.md). The provisional package name is `react-simple-charts`; it remains private and is not ready for installation from npm.
 
 ## Development
 
@@ -23,6 +23,7 @@ Vite serves the React playground and prints its local URL. The page states the f
 | `npm run build:playground` | Static playground in `playground-dist/`                                   |
 | `npm run preview`          | Preview the built playground locally                                      |
 | `npm run typecheck`        | Strict TypeScript checking of source, playground, tests, and TS configs   |
+| `npm run test:types`       | Compile-time public API and JSX inference tests                           |
 | `npm run lint`             | ESLint, including React Hooks rules                                       |
 | `npm run format:check`     | Prettier check                                                            |
 | `npm run format`           | Apply Prettier                                                            |
@@ -35,7 +36,7 @@ Vite serves the React playground and prints its local URL. The page states the f
 
 The library targets React 18.2+ and React 19.x. Planned Line, Bar, Area, Pie, and Donut components will share infrastructure, use SVG rendering, and use d3-scale/d3-shape for pure calculations. Consumers supply React and React DOM as peers. Distribution is ESM-only, with declarations and a single root entry; future APIs use named exports. No internal subpaths are public.
 
-See [architecture](docs/ARCHITECTURE.md), [open decisions](docs/OPEN_DECISIONS.md), and [contributor rules](AGENTS.md). CI checks Node 22/24 with React 18.2/19. Component typing currently uses React 18 definitions to avoid inadvertently requiring React 19-only APIs.
+See [architecture](docs/ARCHITECTURE.md), [open decisions](docs/OPEN_DECISIONS.md), and [contributor rules](AGENTS.md). CI checks Node 22/24 with React 18.2/19. The baseline uses React 18 definitions; CI also checks matching React 19 definitions.
 
 ## License
 
