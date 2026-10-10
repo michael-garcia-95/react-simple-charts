@@ -1,0 +1,74 @@
+{
+  "name": "Deploy GitHub Pages",
+  "on": {
+    "workflow_dispatch": {}
+  },
+  "permissions": {},
+  "concurrency": {
+    "group": "github-pages",
+    "cancel-in-progress": false
+  },
+  "jobs": {
+    "build": {
+      "if": "${{ github.ref == 'refs/heads/main' }}",
+      "runs-on": "ubuntu-latest",
+      "permissions": {
+        "contents": "read"
+      },
+      "steps": [
+        {
+          "uses": "actions/checkout@v6",
+          "with": {
+            "ref": "${{ github.sha }}",
+            "persist-credentials": false
+          }
+        },
+        {
+          "uses": "actions/setup-node@v6",
+          "with": {
+            "node-version": "24",
+            "cache": "npm"
+          }
+        },
+        {
+          "uses": "actions/configure-pages@v5"
+        },
+        {
+          "run": "npm ci"
+        },
+        {
+          "run": "npm run build:site:pages"
+        },
+        {
+          "run": "node scripts/verify-site-build.mjs /react-simple-charts/"
+        },
+        {
+          "uses": "actions/upload-pages-artifact@v4",
+          "with": {
+            "path": "site-dist/"
+          }
+        }
+      ]
+    },
+    "deploy": {
+      "if": "${{ github.ref == 'refs/heads/main' }}",
+      "needs": "build",
+      "runs-on": "ubuntu-latest",
+      "permissions": {
+        "pages": "write",
+        "id-token": "write"
+      },
+      "environment": {
+        "name": "github-pages",
+        "url": "${{ steps.deployment.outputs.page_url }}"
+      },
+      "steps": [
+        {
+          "name": "Deploy Pages",
+          "id": "deployment",
+          "uses": "actions/deploy-pages@v4"
+        }
+      ]
+    }
+  }
+}
