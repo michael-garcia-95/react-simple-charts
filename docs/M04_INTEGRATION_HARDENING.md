@@ -145,7 +145,7 @@ shrink/grow transitions. It checks five independent measured SVGs, separate
 parent widths, bounds/overlap, tables, long legends/tooltips, ordinary Tab/Shift
 Tab entry/exit, all navigation keys, focus retained through hover, mouse and
 native Chromium emulated-touch input, synthetic pen/accessibility clicks,
-center-button/hole exclusion, filled Pie center, independent source replacement,
+center-button exclusion and a separately hit-tested exposed ring hole, filled Pie center, independent source replacement,
 empty/unusable states, constrained fixed SVGs, circular scaling/Donut alignment,
 console/page errors and representative axe scans. Reduced-motion/forced-colors
 media and enlarged text are emulations. Screenshots are inspected visually and

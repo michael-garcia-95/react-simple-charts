@@ -156,7 +156,9 @@ async function point(family, center = false) {
         let x, y;
         if (family === 'pie' || family === 'donut') {
           const radius = center
-            ? 0
+            ? family === 'donut'
+              ? (Math.min(v.width, v.height) / 2 - 8) * 0.5
+              : 0
             : (Math.min(v.width, v.height) / 2 - 8) *
               (family === 'donut' ? 0.8 : 0.6);
           x = v.width / 2 + Math.sin(Math.PI * 0.48) * radius;
@@ -367,6 +369,19 @@ try {
     .click();
   assert.equal(await events(), count);
   const center = await point('donut', true);
+  report.hole = await page.evaluate((p) => {
+    const el = document.elementFromPoint(p.x, p.y);
+    return {
+      tag: el.tagName.toLowerCase(),
+      centerContent: !!el.closest('[data-donut-center]'),
+      inspectionControl: !!el.closest('[role=button]'),
+    };
+  }, center);
+  assert.deepEqual(
+    report.hole,
+    { tag: 'svg', centerContent: false, inspectionControl: false },
+    'exposed ring hole must hit SVG, not the center button or sector',
+  );
   await page.mouse.click(center.x, center.y);
   assert.equal(await events(), count);
   const pieCenter = await point('pie', true);
