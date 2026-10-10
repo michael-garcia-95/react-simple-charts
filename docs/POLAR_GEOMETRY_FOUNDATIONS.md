@@ -136,3 +136,11 @@ interaction and responsive lifecycle remain outside pure core. No geometry code
 or public radius/angle API changes. DonutChart runtime stays deferred to M04-T03.
 See [PieChart](PIE_CHART.md) for label-fitting, tiny-sector pointer, tooltip,
 accessibility and SSR policies. Earlier text above preserves the M04-T01 boundary.
+
+## M04-T03 subsequent integration
+
+[DonutChart](DONUT_CHART.md) is now public using the same polar renderer and
+inspection implementation. The pure geometry engine is unchanged. Pie keeps
+filled sectors, original labels, colors, tables, payloads and interaction; only
+Donut accepts ratio/center content and uses ring-aware presentation. Earlier
+milestone statements above preserve historical task boundaries.

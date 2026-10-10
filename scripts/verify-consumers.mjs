@@ -80,7 +80,7 @@ const browser = await chromium.launch({
   args: ['--no-sandbox'],
 });
 report.browser = browser.version();
-const sample = `import { LineChart, AreaChart, BarChart, PieChart } from 'react-simple-charts';
+const sample = `import { LineChart, AreaChart, BarChart, PieChart, DonutChart } from 'react-simple-charts';
 const data = [{quarter:'Q1',value:12},{quarter:'Q2',value:24},{quarter:'Q3',value:18},{quarter:'Q4',value:32}];
 export default function Sample() {return <main><h1>Packaged public LineChart</h1>
 <section id="explicit"><LineChart data={data} xKey="quarter" yKey="value" width={640} accessibility={{label:'Explicit',description:'Quarterly values',dataTable:'visible'}} /></section>
@@ -101,15 +101,20 @@ export default function Sample() {return <main><h1>Packaged public LineChart</h1
 <section id="pie-single"><PieChart width={480} data={[{name:'Complete',value:1}]} nameKey="name" valueKey="value" accessibility={{label:'Single Pie'}}/></section>
 <section id="pie-negative"><PieChart width={480} data={[{name:'Positive',value:1},{name:'Negative',value:-2}]} nameKey="name" valueKey="value" accessibility={{label:'Unavailable Pie',dataTable:'visible'}}/></section>
 <section id="pie-responsive" style={{width:'80%'}}><PieChart data={data} nameKey="quarter" valueKey="value" accessibility={{label:'Responsive Pie'}}/></section>
+<section id="donut-explicit"><DonutChart width={480} data={[{name:'Same',value:1},{name:'Zero',value:0},{name:'Missing',value:null},{name:'Same',value:3}]} nameKey="name" valueKey="value" centerContent={<span>Allocation</span>} showLabels accessibility={{label:'Explicit Donut',dataTable:'visible'}}/></section>
+<section id="donut-single"><DonutChart width={480} data={[{name:'Complete',value:1}]} nameKey="name" valueKey="value" innerRadiusRatio={0.8} centerContent={0} accessibility={{label:'Single Donut'}}/></section>
+<section id="donut-negative"><DonutChart width={480} data={[{name:'Negative',value:-2}]} nameKey="name" valueKey="value" centerContent="Must not appear" accessibility={{label:'Unavailable Donut',dataTable:'visible'}}/></section>
+<section id="donut-responsive" style={{width:'80%'}}><DonutChart data={data} nameKey="quarter" valueKey="value" innerRadiusRatio={0.4} centerContent={<strong>Responsive allocation</strong>} accessibility={{label:'Responsive Donut'}}/></section>
 <Interactive/></main>;}
 import Interactive from './Interactive';`;
 const interactive = `'use client';
-import {useState} from 'react'; import {LineChart, AreaChart, BarChart, PieChart} from 'react-simple-charts';
+import {useState} from 'react'; import {LineChart, AreaChart, BarChart, PieChart, DonutChart} from 'react-simple-charts';
 function Inspection({area=false}:{area?:boolean}){const Chart=area?AreaChart:LineChart;const [result,setResult]=useState(''); const [count,setCount]=useState(0);return <section id={area?'area-interactive':'interactive'}><Chart width={640} data={[{x:'A',y:1},{x:'A',y:2}]} xKey="x" yKey="y" onDataActivate={p=>{setCount(n=>n+1);setResult(p.index+':'+p.inputMethod);}} accessibility={{label:area?'Interactive Area':'Interactive'}}/><output>{result}:{count}</output></section>;}
 const pieData=[{name:'Same',value:1},{name:'Same',value:1}];
 function PieInspection(){const [result,setResult]=useState('');const [count,setCount]=useState(0);return <section id="pie-interactive"><PieChart width={480} data={pieData} nameKey="name" valueKey="value" onDataActivate={p=>{setCount(n=>n+1);setResult(p.index+':'+p.inputMethod);}} accessibility={{label:'Interactive Pie'}}/><output>{result}:{count}</output></section>;}
+function DonutInspection(){const [result,setResult]=useState('');const [count,setCount]=useState(0);const [center,setCenter]=useState(0);return <section id="donut-interactive"><DonutChart width={480} data={pieData} nameKey="name" valueKey="value" centerContent={<button onClick={()=>setCenter(n=>n+1)}>Details {center}</button>} onDataActivate={p=>{setCount(n=>n+1);setResult(p.index+':'+p.inputMethod);}} accessibility={{label:'Interactive Donut'}}/><output>{result}:{count}</output></section>;}
 function BarInspection({horizontal=false}:{horizontal?:boolean}){const [result,setResult]=useState('');const [count,setCount]=useState(0);return <section id={horizontal?'bar-horizontal-interactive':'bar-interactive'}><BarChart width={640} orientation={horizontal?'horizontal':'vertical'} data={[{x:'A',y:-2},{x:'A',y:0}]} xKey="x" yKey="y" onDataActivate={p=>{setCount(n=>n+1);setResult(p.index+':'+p.inputMethod);}} accessibility={{label:'Interactive Bar'}}/><output>{result}:{count}</output></section>;}
-export default function Interactive(){return <><Inspection/><Inspection area/><BarInspection/><BarInspection horizontal/><PieInspection/><Narrow/></>;}
+export default function Interactive(){return <><Inspection/><Inspection area/><BarInspection/><BarInspection horizontal/><PieInspection/><DonutInspection/><Narrow/></>;}
 function Narrow(){const [state,setState]=useState('ready');const data=state==='empty'?[]:[{x:state==='replacement'?'Replacement':'NorthAmericaEnterpriseSubscriptions',y:-2},{x:'Repeated',y:0}];return <section id="integrated-narrow"><button onClick={()=>setState('empty')}>Empty integrated charts</button><button onClick={()=>setState('replacement')}>Replace integrated data</button>{[LineChart,AreaChart,BarChart].map((Chart,i)=><div key={i} data-narrow={i} style={{width:320}}><Chart data={data} xKey="x" yKey="y" height={state==='unusable'?0:280} accessibility={{label:'Narrow '+i,dataTable:'visible'}}/></div>)}<button onClick={()=>setState('unusable')}>Unusable integrated charts</button></section>;}`;
 const tsconfig = {
   compilerOptions: {
@@ -209,6 +214,8 @@ async function start(dir, kind, port, major) {
         });
       };
     });
+    let donutBefore;
+    let donutResponsiveBefore;
     let pieBefore;
     let pieResponsiveBefore;
     let barBefore;
@@ -220,6 +227,20 @@ async function start(dir, kind, port, major) {
     if (kind === 'next') {
       const staticPage = await browser.newPage({ javaScriptEnabled: false });
       await staticPage.goto(url);
+      donutBefore = await staticPage.locator('#donut-explicit').innerHTML();
+      donutResponsiveBefore = await staticPage
+        .locator('#donut-responsive')
+        .innerHTML();
+      assert.equal(
+        await staticPage.locator('#donut-negative [data-donut-center]').count(),
+        0,
+      );
+      assert.equal(
+        await staticPage
+          .locator('#donut-single [data-donut-center]')
+          .textContent(),
+        '0',
+      );
       pieBefore = await staticPage
         .locator('#pie-explicit svg')
         .evaluate((el) => el.outerHTML);
@@ -262,7 +283,7 @@ async function start(dir, kind, port, major) {
           .evaluate((el) => getComputedStyle(el).height),
         '280px',
       );
-      assert.equal(await staticPage.getByRole('table').count(), 26);
+      assert.equal(await staticPage.getByRole('table').count(), 31);
       await file(
         dir,
         'evidence/before.html',
@@ -273,7 +294,17 @@ async function start(dir, kind, port, major) {
     await page.goto(url);
     await page.waitForFunction(() => window.__observers.length >= 2);
     assert.equal(await page.locator('#responsive svg').count(), 0);
-    assert.equal(await page.getByRole('table').count(), 26);
+    assert.equal(await page.getByRole('table').count(), 31);
+    if (donutBefore)
+      assert.equal(
+        await page.locator('#donut-explicit').innerHTML(),
+        donutBefore,
+      );
+    if (donutResponsiveBefore)
+      assert.equal(
+        await page.locator('#donut-responsive').innerHTML(),
+        donutResponsiveBefore,
+      );
     if (pieBefore)
       assert.equal(
         await page.locator('#pie-explicit svg').evaluate((el) => el.outerHTML),
@@ -389,10 +420,27 @@ async function start(dir, kind, port, major) {
       '#bar-interactive',
       '#bar-horizontal-interactive',
       '#pie-interactive',
+      '#donut-interactive',
     ]) {
+      const ringPoint = async (side) => {
+        await page.locator(`${section} svg`).scrollIntoViewIfNeeded();
+        return page.locator(`${section} svg`).evaluate((el, side) => {
+          const m = el.getScreenCTM();
+          return { x: m.a * (240 + side * 105.6) + m.e, y: m.d * 140 + m.f };
+        }, side);
+      };
+      const clickFirst = async () => {
+        if (section === '#donut-interactive') {
+          const p = await ringPoint(1);
+          await page.mouse.click(p.x, p.y);
+        } else await page.locator(`${section} [role=button]`).first().click();
+      };
       await page.locator(`${section} [role=button]`).first().focus();
-      if (section === '#pie-interactive') {
-        await page.locator(`${section} [role=button]`).last().hover();
+      if (section === '#pie-interactive' || section === '#donut-interactive') {
+        if (section === '#donut-interactive') {
+          const p = await ringPoint(-1);
+          await page.mouse.move(p.x, p.y);
+        } else await page.locator(`${section} [role=button]`).last().hover();
         assert.equal(
           await page
             .locator(`${section} [role=button]`)
@@ -414,7 +462,7 @@ async function start(dir, kind, port, major) {
         await page.locator(`${section} output`).textContent(),
         '1:keyboard:1',
       );
-      await page.locator(`${section} [role=button]`).first().click();
+      await clickFirst();
       assert.equal(
         await page.locator(`${section} output`).textContent(),
         '0:pointer:2',
@@ -423,10 +471,17 @@ async function start(dir, kind, port, major) {
         .locator(`${section} [role=button]`)
         .last()
         .scrollIntoViewIfNeeded();
-      const hit = await page
+      let hit = await page
         .locator(`${section} [role=button]`)
         .last()
         .boundingBox();
+      if (section === '#donut-interactive') {
+        const p = await page.locator(`${section} svg`).evaluate((el) => {
+          const m = el.getScreenCTM();
+          return { x: m.a * (240 - 105.6) + m.e, y: m.d * 140 + m.f };
+        });
+        hit = { x: p.x, y: p.y, width: 0, height: 0 };
+      }
       assert(hit);
       await page.touchscreen.tap(hit.x + hit.width / 2, hit.y + hit.height / 2);
       await page.waitForFunction(
@@ -454,7 +509,7 @@ async function start(dir, kind, port, major) {
           document.querySelector(selector)?.textContent === expected,
         { selector: `${section} output`, expected: '1:keyboard:4' },
       );
-      await page.locator(`${section} [role=button]`).first().click();
+      await clickFirst();
       await page.waitForFunction(
         ({ selector, expected }) =>
           document.querySelector(selector)?.textContent === expected,
@@ -695,6 +750,68 @@ async function start(dir, kind, port, major) {
           ),
         );
     }
+    await page.locator('#donut-responsive svg').waitFor();
+    for (const section of [
+      '#donut-explicit',
+      '#donut-single',
+      '#donut-responsive',
+      '#donut-interactive',
+    ]) {
+      const bounds = await page.locator(section).evaluate((el) => {
+        const svg = el.querySelector('svg'),
+          center = el.querySelector('[data-donut-center]');
+        const a = svg.getBoundingClientRect(),
+          b = center.getBoundingClientRect();
+        return {
+          dx: Math.abs(a.x + a.width / 2 - b.x - b.width / 2),
+          dy: Math.abs(a.y + a.height / 2 - b.y - b.height / 2),
+        };
+      });
+      assert(bounds.dx < 1 && bounds.dy < 1, section + ' center alignment');
+    }
+    const interactiveDonut = page.locator('#donut-interactive');
+    const previous = await interactiveDonut.locator('output').textContent();
+    await interactiveDonut.getByRole('button', { name: 'Details 0' }).click();
+    assert.equal(
+      await interactiveDonut.locator('output').textContent(),
+      previous,
+    );
+    await interactiveDonut.getByRole('button', { name: 'Details 1' }).focus();
+    await page.keyboard.press('Shift+Tab');
+    assert.equal(
+      await page.evaluate(() => document.activeElement?.tagName),
+      'path',
+    );
+    await page.keyboard.press('Tab');
+    assert.equal(
+      await page.evaluate(() => document.activeElement?.textContent),
+      'Details 1',
+    );
+    const emptyHole = await page.locator('#donut-single svg').boundingBox();
+    await page.mouse.click(
+      emptyHole.x + emptyHole.width / 2,
+      emptyHole.y + emptyHole.height / 2,
+    );
+    assert.equal(
+      await interactiveDonut.locator('output').textContent(),
+      previous,
+    );
+    await page.setViewportSize({ width: 650, height: 1200 });
+    await page.waitForTimeout(100);
+    const resized = await page.locator('#donut-responsive').evaluate((el) => {
+      const svg = el.querySelector('svg').getBoundingClientRect(),
+        center = el
+          .querySelector('[data-donut-center]')
+          .getBoundingClientRect();
+      return (
+        Math.abs(svg.x + svg.width / 2 - center.x - center.width / 2) +
+        Math.abs(svg.y + svg.height / 2 - center.y - center.height / 2)
+      );
+    });
+    assert(resized < 1);
+    await page
+      .locator('#donut-explicit')
+      .screenshot({ path: join(dir, 'evidence/donut-center.png') });
     const ax = await page.locator('main').ariaSnapshot();
     assert(ax.includes('rowheader "Q4"') && ax.includes('Responsive — data'));
     await file(dir, 'evidence/accessibility.txt', ax);
@@ -715,7 +832,7 @@ async function start(dir, kind, port, major) {
       await page.waitForFunction(() => window.__observers.length >= 2);
       await page.evaluate(() => window.__release());
       await page.locator('#responsive svg').waitFor();
-      assert.equal(await page.getByRole('table').count(), 26);
+      assert.equal(await page.getByRole('table').count(), 31);
       assert.deepEqual(errors, []);
     } else {
       await page.evaluate(() => window.__unmount());
@@ -736,10 +853,11 @@ async function start(dir, kind, port, major) {
         .locator('[id]')
         .evaluateAll((elements) => elements.map((el) => el.id));
       assert.equal(new Set(rootIds).size, rootIds.length);
-      assert.equal(await page.locator('table').count(), 5);
+      assert.equal(await page.locator('table').count(), 7);
       await page.evaluate(() => window.__release());
       await page.locator('#root4 svg').waitFor();
-      assert.equal(await page.locator('svg').count(), 5);
+      await page.locator('#root6 svg').waitFor();
+      assert.equal(await page.locator('svg').count(), 7);
       assert.deepEqual(errors, []);
       await file(dir, 'evidence/separate-roots.html', rootsBefore);
     }
@@ -806,7 +924,7 @@ try {
         `import assert from 'node:assert/strict';
 import * as api from 'react-simple-charts';
 import {readFileSync} from 'node:fs';
-assert.deepEqual(Object.keys(api).sort(), ['AreaChart','BarChart','LineChart','PieChart']); assert.equal(typeof api.LineChart,'function'); assert.equal(typeof api.AreaChart,'function'); assert.equal(typeof api.BarChart,'function'); assert.equal(typeof api.PieChart,'function');
+assert.deepEqual(Object.keys(api).sort(), ['AreaChart','BarChart','DonutChart','LineChart','PieChart']); assert.equal(typeof api.LineChart,'function'); assert.equal(typeof api.AreaChart,'function'); assert.equal(typeof api.BarChart,'function'); assert.equal(typeof api.PieChart,'function'); assert.equal(typeof api.DonutChart,'function');
 const p=JSON.parse(readFileSync('node_modules/react-simple-charts/package.json'));
 assert.equal(p.private,true); assert.deepEqual(Object.keys(p.exports),['.']);
 assert(p.peerDependencies.react && p.peerDependencies['react-dom']);
@@ -867,9 +985,9 @@ for(const path of ['src/internal/RenderingProbe','dist/index.js','internal']) { 
           'roots-server.mjs',
           `import {createElement,StrictMode} from 'react';
 import {renderToString} from 'react-dom/server';
-import {LineChart,AreaChart,BarChart,PieChart} from 'react-simple-charts';
+import {LineChart,AreaChart,BarChart,PieChart,DonutChart} from 'react-simple-charts';
 import {writeFileSync} from 'node:fs';
-const parts=['alpha-','beta-','gamma-','pie-explicit-','pie-responsive-'].map((prefix,i)=>'<div id="root'+i+'">'+renderToString(createElement(StrictMode,null,createElement([LineChart,AreaChart,BarChart,PieChart,PieChart][i],{...(i===4?{}:{width:640}),data:[{x:new Date('2026-01-01T00:00:00Z'),y:1}],...(i<3?{xKey:'x',yKey:'y'}:{nameKey:'x',valueKey:'y'})})),{identifierPrefix:prefix})+'</div>');
+const parts=['alpha-','beta-','gamma-','pie-explicit-','pie-responsive-','donut-explicit-','donut-responsive-'].map((prefix,i)=>'<div id="root'+i+'">'+renderToString(createElement(StrictMode,null,createElement([LineChart,AreaChart,BarChart,PieChart,PieChart,DonutChart,DonutChart][i],{...([4,6].includes(i)?{}:{width:640}),...(i>=5?{centerContent:createElement("span",null,"Allocation")}: {}),data:[{x:new Date('2026-01-01T00:00:00Z'),y:1}],...(i<3?{xKey:'x',yKey:'y'}:{nameKey:'x',valueKey:'y'})})),{identifierPrefix:prefix})+'</div>');
 writeFileSync('roots.html','<!doctype html><html lang="en"><head><title>Separate roots</title><link rel="icon" href="data:,"></head><body>'+parts.join('')+'<script type="module" src="/roots.tsx"></script></body></html>');`,
         );
         await run('node', ['roots-server.mjs'], dir);
@@ -877,8 +995,8 @@ writeFileSync('roots.html','<!doctype html><html lang="en"><head><title>Separate
           dir,
           'roots.tsx',
           `import {StrictMode} from 'react'; import {hydrateRoot} from 'react-dom/client';
-import {LineChart,AreaChart,BarChart,PieChart} from 'react-simple-charts';
-['alpha-','beta-','gamma-','pie-explicit-','pie-responsive-'].forEach((identifierPrefix,i)=>{const Chart=[LineChart,AreaChart,BarChart][i];hydrateRoot(document.getElementById('root'+i)!,<StrictMode>{i<3 && Chart ? <Chart width={640} data={[{x:new Date('2026-01-01T00:00:00Z'),y:1}]} xKey="x" yKey="y"/> : <PieChart {...(i===4?{}:{width:640})} data={[{x:new Date('2026-01-01T00:00:00Z'),y:1}]} nameKey="x" valueKey="y"/>}</StrictMode>,{identifierPrefix,onRecoverableError: error=>console.error(error)});});`,
+import {LineChart,AreaChart,BarChart,PieChart,DonutChart} from 'react-simple-charts';
+['alpha-','beta-','gamma-','pie-explicit-','pie-responsive-','donut-explicit-','donut-responsive-'].forEach((identifierPrefix,i)=>{const Chart=[LineChart,AreaChart,BarChart][i];hydrateRoot(document.getElementById('root'+i)!,<StrictMode>{i<3 && Chart ? <Chart width={640} data={[{x:new Date('2026-01-01T00:00:00Z'),y:1}]} xKey="x" yKey="y"/> : i>=5 ? <DonutChart {...(i===6?{}:{width:640})} centerContent={<span>Allocation</span>} data={[{x:new Date('2026-01-01T00:00:00Z'),y:1}]} nameKey="x" valueKey="y"/> : <PieChart {...(i===4?{}:{width:640})} data={[{x:new Date('2026-01-01T00:00:00Z'),y:1}]} nameKey="x" valueKey="y"/>}</StrictMode>,{identifierPrefix,onRecoverableError: error=>console.error(error)});});`,
         );
         await file(
           dir,
@@ -928,6 +1046,10 @@ import {LineChart,AreaChart,BarChart,PieChart} from 'react-simple-charts';
         assert(
           appServer.includes('dist/index.js#PieChart') ||
             /dist\/index\.js["'],["']PieChart/.test(appServer),
+        );
+        assert(
+          appServer.includes('dist/index.js#DonutChart') ||
+            /dist\/index\.js["'],["']DonutChart/.test(appServer),
         );
         await file(
           dir,

@@ -1,3 +1,84 @@
+# Packaged public DonutChart — M04-T03
+
+The genuine private 0.0.0 tarball now exposes exactly LineChart, AreaChart,
+BarChart, PieChart and DonutChart. The public Donut interface and all approved type
+exports remain unchanged. No runtime dependency or subpath is added. Fresh actual
+archives are independently installed, and installed ESM bytes are compared to
+the packed build; no source aliases or workspace links substitute for the package.
+
+| Consumer            | React / DOM | Strict package types | Production / Chromium | Axe          |
+| ------------------- | ----------- | -------------------- | --------------------- | ------------ |
+| Vite 8.3.4          | 18.2.0      | Pass                 | Pass                  | 0 violations |
+| Vite 8.3.4          | 19.3.0      | Pass                 | Pass                  | 0 violations |
+| Next 14.2.35        | 18.2.0      | Pass                 | App and Pages pass    | 0 violations |
+| Next 16.4.0 Webpack | 19.3.0      | Pass                 | App and Pages pass    | 0 violations |
+
+Executed versions: Node 24.19.0, npm 11.9.0, Chromium 151.0.7922.173,
+Playwright Core 1.64.0 and axe Playwright 4.13.0. TypeScript is 6.0.3 except
+Next 14 (5.4.5). React 18 types are 18.3.31 / DOM 18.3.7; React 19 types are
+19.3.0 / DOM 19.3.0. Node types are 24.19.1 except Next 14 (20.19.0).
+Next uses its standard skipLibCheck for application dependencies; the separate
+installed-package declaration compilation keeps skipLibCheck=false. No library
+contract is weakened to hide framework declaration conflicts.
+
+The runner preserves all Line/Area/Bar/Pie scenarios. New Donut cases include
+true full rings, default/custom ratios, visible/hidden complete tables, zero/missing
+rows, negative unavailable states, numeric-zero/static/interactive center content,
+explicit SSR and responsive hydration. Both Next App and Pages routes use the
+actual installed package; App Router server code references the genuine Donut
+client export. Main fixtures contain 31 tables. Vite adds two Donut hydration
+roots, bringing the separate prefixed Strict Mode roots to seven across all five
+families. Initial server/client DOM matches before native responsive measurement;
+IDs and description relationships are unique and resolved.
+
+Browser assertions cover ring keyboard, mouse and native touch activation,
+compatibility-click deduplication, standalone accessibility clicks, hover/focus
+roving entry, actual center bounds, resize alignment, center-button keyboard order
+and nonactivation, and empty-hole clicks. Console/page/hydration errors fail the
+suite; none occurred. Four representative main-page axe scans reported zero
+violations. These are executed Chromium checks, not full WCAG certification.
+
+Source validation retains all 810 baseline tests plus 120 new Donut tests:
+**930 passing tests across 44 files**. All 120 Donut tests also pass separately.
+The existing 89 Pie tests run unchanged. Typecheck, public type contracts, lint,
+formatting, package verification, playground build, dry-run pack and diff checks
+pass locally. The Node 22/24 × React 18.2/19 GitHub matrix is a separate final-HEAD
+review gate; local results do not establish its outcome.
+
+| Genuine artifact    |   Bytes |
+| ------------------- | ------: |
+| Tarball (six files) |  80,124 |
+| ESM                 | 106,242 |
+| ESM gzip            |  23,451 |
+
+The real-playground `node scripts/verify-donut.mjs` audit separately checks
+320/480/1200px layouts, ordinary/full-ring/custom-ratio/duplicate/excluded/negative/
+empty/narrow/non-square/tiny-hole/paired/all-five examples. Actual browser bounds
+establish center alignment and containment after resizing and CSS shrinking;
+ring hit tests and empty-center clicks establish hole nonactivation. It also
+executes native Chromium touch, synthetic pen, keyboard and standalone
+assistive-style clicks, and center-button Tab/Shift+Tab navigation. Three focused
+axe scans report zero violations; console/page errors are absent. Captured
+screenshots were inspected for shapes, empty holes, center placement, button
+exposure, thin-ring label omission, visible ring labels at ratio 0.4, wrapping,
+focus, tooltip, negative state and matched Pie/Donut shares.
+
+Evidence and npm cache remain ignored under `work/consumers/` and
+`work/visual/donut/`; generated screenshots are excluded from the package.
+Reproduce with `node scripts/verify-consumers.mjs`, then a running Vite playground
+and `node scripts/verify-donut.mjs`. Optional RSC_BROWSER_PATH selects Chromium;
+RSC_SMOKE_URL selects the audit's playground URL.
+
+Accepted limitations: conservative estimated label fitting, difficult tiny-slice
+pointer targets, approximate tooltip vertical placement, clipped oversized center
+content, host CSS/CSP interactions and large SVG DOM cost. No manual screen-reader,
+physical-device, Firefox/WebKit, Turbopack or full WCAG coverage is claimed.
+Existing Rolldown client-directive and Next 14 configuration warnings remain;
+actual emitted boundaries, builds and browser checks pass. No publication,
+deployment, release, merge or M04-T04 work is included.
+
+The following sections preserve historical evidence.
+
 # Packaged public PieChart — M04-T02
 
 The genuine private 0.0.0 tarball exports exactly LineChart, AreaChart, BarChart

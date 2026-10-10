@@ -1,7 +1,7 @@
 # Public TypeScript contracts — M01-T02
 
 RSC-026/RSC-027 contracts are preserved. LineChart is a public runtime component
-as of M03-T02; AreaChart is public as of M03-T03. BarChart is public as of M03-T04; PieChart is public as of M04-T02; DonutChart remains type-only.
+as of M03-T02; AreaChart is public as of M03-T03. BarChart is public as of M03-T04; PieChart is public as of M04-T02; DonutChart is public as of M04-T03.
 See [LineChart behavior](LINE_CHART.md) for runnable examples and runtime defaults. Import every public type from the package root.
 
 ```ts
@@ -75,8 +75,7 @@ non-distributive conditional to reject partially incompatible unions:
 
 `NoInfer<T>` on field mappings and callback contexts keeps inference anchored to
 `data`. This prevents an invalid field or callback from influencing the inferred
-record type. The real LineChart, AreaChart and BarChart imports demonstrate JSX inference; PieChart also uses its actual runtime import; Donut uses
-compile-only declarations. `satisfies ChartProps<Record>` is convenient
+record type. The real LineChart, AreaChart and BarChart imports demonstrate JSX inference; PieChart also uses its actual runtime import; Donut also uses its actual runtime import. `satisfies ChartProps<Record>` is convenient
 for validating reusable prop objects; plain object literals may widen string
 keys before assignment, so annotate them or use `satisfies` at construction.
 
@@ -180,18 +179,18 @@ data alternative. LineChart and AreaChart implement source tables and roving poi
 
 ## Intended defaults and runtime responsibilities
 
-This section began as M01-T02 implementation intentions. Cartesian defaults are implemented in M03 and Pie defaults in M04-T02; Donut presentation defaults remain intentions:
+This section began as M01-T02 implementation intentions. Cartesian defaults are implemented in M03 and Pie defaults in M04-T02; Donut defaults are implemented in M04-T03:
 width `100%`, height `280` (280px), animation disabled for LineChart, axes visible, grid enabled for
 Cartesian charts, legend enabled, tooltip enabled (Line/Area shared, Bar item, Pie/Donut segment inspection), category
 x-scale, vertical Bar orientation, segment labels hidden, accessible table
-visually hidden, Donut inner radius ratio `0.6`. Cartesian palette fallbacks, automatic series labels, default formatting, accessible naming and pure tick generation are implemented; see the public chart documents. Pie presentation is documented in [PieChart](PIE_CHART.md); Donut presentation remains open. No default is encoded by making a property required.
+visually hidden, Donut inner radius ratio `0.6`. Cartesian palette fallbacks, automatic series labels, default formatting, accessible naming and pure tick generation are implemented; see the public chart documents. Pie presentation is documented in [PieChart](PIE_CHART.md); Donut presentation is documented in [DonutChart](DONUT_CHART.md). No default is encoded by making a property required.
 
 Runtime must validate dimensions, ratios, finite numbers, min/max ordering,
 tick counts, empty data/series, and label/color resolution. Null/undefined numeric
 fields are valid mappings, not valid numbers for inspection: emitted datum values
 are numbers, and runtime must decide how missing/invalid records are handled.
 Cartesian signed values, ordering, scale domains, date validity, normalization and missing categories are implemented in the pure engine; this file is not its algorithm specification. M04-T01 implements pure polar negative rejection, zero-total states and exact percentages. Inputs are preserved in payloads. LineChart runtime normalization and rendering
-now implement these Cartesian responsibilities; PieChart now implements the polar presentation responsibilities; Donut rendering remains deferred.
+now implement these Cartesian responsibilities; PieChart now implements the polar presentation responsibilities; Donut implements ring presentation in M04-T03.
 
 TypeScript is structurally typed: excess-property checks protect fresh literals
 and JSX, but do not make object types exact. Extra fields on previously assigned
@@ -245,3 +244,12 @@ Labels/values remain data-driven NoInfer mappings. Percentage remains 0–100 an
 source segmentId remains original index. Default labels are off; legend/tooltips
 are on. Root runtime exports are exactly LineChart, AreaChart, BarChart, PieChart.
 DonutChart remains a type-only contract. See [PieChart](PIE_CHART.md).
+
+## M04-T03 public DonutChart
+
+The actual root import now exercises generic Donut JSX through both source and
+installed declarations. DonutChartProps<T> still extends PieChartProps<T> with
+only optional numeric innerRadiusRatio and ReactNode centerContent. Runtime ratio
+validation belongs to the pure engine; omitted defaults to 0.6. All five runtime
+chart exports retain their approved type exports and root-only ESM contract.
+See [DonutChart](DONUT_CHART.md).

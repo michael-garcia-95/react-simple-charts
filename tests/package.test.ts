@@ -9,10 +9,11 @@ const pkg = JSON.parse(
 );
 
 describe('package safety contract', () => {
-  it('exports exactly the four approved runtime charts in deterministic order', () => {
+  it('exports exactly the five approved runtime charts in deterministic order', () => {
     expect(Object.keys(api).sort()).toEqual([
       'AreaChart',
       'BarChart',
+      'DonutChart',
       'LineChart',
       'PieChart',
     ]);
