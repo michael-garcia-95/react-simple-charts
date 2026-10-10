@@ -24,8 +24,8 @@ describe('rendering proof playground', () => {
     expect(
       screen.getByRole('img', { name: /Responsive quarterly sample/ }),
     ).toBeVisible();
-    expect(screen.getAllByRole('table')).toHaveLength(68);
-    expect(screen.getByText(/Planned chart families:/)).toHaveTextContent(
+    expect(screen.getAllByRole('table')).toHaveLength(73);
+    expect(screen.getByText(/Implemented chart families:/)).toHaveTextContent(
       'Line, Bar, Area, Pie, and Donut',
     );
   });

@@ -3,7 +3,7 @@
 The MIT copyright-holder decision is finalized: the Development Lead approved Michael Garcia. `LICENSE` includes Copyright (c) 2026 Michael Garcia.
 
 - Approve publication, final package name, initial version, and release process. Package remains private at version 0.0.0.
-- RSC-026/RSC-027 public prop and data contracts are implemented in M01-T02; see [API type contracts](API_TYPE_CONTRACTS.md). M02-T01 implements internal normalization and classification; see [data normalization](DATA_NORMALIZATION.md). M02-T04 implements internal Cartesian missing-point gaps and zero-baseline geometry. Cartesian invalid-data presentation, accessible naming and interaction are implemented in M03; M04-T01 implements internal negative rejection and explicit empty zero-total polar geometry; M04-T02 implements public Pie presentation; Donut presentation remains deferred. M02-T02 implements internal domain/scale/tick policies; see [scales and domains](SCALES_AND_DOMAINS.md).
+- RSC-026/RSC-027 public prop and data contracts are implemented in M01-T02; see [API type contracts](API_TYPE_CONTRACTS.md). M02-T01 implements internal normalization and classification; see [data normalization](DATA_NORMALIZATION.md). M02-T04 implements internal Cartesian missing-point gaps and zero-baseline geometry. Cartesian invalid-data presentation, accessible naming and interaction are implemented in M03; M04-T01 implements internal negative rejection and explicit empty zero-total polar geometry; M04-T02 implements public Pie presentation; M04-T03 implements public Donut presentation. M02-T02 implements internal domain/scale/tick policies; see [scales and domains](SCALES_AND_DOMAINS.md).
 - M01-T03 proves explicit SVG SSR and responsive accessible placeholders with a 280px default, stable IDs, observer cleanup, and jsdom hydration. M01-T04 completes packaged Vite/Next consumer verification using a temporary probe; M03 implements positive finite explicit dimensions and accessible responsive/local-time placeholders; see [rendering compatibility](RENDERING_COMPATIBILITY.md).
 - M01-T03 proves self-contained inline styles and CSS variable fallbacks, visually hidden tables, and focus outlines. Public token API approval, strict CSP support and arbitrary host-style interactions remain open; public charts currently expose an outline on focus and keyboard target stroke.
 - Empty/unavailable messages and local-time client placeholders are implemented. Richer diagnostic UI, future spacing changes and safe rescaling for numerical spans that overflow D3 arithmetic remain design decisions. The M02-T02 rules for duplicate category identity, valid-X value eligibility, zero baselines, bounds, and constant/fallback domains are documented implementation choices, not unresolved engine behavior.
@@ -11,7 +11,7 @@ The MIT copyright-holder decision is finalized: the Development Lead approved Mi
 - Approve a broader browser support policy for the implemented Cartesian components. Current JS target is ES2022.
 - React 18/19 type-definition coverage is added for M01-T02; M01-T03 adds internal SSR, hydration, lifecycle, accessibility, and styling tests to the existing matrix. Public Cartesian runtime components have genuine consumer integration and interaction tests; real screen-reader review and broader browser validation remain open.
 
-Milestone 01 and Milestone 02's M02-T01 through M02-T04 internal foundation tasks are complete and merged. Normalization, scales, layout, and geometry remain internal. M03-T01 provides internal SVG rendering; LineChart, AreaChart and BarChart are public; PieChart is subsequently public in M04-T02; Donut remains deferred.
+Milestone 01 and Milestone 02's M02-T01 through M02-T04 internal foundation tasks are complete and merged. Normalization, scales, layout, and geometry remain internal. M03-T01 provides internal SVG rendering; LineChart, AreaChart and BarChart are public; PieChart is subsequently public in M04-T02; Donut is public as of M04-T03.
 
 M02-T03 documents bounded margin estimates, greedy tick selection, single-line formatting failures, hidden-axis title suppression, horizontal Bar mappings, and independent value grids in [layout and axes](LAYOUT_AND_AXES.md). These engine policies are explicit; future decisions concern final renderer font/title styling and fitting, diagnostic presentation, local-time SSR strategy, and final renderer visual spacing.
 
@@ -72,7 +72,7 @@ open. No public PieChart/DonutChart renderer is approved by this task.
 
 ## M04-T02 implemented Pie policies
 
-PieChart is public; DonutChart remains deferred to M04-T03. The source-ordered
+As of M04-T02, PieChart was public and DonutChart remained deferred to M04-T03. The source-ordered
 static legend includes drawable positive slices; zero/excluded rows remain in the
 complete table. Labels default off and use conservative interior estimates without
 collision detection. Colors resolve by original source index. Percentages display
@@ -105,3 +105,13 @@ screen-reader/broader browser review, strict CSP, performance budgets and future
 measured label placement remain open. M04-T04 integration hardening, interactive
 legends, new radius/angle controls, nested rings, publication and release remain
 deferred. No merge approval is implied.
+
+## M04-T04 integration and next-phase decisions
+
+Five-family integration hardening supersedes the M04-T03 deferral above.
+Public runtime scope remains exactly Line, Area, Bar, Pie and Donut; pure core,
+props, defaults and dependencies remain frozen. Three reproduced Cartesian
+presentation defects are corrected; see [integration report](M04_INTEGRATION_HARDENING.md).
+Manual accessibility, broader browser policy, dense-data performance budgets,
+public demo hosting/CSP and release decisions remain separate future work.
+No deployment, publication or merge approval is implied.

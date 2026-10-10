@@ -188,8 +188,8 @@ Absent animation APIs leave fully meaningful static marks, including SSR.
 ## Limits and deferred work
 
 No interactive legend, aggregation, drilldown, center content, angle interpolation,
-Canvas, chart rotation, theme API or public DonutChart is implemented. DonutChart
-remains a type-only contract for M04-T03. Large SVG/control counts have DOM cost;
+Canvas, chart rotation or theme API is implemented. Pie has no center-content prop;
+DonutChart is public as of M04-T03 and provides center content. Large SVG/control counts have DOM cost;
 no performance optimization or budget is claimed. Inline styles and host CSS/CSP
 can affect presentation; custom tooltip sizing and label fitting are approximate.
 Chromium/axe checks do not establish full WCAG conformance, manual screen-reader
@@ -202,3 +202,9 @@ inspection implementation. The pure geometry engine is unchanged. Pie keeps
 filled sectors, original labels, colors, tables, payloads and interaction; only
 Donut accepts ratio/center content and uses ring-aware presentation. Earlier
 milestone statements above preserve historical task boundaries.
+
+## M04-T04 combined-page hardening
+
+See [five-chart integration](M04_INTEGRATION_HARDENING.md) for the shared-page
+audit, reproducible browser checks and demo handoff. The public contract and
+pure geometry are unchanged.

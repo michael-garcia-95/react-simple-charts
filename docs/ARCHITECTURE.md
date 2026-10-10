@@ -2,7 +2,7 @@
 
 ## Approved direction
 
-React Simple Charts is a single npm package, a TypeScript-first React component library supporting React 18.2+ and React 19.x. Rendering is SVG-first. Planned chart families are Line, Bar, Area, Pie, and Donut; All five chart families are implemented.
+React Simple Charts is a single npm package, a TypeScript-first React component library supporting React 18.2+ and React 19.x. Rendering is SVG-first. All five chart families—Line, Bar, Area, Pie and Donut—are implemented.
 
 ## Module responsibilities
 
@@ -38,7 +38,7 @@ Vitest tests the foundation playground with React Testing Library and the packag
 
 ## Public contract milestone
 
-M01-T02 implements RSC-026/RSC-027 as types, with data-driven generic inference, exclusive single/multi-series mappings, scale-specific keys, and physical-axis typing for horizontal Bars. Compile-time tests use test-only generic declarations; they are not chart implementations. Dedicated source tests and package-root consumer verification exercise both JSX and props objects. React 18/19 type definitions now accompany the runtime CI matrix. Public Cartesian rendering, interaction and source-table accessibility are implemented in M03; polar behavior remains deferred. M02-T01 now implements internal data normalization and its mapping/value validation; see [data normalization](DATA_NORMALIZATION.md).
+M01-T02 implements RSC-026/RSC-027 as types, with data-driven generic inference, exclusive single/multi-series mappings, scale-specific keys, and physical-axis typing for horizontal Bars. Compile-time tests use test-only generic declarations; they are not chart implementations. Dedicated source tests and package-root consumer verification exercise both JSX and props objects. React 18/19 type definitions now accompany the runtime CI matrix. Public Cartesian rendering, interaction and source-table accessibility are implemented in M03; polar presentation is implemented in M04-T02/T03. M02-T01 now implements internal data normalization and its mapping/value validation; see [data normalization](DATA_NORMALIZATION.md).
 
 ## Internal data foundation — M02-T01
 
@@ -54,7 +54,7 @@ M01-T02 implements RSC-026/RSC-027 as types, with data-driven generic inference,
 
 ## Internal geometry foundation — M02-T04
 
-`src/core/geometry/` separates readonly result types, shared datum mapping and gap runs, d3-shape Line/Area paths, grouped Bar slots/rectangles, numerical diagnostics, and orchestration. `buildCartesianGeometry` calls layout internally from the same normalized input, preventing unrelated model/layout pairs. It preserves source and series references, handles independent gaps and singleton points, uses physical zero baselines, and flags finite geometry outside explicit bounds for future plot clipping. Unsafe mappings/slots/paths expose no partial marks. See [geometry foundations](GEOMETRY_FOUNDATIONS.md). Milestone 02 is complete and merged. Public Line/Area rendering now consumes this foundation; stacking and polar geometry remain future work.
+`src/core/geometry/` separates readonly result types, shared datum mapping and gap runs, d3-shape Line/Area paths, grouped Bar slots/rectangles, numerical diagnostics, and orchestration. `buildCartesianGeometry` calls layout internally from the same normalized input, preventing unrelated model/layout pairs. It preserves source and series references, handles independent gaps and singleton points, uses physical zero baselines, and flags finite geometry outside explicit bounds for future plot clipping. Unsafe mappings/slots/paths expose no partial marks. See [geometry foundations](GEOMETRY_FOUNDATIONS.md). Milestone 02 is complete and merged. Public Line/Area rendering now consumes this foundation; stacking remains future work; polar geometry follows in M04-T01.
 
 ## Internal SVG rendering — M03-T01
 
@@ -113,11 +113,11 @@ The shared inspection tooltip uses a 220px border-box matching its positioning e
 for pure Pie/Donut eligibility, scaled proportions, source-ordered d3-shape angles,
 centered radii and validated arc paths. Ready/empty/unusable results preserve
 normalization provenance; negatives reject the complete chart. Public Pie/Donut
-renderers remain deferred. See [polar geometry foundations](POLAR_GEOMETRY_FOUNDATIONS.md).
+renderers remained deferred as of M04-T01. See [polar geometry foundations](POLAR_GEOMETRY_FOUNDATIONS.md).
 
 ## Public PieChart — M04-T02
 
-PieChart is the fourth public runtime export. DonutChart remains type-only.
+As of M04-T02, PieChart was the fourth public runtime export and DonutChart remained type-only; M04-T03 implements Donut.
 `src/charts/PieChart.tsx` preserves the approved generic props and delegates to
 `src/internal/PolarRenderer.tsx`. The renderer normalizes source segments, resolves
 explicit/responsive dimensions and invokes `buildPolarGeometry` with family pie.
@@ -151,3 +151,12 @@ SVG scaling preserve alignment under CSS constraints and non-square dimensions.
 Legend and tables sit outside that frame. Interactive user content remains exposed
 and confined to the actual hole. No default totals, portals, dependencies, public
 props or Cartesian behavior changes. See [DonutChart](DONUT_CHART.md).
+
+## Five-family integration — M04-T04
+
+All five public families now have a reusable combined playground and shared-page
+regressions. Focused Cartesian controls retain their Tab entry/outline during
+hover, legends wrap long labels, and tooltip bounds follow the rendered figure.
+No pure geometry, API, export or dependency changes are introduced. See
+[five-chart integration and demo handoff](M04_INTEGRATION_HARDENING.md) for
+actual browser/consumer evidence and remaining limitations.

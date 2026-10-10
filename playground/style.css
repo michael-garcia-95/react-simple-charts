@@ -27,3 +27,36 @@ section {
   background: white;
   border-radius: 1rem;
 }
+
+.five-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: flex-start;
+}
+.five-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.five-controls label {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+#five-charts {
+  overflow-wrap: anywhere;
+}
+#five-events {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.five-page {
+  padding: min(2rem, 8vw);
+  overflow-wrap: anywhere;
+}
+.five-page #five-charts {
+  padding: min(1.5rem, 6vw);
+}

@@ -243,7 +243,7 @@ tooltip contracts are unchanged; no new public types or props are exported.
 Labels/values remain data-driven NoInfer mappings. Percentage remains 0–100 and
 source segmentId remains original index. Default labels are off; legend/tooltips
 are on. Root runtime exports are exactly LineChart, AreaChart, BarChart, PieChart.
-DonutChart remains a type-only contract. See [PieChart](PIE_CHART.md).
+As of M04-T02, DonutChart remained type-only; M04-T03 implements it. See [PieChart](PIE_CHART.md) and [DonutChart](DONUT_CHART.md).
 
 ## M04-T03 public DonutChart
 

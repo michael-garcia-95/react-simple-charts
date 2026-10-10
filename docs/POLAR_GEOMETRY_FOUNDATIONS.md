@@ -116,14 +116,15 @@ calls with unchanged inputs produce equal results. The existing normalized model
 contract is trusted; manually forged models are not a second normalization API.
 Runtime is O(source rows) plus path output and allocates proportional metadata.
 
-Future renderers must resolve responsive dimensions, translate and style paths,
+As of M04-T01, future renderers were required to resolve responsive dimensions, translate and style paths,
 choose legends/labels, implement diagnostics/empty presentation, provide complete
 source tables (including zero and excluded observations), and design keyboard,
 focus, tooltip and activation behavior. Visual geometry alone is not an accessible
 chart. Screen-reader review and final polar accessibility design remain open.
-Center content, animation, public presentation defaults and wording, tiny-slice
-interaction policy and public Pie/Donut components are deferred. M04-T02 is not
-started; this task ends at the internal foundation and Development Lead review.
+As of M04-T01, center content, animation, public presentation defaults and wording,
+tiny-slice interaction policy and public Pie/Donut components were deferred.
+That task ended at the internal foundation and Development Lead review;
+subsequent public implementation is recorded below.
 
 ## M04-T02 integration (subsequent milestone)
 
@@ -133,7 +134,7 @@ exact local paths with center metadata, uses engine percentages directly and
 retains source identity/order. The full normalization model drives the semantic
 source table; drawable positive slices drive legend and controls. Presentation,
 interaction and responsive lifecycle remain outside pure core. No geometry code
-or public radius/angle API changes. DonutChart runtime stays deferred to M04-T03.
+or public radius/angle API changes. As of M04-T02, DonutChart runtime remained deferred to M04-T03.
 See [PieChart](PIE_CHART.md) for label-fitting, tiny-sector pointer, tooltip,
 accessibility and SSR policies. Earlier text above preserves the M04-T01 boundary.
 

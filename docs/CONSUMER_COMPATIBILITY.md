@@ -1,3 +1,14 @@
+# Five-family packaged integration — M04-T04
+
+The four genuine installed-tarball consumers were rerun for M04-T04 with all
+five runtime exports and unchanged strict declarations. Cartesian focused entry
+is now also checked during hover in every consumer, alongside the existing
+polar check. Vite 8.3.4 with React 18.2.0/19.3.0 and Next 14.2.35/16.4.0 Webpack
+with their corresponding React versions passed production, SSR/hydration,
+App/Pages Router, real-browser interactions and representative axe scans.
+See [M04 integration evidence](M04_INTEGRATION_HARDENING.md) for current
+measurements and limits. Reports below preserve their historical milestone results.
+
 # Packaged public DonutChart — M04-T03
 
 The genuine private 0.0.0 tarball now exposes exactly LineChart, AreaChart,
@@ -82,7 +93,7 @@ The following sections preserve historical evidence.
 # Packaged public PieChart — M04-T02
 
 The genuine private 0.0.0 tarball exports exactly LineChart, AreaChart, BarChart
-and PieChart. DonutChart remains type-only. Fresh independent installations compare
+and PieChart. As of M04-T02, DonutChart remained type-only. Fresh independent installations compare
 packed ESM bytes, compile installed declarations and actual generic Pie JSX,
 reject unauthorized subpaths, verify external/deduplicated React peers, and build
 production applications. Existing Line/Area/Bar scenarios remain intact.

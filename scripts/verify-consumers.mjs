@@ -436,7 +436,7 @@ async function start(dir, kind, port, major) {
         } else await page.locator(`${section} [role=button]`).first().click();
       };
       await page.locator(`${section} [role=button]`).first().focus();
-      if (section === '#pie-interactive' || section === '#donut-interactive') {
+      {
         if (section === '#donut-interactive') {
           const p = await ringPoint(-1);
           await page.mouse.move(p.x, p.y);

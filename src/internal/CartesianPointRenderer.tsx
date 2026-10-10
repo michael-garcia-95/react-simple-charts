@@ -189,7 +189,14 @@ function Graphic<T extends object>({
               }}
             >
               {normalized.data.series.map((series) => (
-                <li key={series.key}>
+                <li
+                  key={series.key}
+                  style={{
+                    minWidth: 0,
+                    overflowWrap: 'anywhere',
+                    maxWidth: '100%',
+                  }}
+                >
                   <span
                     aria-hidden="true"
                     style={{
