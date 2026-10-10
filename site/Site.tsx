@@ -1,26 +1,18 @@
 import {
   ActionLink,
-  ChartCard,
   CodePreview,
   Container,
   Footer,
   Header,
-  navigation,
   repository,
   SectionHeading,
 } from './components';
-import type { Page } from './components';
-import { chartDescriptions, families, ShowcaseChart } from './charts';
+import { pageFromPath, sitePath } from './paths';
+import type { SitePage } from './paths';
+import { InteractiveExample } from './InteractiveExample';
+export { pageFromPath } from './paths';
+import { families, ShowcaseChart } from './charts';
 
-export function pageFromPath(path: string): Page {
-  const normalized =
-    path.replace(/\/index\.html$/, '/').replace(/\/$/, '') || '/';
-  return (
-    navigation.find(
-      (item) => (item.href.replace(/\/$/, '') || '/') === normalized,
-    )?.id ?? 'home'
-  );
-}
 const example = `import { LineChart } from 'react-simple-charts';
 
 const revenue = [
@@ -94,7 +86,7 @@ function Home() {
           {families.map((family, index) => (
             <a
               className="family-link"
-              href={`/examples/#chart-${family}`}
+              href={sitePath(`/examples/#chart-${family}`)}
               key={family}
             >
               <span className="family-number">0{index + 1}</span>
@@ -125,7 +117,7 @@ function Home() {
             checks the mapping while the components handle responsive SVG and
             source-data alternatives.
           </SectionHeading>
-          <a className="text-link" href="/documentation/">
+          <a className="text-link" href={sitePath('/documentation/')}>
             Get to know the API <span aria-hidden="true">→</span>
           </a>
         </div>
@@ -146,27 +138,31 @@ function Examples() {
         </h1>
         <p className="lead">
           Five chart families, rendered by the real library. Every example uses
-          fictional, deterministic data with a visible source table.
+          fictional, deterministic data. Try a dataset, adjust the settings, and
+          copy the matching React example.
         </p>
         <p>
           Tab into a chart and use the arrow keys to inspect values. You can
           also hover or touch a mark.
         </p>
       </div>
+      <nav className="example-jumps" aria-label="Chart families">
+        {families.map((family) => (
+          <a key={family} href={`#chart-${family}`}>
+            {family.charAt(0).toUpperCase() + family.slice(1)}
+          </a>
+        ))}
+      </nav>
       <div className="examples-grid">
         {families.map((family) => (
-          <ChartCard
-            key={family}
-            id={`chart-${family}`}
-            {...chartDescriptions[family]}
-          >
-            <ShowcaseChart family={family} />
-          </ChartCard>
+          <InteractiveExample key={family} family={family} />
         ))}
       </div>
       <p className="afterword">
         Looking for the component API?{' '}
-        <a href="/documentation/">Read the documentation introduction.</a>
+        <a href={sitePath('/documentation/')}>
+          Read the documentation introduction.
+        </a>
       </p>
     </>
   );
@@ -239,8 +235,8 @@ function Documentation() {
               <a href={`${repository}/tree/main/docs`}>
                 developer documentation
               </a>
-              . Browse the <a href="/examples/">examples gallery</a> to see each
-              family.
+              . Browse the <a href={sitePath('/examples/')}>examples gallery</a>{' '}
+              to see each family.
             </p>
           </section>
         </div>
@@ -336,7 +332,7 @@ function About() {
 export function Site({
   page = pageFromPath(window.location.pathname),
 }: {
-  page?: Page;
+  page?: SitePage;
 }) {
   return (
     <>
@@ -352,8 +348,14 @@ export function Site({
             <Examples />
           ) : page === 'documentation' ? (
             <Documentation />
-          ) : (
+          ) : page === 'about' ? (
             <About />
+          ) : (
+            <div className="page-intro">
+              <h1>Page not found</h1>
+              <p>This address does not match a website page.</p>
+              <a href={sitePath('/')}>Return home</a>
+            </div>
           )}
         </Container>
       </main>

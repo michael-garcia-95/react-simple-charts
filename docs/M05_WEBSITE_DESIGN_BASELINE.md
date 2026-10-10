@@ -126,15 +126,16 @@ npm run preview:site -- --host 127.0.0.1 --port 4320
 npm run test:site
 ```
 
-## Hosting proposal
+## Hosting decision — updated in M05-T02
 
-Cloudflare Pages is preferred: repository-root build command
-`npm run build:site`, output `site-dist`, supported Node 22 or 24. Static
-HTML directory routes need no SPA rewrite. Links currently assume origin-root
-hosting; subdirectory hosting requires a deliberate base-path adaptation.
-No Cloudflare project, production publishing configuration, domain, analytics,
-tracking or deployment is created by this task. Assets require a CSP compatible
-with the library's existing inline styles; no new runtime policy is invented.
+GitHub Pages from the existing repository is approved for future hosting at
+`https://michael-garcia-95.github.io/react-simple-charts/`. This supersedes the
+historical M05-T01 Cloudflare Pages proposal. M05-T02 centralizes internal links
+and page detection around Vite's base and verifies root and project-path builds.
+Static directory routes need no SPA rewrite. No deployment, repository Pages
+settings, hosting artifact upload or new permissions are enabled. See
+[the proposed inactive GitHub Pages plan](GITHUB_PAGES_PLAN.md). Assets still
+require a CSP compatible with the library's existing inline styles.
 
 ## Accessibility and motion goals
 
@@ -154,15 +155,15 @@ are evidence, not complete accessibility certification.
 
 - Content renders with React JavaScript; metadata and page routes are static,
   but full content prerendering is deferred. No no-JavaScript content guarantee.
-- Root-hosted URLs are intentional; deployment, canonical URLs, social metadata,
-  richer social assets and base-path decisions await hosting/design review.
+- Root-based local development and `/react-simple-charts/` production artifacts
+  are supported in M05-T02. Deployment, canonical URLs and social metadata await
+  separate approval.
 - The single application bundle contains all four pages; code splitting can be
   considered after measuring actual site needs, with no package size claim.
 - No manual screen-reader review, native browser zoom, native touch device,
   Firefox/WebKit or production performance guarantee is established here.
 - Existing narrow-axis/tiny-sector/custom-content/dense-DOM limits from M04 apply.
-- M05-T02 will expand examples with multiple datasets, controls and copyable
-  source switching. Full documentation/search, theme refinement and broader
+- M05-T02 implements multiple datasets, controls and copyable source switching. Full documentation/search, theme refinement and broader
   browser/assistive-technology review are later work.
 
 No core geometry, public contracts, default behavior, runtime exports, peer
@@ -225,3 +226,19 @@ glyph, clipped-table intrinsic overflow during text enlargement and the implicit
 favicon request. All corrections remain in site presentation; library runtime
 and defaults remain untouched. A simple inline SVG favicon uses the in-code mark.
 Zero axe violations do not establish complete WCAG conformance.
+
+## M05-T02 interactive extension
+
+The restrained palette, typography, four-page architecture, static metadata,
+real built-root imports and technical playground remain the design baseline.
+Examples now uses full-width articles with controls beside the preview above
+768px and stacked below. Each of the five articles has two presets, immediate
+native controls, a complete source table, synchronized TSX, copy feedback and
+reset. Code scrolls within a 26rem panel and data records stay compact.
+Line/Area offer a second series; Bar orientation, polar labels and Donut ratios
+use only approved props. Family jump links retain all established anchor IDs.
+
+The path utility resolves against Vite's base without touching external GitHub
+URLs or same-page fragments. Both build modes retain `site-dist/` isolation and
+the package-boundary guard. No public API, pure engine, peer/dependency or package
+identity changes are introduced. See [M05-T02 implementation and evidence](M05_INTERACTIVE_EXAMPLES.md).

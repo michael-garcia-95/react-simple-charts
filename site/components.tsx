@@ -1,20 +1,22 @@
+import { useRef, useState } from 'react';
 import type { ReactNode } from 'react';
+import { navigation, sitePath } from './paths';
+import type { SitePage } from './paths';
+export { navigation } from './paths';
+export type { Page } from './paths';
 
 export const repository =
   'https://github.com/michael-garcia-95/react-simple-charts';
-export const navigation = [
-  { id: 'home', label: 'Home', href: '/' },
-  { id: 'examples', label: 'Examples', href: '/examples/' },
-  { id: 'documentation', label: 'Documentation', href: '/documentation/' },
-  { id: 'about', label: 'About', href: '/about/' },
-] as const;
-export type Page = (typeof navigation)[number]['id'];
 export function Container({ children }: { children: ReactNode }) {
   return <div className="container">{children}</div>;
 }
 function Brand() {
   return (
-    <a className="brand" href="/" aria-label="React Simple Charts home">
+    <a
+      className="brand"
+      href={sitePath('/')}
+      aria-label="React Simple Charts home"
+    >
       <svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true">
         <path
           d="M4 25L12 16L19 20L28 7"
@@ -31,13 +33,13 @@ function Brand() {
     </a>
   );
 }
-export function Navigation({ page }: { page: Page }) {
+export function Navigation({ page }: { page: SitePage }) {
   return (
     <nav aria-label="Main navigation">
       {navigation.map((item) => (
         <a
           key={item.id}
-          href={item.href}
+          href={sitePath(item.href)}
           aria-current={page === item.id ? 'page' : undefined}
         >
           {item.label}
@@ -46,7 +48,7 @@ export function Navigation({ page }: { page: Page }) {
     </nav>
   );
 }
-export function Header({ page }: { page: Page }) {
+export function Header({ page }: { page: SitePage }) {
   return (
     <header className="site-header">
       <Container>
@@ -84,7 +86,10 @@ export function ActionLink({
   children: ReactNode;
 }) {
   return (
-    <a className={`button${secondary ? ' button-secondary' : ''}`} href={href}>
+    <a
+      className={`button${secondary ? ' button-secondary' : ''}`}
+      href={sitePath(href)}
+    >
       {children}
     </a>
   );
@@ -131,16 +136,62 @@ export function ChartCard({
 export function CodePreview({
   children,
   label,
+  language = 'Code',
+  copyable = false,
 }: {
   children: string;
   label: string;
+  language?: string;
+  copyable?: boolean;
 }) {
+  const [status, setStatus] = useState<{ source: string; message: string }>();
+  const request = useRef(0);
+  async function copy() {
+    const currentRequest = ++request.current;
+    const source = children;
+    setStatus(undefined);
+    let message: string;
+    try {
+      if (!navigator.clipboard?.writeText)
+        throw new Error('Clipboard unavailable');
+      await navigator.clipboard.writeText(source);
+      message = 'Code copied.';
+    } catch {
+      message = 'Could not copy code. Select the code and copy it manually.';
+    }
+    if (request.current === currentRequest) setStatus({ source, message });
+  }
   return (
     <div className="code-preview">
-      <p className="code-label">{label}</p>
+      <div className="code-toolbar">
+        <p className="code-label">
+          {label}
+          <span className="code-language">{language}</span>
+        </p>
+        {copyable && (
+          <button
+            type="button"
+            className="copy-code"
+            onClick={() => void copy()}
+            aria-label={`Copy code: ${label}`}
+          >
+            Copy code
+          </button>
+        )}
+      </div>
       <pre tabIndex={0} aria-label={label}>
         <code>{children}</code>
       </pre>
+      {copyable && (
+        <p
+          className="copy-status"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          {status?.source === children ? status.message : ''}
+        </p>
+      )}
     </div>
   );
 }

@@ -115,3 +115,18 @@ presentation defects are corrected; see [integration report](M04_INTEGRATION_HAR
 Manual accessibility, broader browser policy, dense-data performance budgets,
 public demo hosting/CSP and release decisions remain separate future work.
 No deployment, publication or merge approval is implied.
+
+## M05-T02 website and hosting
+
+GitHub Pages from this repository is the approved future host, at
+`https://michael-garcia-95.github.io/react-simple-charts/`. The earlier Cloudflare
+proposal is superseded. Root development and Vite project-base builds are
+implemented, with independent interactive examples and generated code; see
+[M05-T02](M05_INTERACTIVE_EXAMPLES.md) and [GitHub Pages plan](GITHUB_PAGES_PLAN.md).
+No deployment has occurred. Pages settings, deployment permissions, a deployment
+workflow, custom-domain/DNS policy, canonical/social metadata and live validation
+await separate authorization. Proposed deployment steps remain inactive.
+
+Manual screen-reader review, broader browser/native-device policy, syntax
+highlighting, richer tutorials and production performance measurement remain
+future work. M05-T03, merge, release and npm publication are not authorized here.

@@ -30,6 +30,10 @@ jobs:
       - run: npm run format:check
       - run: npm test
       - run: npm run verify:package
+      - run: npm run verify:site:snippets
       - run: npm run build:site
+      - run: node scripts/verify-site-build.mjs /
+      - run: npm run build:site:pages
+      - run: node scripts/verify-site-build.mjs /react-simple-charts/
       - run: npm run build:playground
       - run: npm pack --dry-run

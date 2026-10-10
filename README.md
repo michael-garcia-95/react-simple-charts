@@ -4,6 +4,12 @@ A lightweight, customizable React charting library built with TypeScript.
 
 ## Status
 
+M05-T02 expands the public Examples page with two deterministic presets per chart,
+independent controls, synchronized runnable TSX, accessible copying and reset.
+Root and GitHub Pages project-path builds are supported; no site is deployed.
+See [interactive examples](docs/M05_INTERACTIVE_EXAMPLES.md) and the
+[approved GitHub Pages plan](docs/GITHUB_PAGES_PLAN.md).
+
 M04-T04 audits the five families together, adds a reusable combined playground
 fixture and corrects Cartesian focus, legend wrapping and constrained tooltip
 placement. See [integration evidence and public demo handoff](docs/M04_INTEGRATION_HARDENING.md).
@@ -83,6 +89,10 @@ components through the built package root. The package is not published to npm.
 npm ci
 npm run dev:site
 npm run build:site
+# Build for the approved future GitHub Pages project URL (no deployment)
+npm run build:site:pages
+# Rebuild root mode before ordinary root preview
+npm run build:site
 npm run preview:site
 npm run test:site
 ```
@@ -92,5 +102,13 @@ output is `site-dist/`. Normal typecheck and test commands also build the librar
 first for clean-checkout artifact resolution. After library source changes,
 rebuild/restart the site dev command. No source alias or new React peer policy
 is used. See [the approved website design baseline](docs/M05_WEBSITE_DESIGN_BASELINE.md)
-for architecture, design, local-build tradeoffs and the Cloudflare Pages proposal.
+for architecture, design and local-build tradeoffs. The GitHub Pages plan
+supersedes the historical Cloudflare Pages proposal.
 No website deployment is configured.
+
+`npm run test:site` covers the foundation, all interactive families and base paths.
+`npm run verify:site:snippets` compiles 22 generated TSX variants against the real
+built package declarations. `node scripts/verify-site-build.mjs /` checks root
+HTML/assets; pass `/react-simple-charts/` after the Pages build. Both modes emit
+only `site-dist/`; the library package and technical playground are unchanged.
+Browser reproduction and ignored evidence locations are in the interactive report.
