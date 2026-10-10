@@ -62,6 +62,7 @@ try {
 } finally {
   await server.close();
 }
+assert.equal(documentationCount, 10, 'Retain all documentation samples');
 const program = ts.createProgram(files, {
   strict: true,
   exactOptionalPropertyTypes: true,

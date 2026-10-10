@@ -1,5 +1,11 @@
 import { useMemo, useState } from 'react';
-import { LineChart, AreaChart, BarChart, PieChart, DonutChart } from '../src';
+import {
+  LineChart,
+  AreaChart,
+  BarChart,
+  PieChart,
+  DonutChart,
+} from '@michael-garcia-95/react-simple-charts';
 function AllocationDetails() {
   const [viewed, setViewed] = useState(false);
   return (

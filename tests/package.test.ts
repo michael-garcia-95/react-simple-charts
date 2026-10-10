@@ -22,6 +22,9 @@ describe('package safety contract', () => {
     expect(typeof LineChart).toBe('function');
   });
   it('remains private and exposes only an ESM root entry with declarations', () => {
+    expect(pkg.name).toBe('@michael-garcia-95/react-simple-charts');
+    expect(pkg.version).toBe('0.0.0');
+    expect(pkg.publishConfig).toEqual({ access: 'public' });
     expect(pkg.private).toBe(true);
     expect(pkg.type).toBe('module');
     expect(pkg.exports).toEqual({

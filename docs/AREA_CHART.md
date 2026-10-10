@@ -3,7 +3,7 @@
 Import the generic component from the sole package root:
 
 ```tsx
-import { AreaChart } from 'react-simple-charts';
+import { AreaChart } from '@michael-garcia-95/react-simple-charts';
 
 const data = [
   { month: 'Jan', actual: -2, forecast: 1 },

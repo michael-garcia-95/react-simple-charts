@@ -10,7 +10,7 @@ import type {
   CartesianActivation,
   SegmentActivation,
   InputMethod,
-} from 'react-simple-charts';
+} from '@michael-garcia-95/react-simple-charts';
 
 interface Row {
   name: string;
@@ -30,7 +30,7 @@ import {
   BarChart,
   PieChart,
   DonutChart,
-} from 'react-simple-charts';
+} from '@michael-garcia-95/react-simple-charts';
 export const series: readonly SeriesConfig<Row>[] = (
   ['amount', 'optional'] as const
 ).map((key) => ({ key, label: key, color: '#abc' }));
@@ -238,8 +238,8 @@ export const neverKey: NumericFieldKey<Row> = 'impossible';
 export const boolKey: CategoricalFieldKey<Row> = 'flag';
 
 // @ts-expect-error Internal package subpaths are not public.
-import type { LineChartProps as InternalProps } from 'react-simple-charts/types/contracts';
-import { BarChart as RuntimeChart } from 'react-simple-charts';
+import type { LineChartProps as InternalProps } from '@michael-garcia-95/react-simple-charts/types/contracts';
+import { BarChart as RuntimeChart } from '@michael-garcia-95/react-simple-charts';
 export type RejectedInternalImport = InternalProps<Row>;
 export const rejectedRuntimeImport = RuntimeChart;
 

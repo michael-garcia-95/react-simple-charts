@@ -121,5 +121,5 @@ export function exampleCode(family: Family, state: ExampleSettings): string {
     `formatValue={${preset.formatterSource}}`,
     `accessibility={{\n        label: ${JSON.stringify(exampleAccessibility(family, state).label)},\n        description: ${JSON.stringify(inspectionDescription)},\n        dataTable: '${state.dataTable}',\n      }}`,
   );
-  return `import { ${component} } from 'react-simple-charts';\n\nconst data = ${formatData(preset.data)};\n\nexport function Example() {\n  return (\n    <${component}\n      ${props.join('\n      ')}\n    />\n  );\n}\n`;
+  return `import { ${component} } from '@michael-garcia-95/react-simple-charts';\n\nconst data = ${formatData(preset.data)};\n\nexport function Example() {\n  return (\n    <${component}\n      ${props.join('\n      ')}\n    />\n  );\n}\n`;
 }

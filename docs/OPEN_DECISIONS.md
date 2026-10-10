@@ -180,3 +180,26 @@ M06-T02 through T07 are implementation proposals, not authorizations. No runtime
 contract, identity/version, publication workflow, tag, package, Pages setting or
 deployed website is changed by this assessment. Await Lead review and user
 approval; stop after M06-T01.
+
+## M06-T02 approved package identity
+
+The user approved the personal npm scope `michael-garcia-95`, confirmed npm
+username registration and enabled 2FA. The independent, personally maintained
+React Simple Charts library now uses `@michael-garcia-95/react-simple-charts`.
+The manifest, lockfile, active imports, generators and installed-consumer tools
+are migrated together; see [implementation evidence](M06_PACKAGE_IDENTITY.md).
+Earlier naming recommendations and milestone reports remain historical evidence.
+
+The library remains unpublished, `private: true`, version `0.0.0`. Initial
+`0.1.0` is recommended but still awaits final approval. Public npm onboarding
+belongs to later M06 tasks. GitHub repository, branding and Pages base are unchanged.
+
+The existing Node engines policy is unchanged. Separating development-tool
+minimums from supported consumer SSR Node versions remains an explicit decision;
+no wider consumer Node or TypeScript support is claimed here. Remaining release
+gates include distribution/source-map and browser policy, manual screen-reader
+review, public release documentation, version/changelog/maintenance policy,
+secure bootstrap and trusted-publisher/provenance preparation, and final explicit
+publication approval (M06-T03 through T07). No package reservation, publication,
+release, tag, token, organization, trusted publisher or website deployment is
+authorized by this identity implementation. Stop after M06-T02 for Lead review.

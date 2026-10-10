@@ -1,3 +1,14 @@
+# Current package identity — M06-T02
+
+Current consumer imports use `@michael-garcia-95/react-simple-charts`, still
+private and unpublished at `0.0.0`. Reproduce the four installed-tarball checks
+with `RSC_BROWSER_PATH=/usr/bin/chromium node scripts/verify-consumers.mjs`;
+the runner reads identity from package.json and creates fresh independent apps.
+See [M06 package identity](M06_PACKAGE_IDENTITY.md) for current results and archive
+inventory. Earlier package names, instructions and measurements below and in
+milestone reports describe their historical artifacts; use the approved scoped
+root for current integration. Consumer Node engine policy remains undecided.
+
 # Five-family packaged integration — M04-T04
 
 The four genuine installed-tarball consumers were rerun for M04-T04 with all

@@ -1,7 +1,7 @@
 # Public LineChart — M03-T02
 
 ```tsx
-import { LineChart } from 'react-simple-charts';
+import { LineChart } from '@michael-garcia-95/react-simple-charts';
 
 const data = [
   { month: 'Jan', actual: 10, forecast: 12 },

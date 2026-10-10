@@ -4,7 +4,7 @@ import {
   BarChart,
   PieChart,
   DonutChart,
-} from 'react-simple-charts';
+} from '@michael-garcia-95/react-simple-charts';
 import { allocation, comparison, dollars, revenue, trend } from './data';
 
 export const families = ['line', 'area', 'bar', 'pie', 'donut'] as const;
