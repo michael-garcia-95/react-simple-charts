@@ -3,7 +3,7 @@
 export const documentationCode = {
   line: {
     label: 'LineChart · monthly revenue',
-    source: `import { LineChart } from 'react-simple-charts';
+    source: `import { LineChart } from '@michael-garcia-95/react-simple-charts';
 
 interface Revenue {
   month: string;
@@ -37,7 +37,7 @@ export function RevenueChart() {
   },
   area: {
     label: 'AreaChart · independent activity series',
-    source: `import { AreaChart } from 'react-simple-charts';
+    source: `import { AreaChart } from '@michael-garcia-95/react-simple-charts';
 
 interface Activity {
   week: string;
@@ -72,7 +72,7 @@ export function ActivityChart() {
   },
   bar: {
     label: 'BarChart · horizontal grouped balances',
-    source: `import { BarChart } from 'react-simple-charts';
+    source: `import { BarChart } from '@michael-garcia-95/react-simple-charts';
 
 interface Balance {
   department: string;
@@ -114,7 +114,7 @@ export function BalanceChart() {
   },
   pie: {
     label: 'PieChart · category counts',
-    source: `import { PieChart } from 'react-simple-charts';
+    source: `import { PieChart } from '@michael-garcia-95/react-simple-charts';
 
 interface CategoryCount {
   category: string;
@@ -146,7 +146,7 @@ export function CategoryChart() {
   },
   donut: {
     label: 'DonutChart · budget allocation',
-    source: `import { DonutChart } from 'react-simple-charts';
+    source: `import { DonutChart } from '@michael-garcia-95/react-simple-charts';
 
 interface Budget {
   department: string;
@@ -179,7 +179,7 @@ export function BudgetChart() {
   },
   linear: {
     label: 'LineChart · numerical X',
-    source: `import { LineChart } from 'react-simple-charts';
+    source: `import { LineChart } from '@michael-garcia-95/react-simple-charts';
 
 const data = [
   { distance: 0, activity: 12 },
@@ -205,7 +205,7 @@ export function DistanceChart() {
   },
   utc: {
     label: 'LineChart · UTC dates',
-    source: `import { LineChart } from 'react-simple-charts';
+    source: `import { LineChart } from '@michael-garcia-95/react-simple-charts';
 
 const data = [
   { date: new Date('2026-01-01T00:00:00Z'), activity: 12 },
@@ -230,7 +230,7 @@ export function DailyChart() {
   },
   time: {
     label: 'LineChart · local-time dates',
-    source: `import { LineChart } from 'react-simple-charts';
+    source: `import { LineChart } from '@michael-garcia-95/react-simple-charts';
 
 const data = [
   { date: new Date('2026-01-01T12:00:00Z'), activity: 12 },
@@ -256,8 +256,8 @@ export function LocalActivityChart() {
   },
   cartesianTooltip: {
     label: 'Custom tooltip · Cartesian context',
-    source: `import { LineChart } from 'react-simple-charts';
-import type { CartesianTooltipContext } from 'react-simple-charts';
+    source: `import { LineChart } from '@michael-garcia-95/react-simple-charts';
+import type { CartesianTooltipContext } from '@michael-garcia-95/react-simple-charts';
 
 interface Revenue {
   month: string;
@@ -300,8 +300,8 @@ export function RevenueInspection() {
   },
   segmentTooltip: {
     label: 'Custom tooltip · polar segment context',
-    source: `import { PieChart } from 'react-simple-charts';
-import type { SegmentTooltipContext } from 'react-simple-charts';
+    source: `import { PieChart } from '@michael-garcia-95/react-simple-charts';
+import type { SegmentTooltipContext } from '@michael-garcia-95/react-simple-charts';
 
 interface Budget {
   department: string;

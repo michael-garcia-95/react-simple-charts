@@ -1,5 +1,9 @@
 import { useState } from 'react';
-import { LineChart, AreaChart, BarChart } from '../src';
+import {
+  LineChart,
+  AreaChart,
+  BarChart,
+} from '@michael-garcia-95/react-simple-charts';
 
 const samples = [
   { category: 'NorthAmericaEnterpriseSubscriptions', actual: -4, forecast: 3 },

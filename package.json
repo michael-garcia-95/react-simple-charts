@@ -1,8 +1,8 @@
 {
-  "name": "react-simple-charts",
+  "name": "@michael-garcia-95/react-simple-charts",
   "version": "0.0.0",
   "private": true,
-  "description": "A lightweight, customizable React charting library built with TypeScript.",
+  "description": "React and TypeScript SVG charts: Line, Area, Bar, Pie and Donut.",
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
@@ -21,9 +21,9 @@
     }
   },
   "scripts": {
-    "dev": "vite",
+    "dev": "npm run build && vite",
     "build": "tsdown",
-    "build:playground": "vite build",
+    "build:playground": "npm run build && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --max-warnings 0",
@@ -74,5 +74,27 @@
     "typescript-eslint": "^8.71.1",
     "vite": "^8.3.4",
     "vitest": "^5.0.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/michael-garcia-95/react-simple-charts.git"
+  },
+  "homepage": "https://michael-garcia-95.github.io/react-simple-charts/",
+  "bugs": {
+    "url": "https://github.com/michael-garcia-95/react-simple-charts/issues"
+  },
+  "keywords": [
+    "react",
+    "typescript",
+    "charts",
+    "svg",
+    "line-chart",
+    "area-chart",
+    "bar-chart",
+    "pie-chart",
+    "donut-chart"
+  ],
+  "publishConfig": {
+    "access": "public"
   }
 }

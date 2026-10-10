@@ -73,7 +73,9 @@ it.each(Object.entries(documentationCode))(
     const panel = screen.getByLabelText(sample.label, { selector: 'pre' });
     expect(panel).toHaveAttribute('tabindex', '0');
     expect(panel.querySelector('code')!.textContent).toBe(sample.source);
-    expect(sample.source).toContain("from 'react-simple-charts'");
+    expect(sample.source).toContain(
+      "from '@michael-garcia-95/react-simple-charts'",
+    );
     expect(sample.source).toContain('export function');
     expect(sample.source).toContain('accessibility={{');
     expect(
@@ -245,10 +247,13 @@ it('separates current local availability from future public release installation
     'npm run build',
     'npm run dev:site',
     'npm pack',
-    'react-simple-charts-0.0.0.tgz',
+    'michael-garcia-95-react-simple-charts-0.0.0.tgz',
   ])
     expect(text).toContain(phrase);
   expect(text).not.toContain('npm install react-simple-charts');
+  expect(text).not.toContain(
+    'npm install @michael-garcia-95/react-simple-charts',
+  );
   expect(
     screen.getByLabelText('Local tarball workflow', { selector: 'pre' }),
   ).toHaveAttribute('tabindex', '0');

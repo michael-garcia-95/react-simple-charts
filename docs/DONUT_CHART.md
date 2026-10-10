@@ -3,7 +3,7 @@
 Import the component and types from the sole package root:
 
 ```tsx
-import { DonutChart } from 'react-simple-charts';
+import { DonutChart } from '@michael-garcia-95/react-simple-charts';
 
 const data = [
   { name: 'Product', value: 48 },
@@ -31,7 +31,7 @@ cannot widen it. Nullable/optional categorical and numeric fields qualify. No
 index signature is required; unknown keys and incompatible field types fail.
 
 ```tsx
-import type { DonutChartProps } from 'react-simple-charts';
+import type { DonutChartProps } from '@michael-garcia-95/react-simple-charts';
 interface Allocation {
   name: string;
   amount: number | null;

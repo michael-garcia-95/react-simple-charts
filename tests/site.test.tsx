@@ -106,11 +106,14 @@ describe('public website foundation', () => {
     expect(screen.getByText(/React 18.2.*React 19.x/)).toBeInTheDocument();
     const content = screen.getByRole('main').textContent!;
     expect(content).toContain(
-      "import { LineChart } from 'react-simple-charts'",
+      "import { LineChart } from '@michael-garcia-95/react-simple-charts'",
     );
     expect(content).toContain('xKey="month"');
     expect(content).toContain("dataTable: 'visible'");
     expect(content).not.toContain('npm install react-simple-charts');
+    expect(content).not.toContain(
+      'npm install @michael-garcia-95/react-simple-charts',
+    );
     expect(
       screen.getAllByRole('generic', {
         name: /Local repository workflow|LineChart · monthly revenue/,
@@ -137,7 +140,9 @@ describe('public website foundation', () => {
   );
   it('uses the built root export and keeps site files out of the library allowlist', () => {
     const chartSource = readFileSync(resolve('site/charts.tsx'), 'utf8');
-    expect(chartSource).toContain("from 'react-simple-charts'");
+    expect(chartSource).toContain(
+      "from '@michael-garcia-95/react-simple-charts'",
+    );
     expect(chartSource).not.toMatch(/from ['"].*(?:src|internal|dist)/);
     const config = readFileSync(resolve('vite.site.config.ts'), 'utf8');
     expect(config).not.toMatch(/alias\s*:/);

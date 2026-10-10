@@ -1,5 +1,11 @@
 import { useState } from 'react';
-import { DonutChart, PieChart, LineChart, AreaChart, BarChart } from '../src';
+import {
+  DonutChart,
+  PieChart,
+  LineChart,
+  AreaChart,
+  BarChart,
+} from '@michael-garcia-95/react-simple-charts';
 const data = [
   { name: 'Product', value: 48 },
   { name: 'Services', value: 32 },

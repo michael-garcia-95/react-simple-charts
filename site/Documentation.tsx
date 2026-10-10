@@ -226,12 +226,13 @@ npm run build
 npm pack --cache work/npm-cache
 
 # In another local React application
-npm install /absolute/path/react-simple-charts/react-simple-charts-0.0.0.tgz`}</CodePreview>
+npm install /absolute/path/react-simple-charts/michael-garcia-95-react-simple-charts-0.0.0.tgz`}</CodePreview>
             <p>
               Keep React and React DOM installed in that application within the
               supported peer range. Import only from{' '}
-              <code>react-simple-charts</code>. After library changes, rebuild
-              and repack a fresh archive before reinstalling it.
+              <code>@michael-garcia-95/react-simple-charts</code>. After library
+              changes, rebuild and repack a fresh archive before reinstalling
+              it.
             </p>
           </DocSection>
           <DocSection idPrefix={idPrefix} id="choose-a-chart">

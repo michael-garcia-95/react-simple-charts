@@ -3,7 +3,7 @@ import type {
   NumericFieldKey,
   SeriesConfig,
   ValueFormatter,
-} from 'react-simple-charts';
+} from '@michael-garcia-95/react-simple-charts';
 import { allocation, comparison, dollars, revenue, trend } from './data';
 
 interface Preset<T extends object> {

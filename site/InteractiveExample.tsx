@@ -5,7 +5,7 @@ import {
   BarChart,
   PieChart,
   DonutChart,
-} from 'react-simple-charts';
+} from '@michael-garcia-95/react-simple-charts';
 import type { Family } from './charts';
 import { ChartCard, CodePreview } from './components';
 import type { CartesianPreset, PolarPreset } from './example-data';

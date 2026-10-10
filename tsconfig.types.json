@@ -2,7 +2,7 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "paths": {
-      "react-simple-charts": ["./src/index.ts"]
+      "@michael-garcia-95/react-simple-charts": ["./src/index.ts"]
     },
     "skipLibCheck": false
   },

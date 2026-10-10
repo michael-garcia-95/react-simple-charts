@@ -17,6 +17,9 @@ import { gzipSync } from 'node:zlib';
 
 const root = resolve(import.meta.dirname, '..');
 const work = join(root, 'work/consumers');
+const pkg = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
+const packageName = pkg.name;
+const installedEntry = `node_modules/${packageName}/dist/index.js`;
 const env = {
   ...process.env,
   npm_config_cache: join(work, 'npm-cache'),
@@ -43,7 +46,10 @@ async function json(dir, name, value) {
 async function pack(dir) {
   await run('npm', ['pack', '--pack-destination', work], dir);
   const p = JSON.parse(await readFile(join(dir, 'package.json'), 'utf8'));
-  return join(work, `${p.name}-${p.version}.tgz`);
+  return join(
+    work,
+    `${p.name.replace(/^@/, '').replaceAll('/', '-')}-${p.version}.tgz`,
+  );
 }
 const report = {
   node: process.version,
@@ -80,7 +86,7 @@ const browser = await chromium.launch({
   args: ['--no-sandbox'],
 });
 report.browser = browser.version();
-const sample = `import { LineChart, AreaChart, BarChart, PieChart, DonutChart } from 'react-simple-charts';
+const sample = `import { LineChart, AreaChart, BarChart, PieChart, DonutChart } from '${packageName}';
 const data = [{quarter:'Q1',value:12},{quarter:'Q2',value:24},{quarter:'Q3',value:18},{quarter:'Q4',value:32}];
 export default function Sample() {return <main><h1>Packaged public LineChart</h1>
 <section id="explicit"><LineChart data={data} xKey="quarter" yKey="value" width={640} accessibility={{label:'Explicit',description:'Quarterly values',dataTable:'visible'}} /></section>
@@ -108,7 +114,7 @@ export default function Sample() {return <main><h1>Packaged public LineChart</h1
 <Interactive/></main>;}
 import Interactive from './Interactive';`;
 const interactive = `'use client';
-import {useState} from 'react'; import {LineChart, AreaChart, BarChart, PieChart, DonutChart} from 'react-simple-charts';
+import {useState} from 'react'; import {LineChart, AreaChart, BarChart, PieChart, DonutChart} from '${packageName}';
 function Inspection({area=false}:{area?:boolean}){const Chart=area?AreaChart:LineChart;const [result,setResult]=useState(''); const [count,setCount]=useState(0);return <section id={area?'area-interactive':'interactive'}><Chart width={640} data={[{x:'A',y:1},{x:'A',y:2}]} xKey="x" yKey="y" onDataActivate={p=>{setCount(n=>n+1);setResult(p.index+':'+p.inputMethod);}} accessibility={{label:area?'Interactive Area':'Interactive'}}/><output>{result}:{count}</output></section>;}
 const pieData=[{name:'Same',value:1},{name:'Same',value:1}];
 function PieInspection(){const [result,setResult]=useState('');const [count,setCount]=useState(0);return <section id="pie-interactive"><PieChart width={480} data={pieData} nameKey="name" valueKey="value" onDataActivate={p=>{setCount(n=>n+1);setResult(p.index+':'+p.inputMethod);}} accessibility={{label:'Interactive Pie'}}/><output>{result}:{count}</output></section>;}
@@ -892,7 +898,7 @@ try {
         '@types/react-dom': domTypes,
         '@types/node': nodeTypes,
         typescript: compiler,
-        'react-simple-charts': `file:${genuine}`,
+        [packageName]: `file:${genuine}`,
         ...(kind === 'vite' ? { vite: '8.3.4' } : { next }),
       };
       await json(dir, 'package.json', {
@@ -922,13 +928,13 @@ try {
         dir,
         'package-check.mjs',
         `import assert from 'node:assert/strict';
-import * as api from 'react-simple-charts';
+import * as api from '${packageName}';
 import {readFileSync} from 'node:fs';
 assert.deepEqual(Object.keys(api).sort(), ['AreaChart','BarChart','DonutChart','LineChart','PieChart']); assert.equal(typeof api.LineChart,'function'); assert.equal(typeof api.AreaChart,'function'); assert.equal(typeof api.BarChart,'function'); assert.equal(typeof api.PieChart,'function'); assert.equal(typeof api.DonutChart,'function');
-const p=JSON.parse(readFileSync('node_modules/react-simple-charts/package.json'));
-assert.equal(p.private,true); assert.deepEqual(Object.keys(p.exports),['.']);
+const p=JSON.parse(readFileSync('node_modules/${packageName}/package.json'));
+assert.equal(p.name,${JSON.stringify(packageName)}); assert.equal(p.version,${JSON.stringify(pkg.version)}); assert.equal(p.private,true); assert.deepEqual(Object.keys(p.exports),['.']);
 assert(p.peerDependencies.react && p.peerDependencies['react-dom']);
-for(const path of ['src/internal/RenderingProbe','dist/index.js','internal']) { await assert.rejects(import('react-simple-charts/'+path), {code:'ERR_PACKAGE_PATH_NOT_EXPORTED'}); }
+for(const path of ['src/internal/RenderingProbe','dist/index.js','internal']) { await assert.rejects(import('${packageName}/'+path), {code:'ERR_PACKAGE_PATH_NOT_EXPORTED'}); }
 `,
       );
       if (kind === 'vite') {
@@ -971,9 +977,7 @@ for(const path of ['src/internal/RenderingProbe','dist/index.js','internal']) { 
       }
       await run('npm', ['install', '--no-audit', '--no-fund'], dir);
       assert.deepEqual(
-        await readFile(
-          join(dir, 'node_modules/react-simple-charts/dist/index.js'),
-        ),
+        await readFile(join(dir, installedEntry)),
         js,
         'Installed genuine ESM must match the packed build',
       );
@@ -985,7 +989,7 @@ for(const path of ['src/internal/RenderingProbe','dist/index.js','internal']) { 
           'roots-server.mjs',
           `import {createElement,StrictMode} from 'react';
 import {renderToString} from 'react-dom/server';
-import {LineChart,AreaChart,BarChart,PieChart,DonutChart} from 'react-simple-charts';
+import {LineChart,AreaChart,BarChart,PieChart,DonutChart} from '${packageName}';
 import {writeFileSync} from 'node:fs';
 const parts=['alpha-','beta-','gamma-','pie-explicit-','pie-responsive-','donut-explicit-','donut-responsive-'].map((prefix,i)=>'<div id="root'+i+'">'+renderToString(createElement(StrictMode,null,createElement([LineChart,AreaChart,BarChart,PieChart,PieChart,DonutChart,DonutChart][i],{...([4,6].includes(i)?{}:{width:640}),...(i>=5?{centerContent:createElement("span",null,"Allocation")}: {}),data:[{x:new Date('2026-01-01T00:00:00Z'),y:1}],...(i<3?{xKey:'x',yKey:'y'}:{nameKey:'x',valueKey:'y'})})),{identifierPrefix:prefix})+'</div>');
 writeFileSync('roots.html','<!doctype html><html lang="en"><head><title>Separate roots</title><link rel="icon" href="data:,"></head><body>'+parts.join('')+'<script type="module" src="/roots.tsx"></script></body></html>');`,
@@ -995,7 +999,7 @@ writeFileSync('roots.html','<!doctype html><html lang="en"><head><title>Separate
           dir,
           'roots.tsx',
           `import {StrictMode} from 'react'; import {hydrateRoot} from 'react-dom/client';
-import {LineChart,AreaChart,BarChart,PieChart,DonutChart} from 'react-simple-charts';
+import {LineChart,AreaChart,BarChart,PieChart,DonutChart} from '${packageName}';
 ['alpha-','beta-','gamma-','pie-explicit-','pie-responsive-','donut-explicit-','donut-responsive-'].forEach((identifierPrefix,i)=>{const Chart=[LineChart,AreaChart,BarChart][i];hydrateRoot(document.getElementById('root'+i)!,<StrictMode>{i<3 && Chart ? <Chart width={640} data={[{x:new Date('2026-01-01T00:00:00Z'),y:1}]} xKey="x" yKey="y"/> : i>=5 ? <DonutChart {...(i===6?{}:{width:640})} centerContent={<span>Allocation</span>} data={[{x:new Date('2026-01-01T00:00:00Z'),y:1}]} nameKey="x" valueKey="y"/> : <PieChart {...(i===4?{}:{width:640})} data={[{x:new Date('2026-01-01T00:00:00Z'),y:1}]} nameKey="x" valueKey="y"/>}</StrictMode>,{identifierPrefix,onRecoverableError: error=>console.error(error)});});`,
         );
         await file(
@@ -1032,11 +1036,7 @@ import {LineChart,AreaChart,BarChart,PieChart,DonutChart} from 'react-simple-cha
           join(dir, '.next/server/app/page_client-reference-manifest.js'),
           'utf8',
         );
-        assert(
-          clientManifest.includes(
-            'node_modules/react-simple-charts/dist/index.js',
-          ),
-        );
+        assert(clientManifest.includes(installedEntry));
         // Next manifests register the package namespace (*), not export names.
         // The compiled Server Component must reference the named client export.
         const appServer = await readFile(
@@ -1104,7 +1104,9 @@ import {LineChart,AreaChart,BarChart,PieChart,DonutChart} from 'react-simple-cha
         report.artifacts[`vite${major}`] = { jsBytes: total, gzipBytes: gzip };
         await json(dir, 'evidence/bundle-sources.json', sources);
         assert(!sources.some((name) => /react\.development/.test(name)));
-        assert(sources.some((name) => /react-simple-charts/.test(name)));
+        assert(
+          sources.some((name) => name.includes(`node_modules/${packageName}/`)),
+        );
       }
       await start(dir, kind, major === 18 ? 4318 : 4319, major);
       await json(work, 'results.json', report);

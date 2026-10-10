@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { PieChart } from '../src';
+import { PieChart } from '@michael-garcia-95/react-simple-charts';
 const ordinary = [
   { name: 'Product', value: 48 },
   { name: 'Services', value: 32 },

@@ -3,7 +3,11 @@ import { DonutExamples } from './DonutExamples';
 import { FiveCharts } from './FiveCharts';
 import { PieExamples } from './PieExamples';
 import { Integration } from './Integration';
-import { LineChart, AreaChart, BarChart } from '../src';
+import {
+  LineChart,
+  AreaChart,
+  BarChart,
+} from '@michael-garcia-95/react-simple-charts';
 import { LinePreview } from '../src/internal/LinePreview';
 import { RenderingProbe } from '../src/internal/RenderingProbe';
 

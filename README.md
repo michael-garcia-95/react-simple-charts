@@ -1,13 +1,14 @@
-# react-simple-charts
+# React Simple Charts
 
-A lightweight, customizable React charting library built with TypeScript.
+React and TypeScript SVG charts: Line, Area, Bar, Pie and Donut.
 
 ## Status
 
 The website is live at <https://michael-garcia-95.github.io/react-simple-charts/>.
 The library from this repository remains unpublished on npm, private at 0.0.0.
 See [the M06 release readiness assessment](docs/M06_RELEASE_READINESS.md).
-The current npm name requires an ownership/naming decision before publication.
+The approved package identifier is `@michael-garcia-95/react-simple-charts`. It is not available on npm.
+See [the identity implementation report](docs/M06_PACKAGE_IDENTITY.md).
 
 The milestone notes below describe their original implementation scope.
 
@@ -39,7 +40,7 @@ The package stays private at 0.0.0. See [DonutChart usage](docs/DONUT_CHART.md),
 [LineChart](docs/LINE_CHART.md) and [AreaChart](docs/AREA_CHART.md).
 
 ```tsx
-import { LineChart } from 'react-simple-charts';
+import { LineChart } from '@michael-garcia-95/react-simple-charts';
 
 export function Sales() {
   return (

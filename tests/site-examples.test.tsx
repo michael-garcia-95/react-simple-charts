@@ -61,7 +61,7 @@ describe.each(families)('%s interactive example', (family) => {
       examplePreset(family, 'primary').data.length,
     );
     expect(source()).toBe(exampleCode(family, defaultSettings()));
-    expect(source()).toContain("from 'react-simple-charts'");
+    expect(source()).toContain("from '@michael-garcia-95/react-simple-charts'");
     const rows = source()
       .split('const data = [')[1]!
       .split('];')[0]!

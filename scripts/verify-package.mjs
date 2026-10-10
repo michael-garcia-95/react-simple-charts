@@ -1,11 +1,16 @@
 import assert from 'node:assert/strict';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { build } from 'tsdown';
 import ts from 'typescript';
 
+const execute = promisify(execFile);
 const pkg = JSON.parse(await readFile('package.json', 'utf8'));
+assert.equal(pkg.name, '@michael-garcia-95/react-simple-charts');
+assert.equal(pkg.version, '0.0.0');
 assert.equal(pkg.private, true);
 assert.equal(pkg.type, 'module');
 assert.deepEqual(pkg.exports, {
@@ -15,7 +20,7 @@ const code = await readFile('dist/index.js', 'utf8');
 assert.match(code, /^\s*["']use client["'];/);
 assert.doesNotMatch(code, /\brequire\(|module\.exports/);
 assert.match(await readFile('dist/index.d.ts', 'utf8'), /export/);
-const api = await import('react-simple-charts');
+const api = await import(pkg.name);
 assert.deepEqual(Object.keys(api).sort(), [
   'AreaChart',
   'BarChart',
@@ -27,6 +32,7 @@ assert.equal(typeof api.LineChart, 'function');
 assert.equal(typeof api.AreaChart, 'function');
 assert.equal(typeof api.BarChart, 'function');
 assert.equal(typeof api.PieChart, 'function');
+assert.equal(typeof api.DonutChart, 'function');
 const { createElement } = await import('react');
 const { renderToString } = await import('react-dom/server');
 assert.match(
@@ -41,7 +47,7 @@ assert.match(
   /<svg/,
 );
 assert.match(code, /from ["']react(?:\/jsx-runtime)?["']/);
-await assert.rejects(import('react-simple-charts/internal'), {
+await assert.rejects(import(`${pkg.name}/internal`), {
   code: 'ERR_PACKAGE_PATH_NOT_EXPORTED',
 });
 const declarations = ts.createProgram(
@@ -128,6 +134,56 @@ try {
   assert.match(probe, /^\s*["']use client["'];/);
 } finally {
   await rm(directory, { recursive: true, force: true });
+}
+// Inspect a real archive, including its manifest and exact packed build bytes.
+const archiveDirectory = await mkdtemp(join(tmpdir(), 'rsc-archive-'));
+try {
+  const { stdout } = await execute('npm', [
+    'pack',
+    '--json',
+    // The parent verify:package command already built the distribution.
+    '--ignore-scripts',
+    '--cache',
+    join(archiveDirectory, 'npm-cache'),
+    '--pack-destination',
+    archiveDirectory,
+  ]);
+  const [packed] = JSON.parse(stdout);
+  assert.equal(packed.name, pkg.name);
+  assert.equal(packed.version, pkg.version);
+  assert.deepEqual(packed.bundled, []);
+  const inventory = [
+    'LICENSE',
+    'README.md',
+    'package.json',
+    'dist/index.js',
+    'dist/index.d.ts',
+    'dist/index.js.map',
+  ].sort();
+  assert.deepEqual(packed.files.map(({ path }) => path).sort(), inventory);
+  const archive = join(archiveDirectory, packed.filename);
+  const { stdout: entries } = await execute('tar', ['-tzf', archive]);
+  assert.deepEqual(
+    entries.trim().split('\n').sort(),
+    inventory.map((path) => `package/${path}`).sort(),
+  );
+  await execute('tar', ['-xzf', archive, '-C', archiveDirectory]);
+  const packedRoot = join(archiveDirectory, 'package');
+  assert.deepEqual(
+    JSON.parse(await readFile(join(packedRoot, 'package.json'), 'utf8')),
+    pkg,
+  );
+  for (const path of inventory.filter((path) => path.startsWith('dist/'))) {
+    assert.deepEqual(
+      await readFile(join(packedRoot, path)),
+      await readFile(path),
+    );
+  }
+  console.log(
+    `Actual archive verified: ${packed.filename}, ${packed.entryCount} files, ${packed.size} packed bytes, ${packed.unpackedSize} unpacked bytes.`,
+  );
+} finally {
+  await rm(archiveDirectory, { recursive: true, force: true });
 }
 console.log(
   'Package contract, declarations, client boundary, and React externalization verified.',

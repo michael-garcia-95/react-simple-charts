@@ -1,10 +1,10 @@
 # Public BarChart — M03-T04
 
-Import `BarChart` from `react-simple-charts`. The package is private at 0.0.0;
+Import `BarChart` from `@michael-garcia-95/react-simple-charts`. The package is private at 0.0.0;
 these examples describe the packaged API, not an available npm release.
 
 ```tsx
-import { BarChart } from 'react-simple-charts';
+import { BarChart } from '@michael-garcia-95/react-simple-charts';
 
 const data = [
   { department: 'Support', actual: 12, budget: 15 },

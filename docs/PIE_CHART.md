@@ -3,7 +3,7 @@
 Import the public component and all types from the package root:
 
 ```tsx
-import { PieChart } from 'react-simple-charts';
+import { PieChart } from '@michael-garcia-95/react-simple-charts';
 
 const data = [
   { name: 'Product', value: 48 },
@@ -21,7 +21,7 @@ unknown keys and incompatible field types fail compilation. No index signature
 is needed. Props, data, records, Dates and color arrays are not mutated.
 
 ```tsx
-import type { PieChartProps } from 'react-simple-charts';
+import type { PieChartProps } from '@michael-garcia-95/react-simple-charts';
 interface Allocation {
   name: string;
   amount: number | null;

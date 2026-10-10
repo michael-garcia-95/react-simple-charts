@@ -9,7 +9,7 @@ import type {
   LineChartProps,
   SeriesConfig,
   DonutChartProps,
-} from 'react-simple-charts';
+} from '@michael-garcia-95/react-simple-charts';
 
 interface Sales {
   month: string;
