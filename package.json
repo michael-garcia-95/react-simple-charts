@@ -33,7 +33,13 @@
     "test:watch": "vitest",
     "verify:package": "npm run build && node scripts/verify-package.mjs",
     "prepack": "npm run build",
-    "test:types": "tsc --project tsconfig.types.json"
+    "test:types": "tsc --project tsconfig.types.json",
+    "pretypecheck": "npm run build",
+    "pretest": "npm run build",
+    "dev:site": "npm run build && vite --config vite.site.config.ts",
+    "build:site": "npm run build && vite build --config vite.site.config.ts",
+    "preview:site": "vite preview --config vite.site.config.ts",
+    "test:site": "npm run build && vitest run tests/site.test.tsx"
   },
   "peerDependencies": {
     "react": "^18.2.0 || ^19.0.0",

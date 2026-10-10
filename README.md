@@ -72,3 +72,25 @@ Licensed under the MIT License. Copyright (c) 2026 Michael Garcia. The copyright
 The historical RenderingProbe and source-internal LinePreview remain available only in the repository. Genuine packaged Vite/Next validation uses all five public charts; see [consumer compatibility](docs/CONSUMER_COMPATIBILITY.md).
 
 See [M03 integration hardening](docs/M03_INTEGRATION_HARDENING.md) for the cross-family audit, reproducible browser matrix, fixes and remaining risks.
+
+## Public website foundation
+
+The dedicated `site/` application is separate from the technical playground.
+It contains Home, Examples, Documentation and About, using the five actual
+components through the built package root. The package is not published to npm.
+
+```sh
+npm ci
+npm run dev:site
+npm run build:site
+npm run preview:site
+npm run test:site
+```
+
+Site commands build the library before consuming its root exports; production
+output is `site-dist/`. Normal typecheck and test commands also build the library
+first for clean-checkout artifact resolution. After library source changes,
+rebuild/restart the site dev command. No source alias or new React peer policy
+is used. See [the approved website design baseline](docs/M05_WEBSITE_DESIGN_BASELINE.md)
+for architecture, design, local-build tradeoffs and the Cloudflare Pages proposal.
+No website deployment is configured.
