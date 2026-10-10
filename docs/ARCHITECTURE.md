@@ -2,7 +2,7 @@
 
 ## Approved direction
 
-React Simple Charts is a single npm package, a TypeScript-first React component library supporting React 18.2+ and React 19.x. Rendering is SVG-first. Planned chart families are Line, Bar, Area, Pie, and Donut; LineChart, AreaChart, BarChart and PieChart are implemented; Donut remains deferred.
+React Simple Charts is a single npm package, a TypeScript-first React component library supporting React 18.2+ and React 19.x. Rendering is SVG-first. Planned chart families are Line, Bar, Area, Pie, and Donut; All five chart families are implemented.
 
 ## Module responsibilities
 
@@ -11,7 +11,7 @@ React Simple Charts is a single npm package, a TypeScript-first React component 
 - `src/internal/`: implementation details unavailable through package subpaths.
 - `src/styles/`: self-contained styling based on CSS variables. Future components must work without a mandatory external stylesheet.
 - `src/types/`: shared TypeScript contracts. `contracts.ts` contains focused chart-family unions and shared data, axis, tooltip, activation, and accessibility types. See [API type contracts](API_TYPE_CONTRACTS.md).
-- `src/index.ts`: the sole public barrel. It exports approved M01-T02 contracts as types and LineChart, AreaChart, BarChart and PieChart as the only runtime chart exports.
+- `src/index.ts`: the sole public barrel. It exports approved M01-T02 contracts as types and LineChart, AreaChart, BarChart, PieChart and DonutChart as the only runtime chart exports.
 - `playground/`: a Vite React application, excluded from the npm package.
 - `tests/`: foundation contract and accessible playground tests.
 - `scripts/verify-package.mjs`: verifies built artifacts and probes runtime externalization using the real build configuration.
@@ -134,3 +134,20 @@ segmentId replaces series identity. No totals, percentages or paths are recalcul
 existing raw fallback now retains an empty semantic table for malformed nonarray
 data. No dependency, public contract or subpath is added. See [PieChart](PIE_CHART.md).
 Earlier sections above record historical milestone state.
+
+## Public DonutChart — M04-T03
+
+DonutChart is the fifth runtime export. The approved generic contract is unchanged.
+PolarRenderer accepts a discriminated family/props union; public wrappers select
+pie or donut without unsafe prop casts. Normalization, source tables, legend,
+colors, roving controls, tooltips, gesture evidence and opacity lifecycle are shared.
+The unchanged pure engine validates the default/custom ratio and generates true
+ring paths. Labels and tooltip anchors use ring midpoint; Pie keeps its original
+60%-radius label position and fitting.
+
+A Donut-only SVG frame contains an accessible HTML center region sized as an
+inscribed square from engine inner radius. Percentage positions and proportional
+SVG scaling preserve alignment under CSS constraints and non-square dimensions.
+Legend and tables sit outside that frame. Interactive user content remains exposed
+and confined to the actual hole. No default totals, portals, dependencies, public
+props or Cartesian behavior changes. See [DonutChart](DONUT_CHART.md).

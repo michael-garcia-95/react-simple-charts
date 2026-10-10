@@ -178,6 +178,7 @@ export function PolarSegmentInspection<T extends object>({
         style={{
           display: 'block',
           maxWidth: '100%',
+          ...(geometry.family === 'donut' ? { height: 'auto' } : {}),
           outline:
             focusedKey !== null
               ? '3px solid var(--rsc-focus-color, #075985)'
@@ -411,11 +412,17 @@ export function PolarSegmentInspection<T extends object>({
           style={{
             position: 'absolute',
             // CSS bounds use the actual figure width even when a fixed SVG is scaled.
-            left: `clamp(0px, ${active.point.centerX + labelPosition(active.point).x}px, max(0px, calc(100% - 220px)))`,
-            top: Math.max(
-              0,
-              active.point.centerY + labelPosition(active.point).y - 80,
-            ),
+            left:
+              geometry.family === 'donut'
+                ? `clamp(0px, ${((active.point.centerX + labelPosition(active.point).x) / geometry.viewport.width) * 100}%, max(0px, calc(100% - 220px)))`
+                : `clamp(0px, ${active.point.centerX + labelPosition(active.point).x}px, max(0px, calc(100% - 220px)))`,
+            top:
+              geometry.family === 'donut'
+                ? `max(0px, calc(${((active.point.centerY + labelPosition(active.point).y) / geometry.viewport.height) * 100}% - 80px))`
+                : Math.max(
+                    0,
+                    active.point.centerY + labelPosition(active.point).y - 80,
+                  ),
             width: 220,
             boxSizing: 'border-box',
             overflowWrap: 'anywhere',

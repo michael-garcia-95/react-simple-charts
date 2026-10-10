@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { DonutExamples } from './DonutExamples';
 import { PieExamples } from './PieExamples';
 import { Integration } from './Integration';
 import { LineChart, AreaChart, BarChart } from '../src';
@@ -9,7 +10,7 @@ export function App() {
   const [activation, setActivation] = useState('No activation yet');
   return (
     <main>
-      <p className="eyebrow">Development playground · M04-T02</p>
+      <p className="eyebrow">Development playground · M04-T03</p>
       <h1>React Simple Charts</h1>
       <p>
         A lightweight, customizable React charting library built with
@@ -21,12 +22,13 @@ export function App() {
         </h2>
         <p>
           LineChart is publicly importable. AreaChart and BarChart are also
-          public; PieChart is public and Donut remains planned.
+          public; PieChart and DonutChart are public.
         </p>
         <p>Planned chart families: Line, Bar, Area, Pie, and Donut.</p>
       </section>
       <Integration />
       <PieExamples />
+      <DonutExamples />
       <section aria-labelledby="explicit-heading">
         <h2 id="explicit-heading">Explicit dimensions · 640 × 280</h2>
         <p>

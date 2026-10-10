@@ -43,3 +43,5 @@ export { AreaChart } from './charts/AreaChart';
 export { BarChart } from './charts/BarChart';
 
 export { PieChart } from './charts/PieChart';
+
+export { DonutChart } from './charts/DonutChart';

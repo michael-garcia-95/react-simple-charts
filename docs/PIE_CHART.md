@@ -194,3 +194,11 @@ no performance optimization or budget is claimed. Inline styles and host CSS/CSP
 can affect presentation; custom tooltip sizing and label fitting are approximate.
 Chromium/axe checks do not establish full WCAG conformance, manual screen-reader
 behavior, Firefox or WebKit compatibility. These remain review gaps.
+
+## M04-T03 subsequent integration
+
+[DonutChart](DONUT_CHART.md) is now public using the same polar renderer and
+inspection implementation. The pure geometry engine is unchanged. Pie keeps
+filled sectors, original labels, colors, tables, payloads and interaction; only
+Donut accepts ratio/center content and uses ring-aware presentation. Earlier
+milestone statements above preserve historical task boundaries.

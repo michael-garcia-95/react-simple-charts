@@ -19,6 +19,7 @@ const api = await import('react-simple-charts');
 assert.deepEqual(Object.keys(api).sort(), [
   'AreaChart',
   'BarChart',
+  'DonutChart',
   'LineChart',
   'PieChart',
 ]);

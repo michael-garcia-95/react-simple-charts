@@ -89,3 +89,19 @@ Manual screen-reader and broader browser review, host CSP/theme support, perform
 budgets and improved measured label placement remain open. Donut center content,
 public radius settings, interactive legends and later milestone integration are
 outside M04-T02. No publication, merge or release approval is implied.
+
+## M04-T03 implemented Donut policies
+
+DonutChart is public with default ratio 0.6 and no fabricated center total. The
+unchanged engine rejects invalid or unrepresentable holes rather than clamping.
+Center content uses a contained inscribed HTML region, retains semantic text and
+interactive controls, and follows actual SVG scaling. Ring labels use conservative
+estimated radial/angular fitting; tooltip anchors sit in the ring. Pie behavior
+and its 60%-radius labels are preserved. See [DonutChart](DONUT_CHART.md).
+
+Accepted presentation limitations: arbitrary large center content is clipped,
+label fitting is estimated and tooltip vertical placement is approximate. Manual
+screen-reader/broader browser review, strict CSP, performance budgets and future
+measured label placement remain open. M04-T04 integration hardening, interactive
+legends, new radius/angle controls, nested rings, publication and release remain
+deferred. No merge approval is implied.

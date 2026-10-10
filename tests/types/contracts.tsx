@@ -1,4 +1,3 @@
-import type { ReactElement } from 'react';
 import type {
   LineChartProps,
   PieChartProps,
@@ -25,11 +24,13 @@ interface Row {
   impossible: never;
 }
 export const data: readonly Row[] = [];
-import { LineChart, AreaChart, BarChart, PieChart } from 'react-simple-charts';
-declare function DonutChart<T extends object>(
-  props: DonutChartProps<T>,
-): ReactElement;
-
+import {
+  LineChart,
+  AreaChart,
+  BarChart,
+  PieChart,
+  DonutChart,
+} from 'react-simple-charts';
 export const series: readonly SeriesConfig<Row>[] = (
   ['amount', 'optional'] as const
 ).map((key) => ({ key, label: key, color: '#abc' }));
@@ -266,10 +267,6 @@ export function describeInputMethod(method: InputMethod): string {
 // @ts-expect-error Mouse is represented by pointer, not a separate input method.
 export const invalidInputMethod: InputMethod = 'mouse';
 
-// @ts-expect-error Donut remains a future runtime component.
-import { DonutChart as RuntimeDonut } from 'react-simple-charts';
-export const rejectedPolarRuntimeImports = [RuntimeDonut];
-
 // Actual root Bar JSX preserves exclusive mappings and physical axis contracts.
 // prettier-ignore
 export const barDate = <BarChart data={data} xKey="when" yKey="nullable" />;
@@ -311,3 +308,31 @@ export const pieBoolean = <PieChart data={data} nameKey="flag" valueKey="amount"
 // @ts-expect-error Unknown labels cannot influence data inference.
 // prettier-ignore
 export const pieUnknown = <PieChart data={data} nameKey="other" valueKey="amount" />;
+
+export const publicDonut = (
+  <DonutChart
+    data={data}
+    nameKey="name"
+    valueKey="amount"
+    innerRadiusRatio={0.6}
+    centerContent={<button>Details</button>}
+    tooltip={({ segment }) => segment.record.name}
+    onDataActivate={(p) => p.record.amount?.toFixed()}
+  />
+);
+// @ts-expect-error Ratio must be numeric.
+// prettier-ignore
+export const donutBadRatio = <DonutChart data={data} nameKey="name" valueKey="amount" innerRadiusRatio="0.6" />;
+// @ts-expect-error Donut mapping must remain inferred from data.
+// prettier-ignore
+export const donutBadKey = <DonutChart data={data} nameKey="unknown" valueKey="amount" />;
+// @ts-expect-error Pie cannot receive center content.
+// prettier-ignore
+export const pieCenter = <PieChart data={data} nameKey="name" valueKey="amount" centerContent="Total" />;
+export const donutProps = {
+  data,
+  nameKey: 'name',
+  valueKey: 'amount',
+  centerContent: 0,
+  innerRadiusRatio: 0.6,
+} satisfies DonutChartProps<Row>;

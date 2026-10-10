@@ -1,6 +1,6 @@
 'use client';
 import { useId } from 'react';
-import type { PieChartProps } from '../types/contracts';
+import type { PieChartProps, DonutChartProps } from '../types/contracts';
 import { normalizeSegments } from '../core/data/segments';
 import { buildPolarGeometry } from '../core/geometry/polar';
 import { usableDimension } from './probe-layout';
@@ -9,18 +9,24 @@ import { SegmentDataTable, SourceDataTable } from './svg/DataTable';
 import { indexedColor, visuallyHidden } from './svg/presentation';
 import { segmentLabel } from './svg/PolarMarks';
 import { PolarSegmentInspection } from '../charts/PolarSegmentInspection';
+type Presentation<T extends object> =
+  | { family: 'pie'; props: PieChartProps<T> }
+  | { family: 'donut'; props: DonutChartProps<T> };
 function Graphic<T extends object>({
-  props,
+  presentation,
   width,
   id,
 }: {
-  props: PieChartProps<T>;
+  presentation: Presentation<T>;
   width: number | null;
   id: string;
 }) {
+  const { props, family } = presentation;
   const normalized = normalizeSegments(props);
   const height = props.height === undefined ? 280 : props.height;
-  const label = props.accessibility?.label?.trim() || 'Pie chart';
+  const label =
+    props.accessibility?.label?.trim() ||
+    (family === 'donut' ? 'Donut chart' : 'Pie chart');
   const invalid =
     !usableDimension(height) ||
     (typeof props.width === 'number' && !usableDimension(props.width));
@@ -29,19 +35,77 @@ function Graphic<T extends object>({
     ? null
     : buildPolarGeometry({
         normalized,
-        family: 'pie',
+        ...(presentation.family === 'donut'
+          ? {
+              family: 'donut' as const,
+              ...(presentation.props.innerRadiusRatio === undefined
+                ? {}
+                : { innerRadiusRatio: presentation.props.innerRadiusRatio }),
+            }
+          : { family: 'pie' as const }),
         width: width ?? NaN,
         height,
       });
   return (
     <>
       {!invalid && geometry?.status === 'ready' ? (
-        <PolarSegmentInspection
-          props={props}
-          geometry={geometry}
-          id={id}
-          label={label}
-        />
+        presentation.family === 'donut' ? (
+          <div
+            data-donut-frame
+            style={{
+              position: 'relative',
+              width: geometry.viewport.width,
+              maxWidth: '100%',
+            }}
+          >
+            <PolarSegmentInspection
+              props={props}
+              geometry={geometry}
+              id={id}
+              label={label}
+            />
+            {presentation.props.centerContent !== undefined &&
+              presentation.props.centerContent !== null && (
+                <div
+                  data-donut-center
+                  style={{
+                    position: 'absolute',
+                    left: `${(geometry.viewport.centerX / geometry.viewport.width) * 100}%`,
+                    top: `${(geometry.viewport.centerY / geometry.viewport.height) * 100}%`,
+                    // An inscribed square keeps the entire interactive HTML region inside the hole.
+                    width: `${((Math.SQRT2 * geometry.viewport.innerRadius) / geometry.viewport.width) * 100}%`,
+                    height: `${((Math.SQRT2 * geometry.viewport.innerRadius) / geometry.viewport.height) * 100}%`,
+                    transform: 'translate(-50%, -50%)',
+                    display: 'grid',
+                    placeItems: 'center',
+                    overflow: 'hidden',
+                    overflowWrap: 'anywhere',
+                    minWidth: 0,
+                    textAlign: 'center',
+                  }}
+                >
+                  <div
+                    style={{
+                      minWidth: 0,
+                      maxWidth: '100%',
+                      maxHeight: '100%',
+                      overflow: 'hidden',
+                      overflowWrap: 'anywhere',
+                    }}
+                  >
+                    {presentation.props.centerContent}
+                  </div>
+                </div>
+              )}
+          </div>
+        ) : (
+          <PolarSegmentInspection
+            props={props}
+            geometry={geometry}
+            id={id}
+            label={label}
+          />
+        )
       ) : (
         <div
           role="img"
@@ -133,20 +197,21 @@ function Graphic<T extends object>({
   );
 }
 function Responsive<T extends object>({
-  props,
+  presentation,
   id,
 }: {
-  props: PieChartProps<T>;
+  presentation: Presentation<T>;
   id: string;
 }) {
   const { ref, width } = useContainerWidth();
   return (
     <div ref={ref} style={{ width: '100%', minWidth: 0 }}>
-      <Graphic props={props} width={width} id={id} />
+      <Graphic presentation={presentation} width={width} id={id} />
     </div>
   );
 }
-export function PolarRenderer<T extends object>(props: PieChartProps<T>) {
+export function PolarRenderer<T extends object>(presentation: Presentation<T>) {
+  const { props } = presentation;
   const id = useId();
   return (
     <figure
@@ -167,9 +232,9 @@ export function PolarRenderer<T extends object>(props: PieChartProps<T>) {
       }}
     >
       {typeof props.width === 'number' ? (
-        <Graphic props={props} width={props.width} id={id} />
+        <Graphic presentation={presentation} width={props.width} id={id} />
       ) : (
-        <Responsive props={props} id={id} />
+        <Responsive presentation={presentation} id={id} />
       )}
     </figure>
   );
