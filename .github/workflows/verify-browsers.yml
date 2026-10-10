@@ -1,0 +1,74 @@
+name: Browser verification
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser-smoke:
+    name: Chromium, Firefox and WebKit smoke
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/work/browser-smoke/binaries
+      RSC_SMOKE_BROWSERS: chromium,firefox,webkit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.19.0'
+          cache: npm
+      - run: npm ci
+      - name: Install isolated pinned browser driver
+        run: node scripts/verify-browser-smoke.mjs --install-driver-only
+      - name: Install all three engines and Linux dependencies
+        run: |
+          set -o pipefail
+          node work/browser-smoke/driver/node_modules/playwright-core/cli.js install --with-deps chromium firefox webkit 2>&1 | tee work/browser-smoke/installation.log
+      - name: Verify genuine installed archive in all engines
+        run: |
+          set -o pipefail
+          npm run verify:browsers 2>&1 | tee work/browser-smoke/verification.log
+      - name: Report and enforce complete browser evidence
+        if: always()
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import { existsSync, readFileSync, appendFileSync } from 'node:fs';
+          const path = 'work/browser-smoke/results.json';
+          if (!existsSync(path)) {
+            appendFileSync(process.env.GITHUB_STEP_SUMMARY, 'Browser smoke report unavailable: Chromium, Firefox and WebKit are not verified. Inspect installation and job logs.\n');
+            process.exit(1);
+          }
+          const report = JSON.parse(readFileSync(path, 'utf8'));
+          const lines = ['| Engine | Executed version | Status | Checks | Axe violations |', '| --- | --- | --- | ---: | ---: |'];
+          for (const name of ['chromium', 'firefox', 'webkit']) {
+            const result = report.browsers.find(item => item.engine === name);
+            lines.push(`| ${name} | ${result?.version ?? 'not executed'} | ${result?.status ?? 'not executed'} | ${result?.checks.length ?? 0} | ${result?.axeViolations ?? 'not executed'} |`);
+          }
+          appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\n') + '\n');
+          assert.deepEqual(report.browsers.map(item => item.engine), ['chromium', 'firefox', 'webkit']);
+          for (const result of report.browsers) {
+            assert.equal(result.status, 'pass', result.engine);
+            assert.equal(result.checks.length, 15, result.engine);
+            assert.equal(result.axeViolations, 0, result.engine);
+          }
+          NODE
+      - name: Upload browser evidence and failure diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-smoke-${{ github.sha }}
+          retention-days: 14
+          if-no-files-found: warn
+          path: |
+            work/browser-smoke/results.json
+            work/browser-smoke/*.log
+            work/browser-smoke/*.png
+            work/browser-smoke/*-accessibility.txt
+            work/browser-smoke/*-axe.json
+            work/browser-smoke/driver/package.json
+            work/browser-smoke/driver/package-lock.json

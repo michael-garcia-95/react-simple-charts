@@ -350,3 +350,59 @@ archive inventory and local sizes remain 82,123 packed / 353,878 unpacked bytes.
 Detailed correction logs are ignored under work/m06-t03-review. Final pushed SHA
 and all four final-head CI outcomes are recorded in the review handoff. No new PR,
 merge, publication, release/tag or deployment is authorized or performed.
+
+## M06-T03B — Isolated cross-browser CI verification
+
+Verified clean baseline `715bcd46001910bef72daf931c199cfc069befd7` after fetching
+origin/main. The dedicated `Browser verification` pull-request/manual workflow
+uses Ubuntu 24.04 and pinned Node 24.19.0, independently of the existing four
+Node/React jobs. It runs npm ci, installs the existing Playwright Core 1.64.0 /
+axe Playwright 4.13.0 driver under ignored work via `--install-driver-only`, then
+uses that driver's supported `install --with-deps chromium firefox webkit` command.
+No root dependency, package metadata, source map, chart API or Pages workflow changes.
+
+`npm run verify:browsers` explicitly requests all three engines. It still packs
+and installs the genuine six-file archive into a fresh Vite/React production
+fixture, compares installed ESM bytes and executes every existing assertion.
+There are no source aliases, forced clicks, assertion retries or browser fallbacks.
+A separate report gate requires all three engine results to pass with 15 recorded
+checks and zero axe violations each. Installation or unexecuted engines fail the job.
+
+The job uploads narrowly selected logs, results, screenshots, accessibility
+snapshots, complete axe analysis and driver manifests for 14 days, even on failure.
+Failure screenshots/snapshots are attempted before closing the browser; diagnostic
+capture failures are recorded without replacing the original assertion failure.
+Browser binaries, npm caches and node_modules are excluded from these artifacts
+and from the distributed archive. Exact executed browser versions come from
+browser.version(), not installation metadata.
+
+GitHub Actions execution evidence is pending the initial task PR run. Local
+Chromium evidence and the prior Firefox/WebKit download restrictions above remain
+separate historical results. This workflow's existence alone does not establish
+browser compatibility. Physical Safari/macOS/iOS, Windows/NVDA, mobile devices,
+strict CSP and real screen-reader announcements remain unverified. Manual NVDA
+checks remain pending; automated axe is not WCAG certification.
+
+Reproduce on a Linux machine with permitted Playwright downloads:
+
+```sh
+npm ci
+node scripts/verify-browser-smoke.mjs --install-driver-only
+export PLAYWRIGHT_BROWSERS_PATH="$PWD/work/browser-smoke/binaries"
+node work/browser-smoke/driver/node_modules/playwright-core/cli.js install --with-deps chromium firefox webkit
+RSC_SMOKE_BROWSERS=chromium,firefox,webkit npm run verify:browsers
+```
+
+`--prepare-only` retains the independent Windows manual-fixture workflow and does
+not provision browser drivers. `--install-driver-only` provisions only the driver,
+without packing the library or building a consumer. Normal browser verification
+continues to perform both preparation and driver setup.
+
+M06-T03B local validation on Node 24.19.0 / npm 11.9.0 passed: npm ci (274
+packages), typecheck, test:types, lint, format:check, 1,115 Vitest tests / 52 files,
+seven npm-command tests, verify:package (six files, 82,123 packed / 353,878 unpacked
+bytes), verify:site:snippets (32 samples), both site builds and base checks,
+build:playground, npm pack --dry-run and git diff --check. Isolated driver-only
+provisioning also passed. Exact commands match the local validation table above;
+focused command: `node --test scripts/tests/npm-command.test.mjs`. These are local
+results, not substitutes for GitHub Actions engine execution.
