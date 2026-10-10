@@ -154,3 +154,29 @@ are required. Squash merge, Pages settings/workflow/permissions, deployment,
 release and npm publication still require explicit approval. Manual assistive
 technology, wider browsers/native devices and future production performance
 budgets remain separate review decisions. No M06 work is begun.
+
+## M06-T01 release readiness assessment
+
+See [the release readiness report](M06_RELEASE_READINESS.md). The website is live
+at <https://michael-garcia-95.github.io/react-simple-charts/>; earlier no-deployment
+statements above are historical. This repository's library remains unpublished,
+private at 0.0.0. Official npm registry verification on 2026-10-10 confirms the
+current unscoped name belongs to another publisher (latest 0.0.19; public
+maintainer samueldelesque). Inactivity does not permit an unrelated account to
+publish it. Recommend a user-controlled npm scope, verified independently of
+the GitHub username; no final name is approved or reserved.
+
+Outstanding Development Lead/user decisions: final identity and namespace
+ownership/maintainers; initial version (recommend 0.1.0, not a final choice);
+consumer Node/TypeScript and browser policy; minimum manual screen-reader gate
+and browser/device deferrals; source-map exposure; breaking-change/changelog/
+maintenance policy; secure first-publication bootstrap, 2FA, OIDC/provenance,
+restricted release permissions and manual approvals. Current npm documentation
+also supports staging new packages, which creates a public 0.0.0-stage placeholder
+and therefore requires explicit approval rather than being a harmless test.
+
+Release conclusion is NO-GO pending the report's prioritized gates. Proposed
+M06-T02 through T07 are implementation proposals, not authorizations. No runtime
+contract, identity/version, publication workflow, tag, package, Pages setting or
+deployed website is changed by this assessment. Await Lead review and user
+approval; stop after M06-T01.

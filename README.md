@@ -4,6 +4,13 @@ A lightweight, customizable React charting library built with TypeScript.
 
 ## Status
 
+The website is live at <https://michael-garcia-95.github.io/react-simple-charts/>.
+The library from this repository remains unpublished on npm, private at 0.0.0.
+See [the M06 release readiness assessment](docs/M06_RELEASE_READINESS.md).
+The current npm name requires an ownership/naming decision before publication.
+
+The milestone notes below describe their original implementation scope.
+
 M05-T04 audits website integration and corrects stale copy feedback after reset
 and clipped keyboard focus outlines. See [website hardening and readiness evidence](docs/M05_WEBSITE_HARDENING.md)
 for production build/browser checks, local measurements and deployment prerequisites.
@@ -16,7 +23,7 @@ The package remains private at 0.0.0; deployment and publication remain separate
 
 M05-T02 expands the public Examples page with two deterministic presets per chart,
 independent controls, synchronized runnable TSX, accessible copying and reset.
-Root and GitHub Pages project-path builds are supported; no site is deployed.
+Root and GitHub Pages project-path builds are supported; the site is now live.
 See [interactive examples](docs/M05_INTERACTIVE_EXAMPLES.md) and the
 [approved GitHub Pages plan](docs/GITHUB_PAGES_PLAN.md).
 
@@ -99,7 +106,7 @@ components through the built package root. The package is not published to npm.
 npm ci
 npm run dev:site
 npm run build:site
-# Build for the approved future GitHub Pages project URL (no deployment)
+# Build locally for the live GitHub Pages project URL (no deployment)
 npm run build:site:pages
 # Rebuild root mode before ordinary root preview
 npm run build:site
@@ -114,7 +121,8 @@ rebuild/restart the site dev command. No source alias or new React peer policy
 is used. See [the approved website design baseline](docs/M05_WEBSITE_DESIGN_BASELINE.md)
 for architecture, design and local-build tradeoffs. The GitHub Pages plan
 supersedes the historical Cloudflare Pages proposal.
-No website deployment is configured.
+A separate manual main-only GitHub Pages deployment workflow is configured;
+local build commands do not deploy the site.
 
 `npm run test:site` covers the foundation, all interactive families and base paths.
 `npm run verify:site:snippets` compiles 32 TSX samples (22 interactive variants and
