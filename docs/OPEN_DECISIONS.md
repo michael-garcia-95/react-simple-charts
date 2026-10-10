@@ -143,3 +143,14 @@ Package release/publication, Pages settings/deployment, custom domains, manual
 screen-reader and wider browser/device validation, strict CSP and dense-data
 performance budgets remain separate decisions. Documentation does not expand the
 public API or imply availability on npm. M05-T04 and merge remain unapproved.
+
+## M05-T04 website hardening
+
+M05-T04 is now authorized as the final website audit. Its focused site-level
+copy/focus corrections and deployment-readiness evidence are documented in
+[website hardening](M05_WEBSITE_HARDENING.md); earlier task-boundary statements
+above remain historical. Final-head CI verification and Development Lead review
+are required. Squash merge, Pages settings/workflow/permissions, deployment,
+release and npm publication still require explicit approval. Manual assistive
+technology, wider browsers/native devices and future production performance
+budgets remain separate review decisions. No M06 work is begun.

@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
+import { verifySiteHardening } from './verify-site-hardening.mjs';
 const root = resolve(import.meta.dirname, '..');
 const require = createRequire(
   resolve(root, 'work/consumers/driver/package.json'),
@@ -61,6 +62,7 @@ const report = {
   errors,
 };
 const routes = ['/', '/examples/', '/documentation/', '/about/'];
+const widths = [320, 375, 480, 768, 900, 1200, 1440];
 async function bounds() {
   return page.evaluate(() => ({
     pageWidth: document.documentElement.clientWidth,
@@ -80,7 +82,7 @@ async function bounds() {
   }));
 }
 try {
-  for (const width of [320, 480, 768, 1200]) {
+  for (const width of widths) {
     await page.setViewportSize({ width, height: 900 });
     for (const route of routes) {
       const response = await page.goto(origin + pathFor(route));
@@ -185,7 +187,7 @@ try {
     'limitations-and-troubleshooting',
   ];
   report.documentation = [];
-  for (const width of [320, 480, 768, 1200]) {
+  for (const width of widths) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto(origin + pathFor('/documentation/'));
     const toc = page.getByRole('navigation', {
@@ -271,6 +273,18 @@ try {
           return style.overflowX === 'auto' && style.fontSize !== '0px';
         }),
       );
+      await panel.focus();
+      await page.keyboard.press('ArrowRight');
+      const focus = await panel.evaluate((node) => {
+        const style = getComputedStyle(node);
+        return {
+          outline: style.outlineStyle,
+          width: parseFloat(style.outlineWidth),
+          offset: parseFloat(style.outlineOffset),
+        };
+      });
+      assert.equal(focus.outline, 'solid');
+      assert.ok(focus.offset <= -focus.width, 'Code focus outline is clipped');
     }
     if (width === 320) {
       const panel = page.getByLabel('BarChart · horizontal grouped balances', {
@@ -380,7 +394,7 @@ try {
     );
   }
   // Exercise every family and current-code synchronization at each required width.
-  for (const width of [320, 480, 768, 1200]) {
+  for (const width of widths) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto(origin + pathFor('/examples/'));
     await page.waitForFunction(
@@ -727,6 +741,15 @@ try {
   });
   report.enlargedText =
     'All four pages at 320px / 200% root font size, no document overflow';
+  await verifySiteHardening({
+    browser,
+    page,
+    context,
+    base,
+    origin,
+    evidence,
+    report,
+  });
   const manifest = JSON.parse(
     await readFile(resolve(root, 'package.json'), 'utf8'),
   );

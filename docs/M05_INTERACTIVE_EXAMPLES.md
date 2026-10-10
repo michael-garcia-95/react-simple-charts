@@ -239,3 +239,14 @@ No known unresolved implementation defect was found in the exercised scope.
 Manual accessibility/broader-browser checks and future deployment prerequisites
 remain the limitations described above. No merge, deployment, release or
 publication occurred.
+
+## M05-T04 integration audit follow-up
+
+The later [website hardening audit](M05_WEBSITE_HARDENING.md) reproduces and
+corrects a copy-feedback gap: source equality alone allowed an old completed or
+pending result to reappear after switching datasets and Reset. Feedback now
+belongs to a source revision and the latest request; focus remains unchanged.
+Site CSS also contains chart/code focus outlines inside clipping boundaries.
+New regressions reset every family while retaining already modified siblings.
+The historical M05-T02 outcomes above are preserved; current evidence is in the
+M05-T04 report.

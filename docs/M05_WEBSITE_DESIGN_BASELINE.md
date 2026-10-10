@@ -260,3 +260,11 @@ configuration, interaction, source-data accessibility, responsive/SSR behavior a
 implemented limits. See [M05-T03 structure and verification](M05_DEVELOPER_DOCUMENTATION.md).
 Search infrastructure and wider assistive-technology/browser review remain deferred;
 the earlier introduction-only scope above records M05-T01, not this extension.
+
+## M05-T04 focus hardening
+
+The [complete website audit](M05_WEBSITE_HARDENING.md) retains this approved
+visual language. Scoped CSS places existing keyboard outlines inside code/chart
+clipping boundaries so all four edges remain visible. No layout redesign,
+library default change or product feature is added. See the hardening report
+for the seven-width and enlarged-text evidence; historical reports remain intact.

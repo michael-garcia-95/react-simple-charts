@@ -229,3 +229,12 @@ label/custom-tooltip fitting, large SVG DOM cost and host CSS/CSP limits remain.
 Chromium/axe and 200% root text enlargement do not establish manual screen-reader,
 Firefox/WebKit, native browser zoom, physical touchscreen or production performance
 validation. Deployment, release/publication and merging require separate review.
+
+## M05-T04 shared-component follow-up
+
+[Website hardening](M05_WEBSITE_HARDENING.md) improves the shared CodePreview:
+each source transition invalidates copy feedback, including reset to identical
+text, and scrolling-panel focus outlines remain visible within their clipped
+parents. Documentation's authoritative sources, fourteen anchors, claims and
+ten compiled samples remain intact. Historical M05-T03 counts above are not
+rewritten; the later report records the expanded browser and regression evidence.
