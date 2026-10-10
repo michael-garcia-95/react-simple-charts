@@ -9,32 +9,11 @@ import {
 } from './components';
 import { pageFromPath, sitePath } from './paths';
 import type { SitePage } from './paths';
+import { Documentation } from './Documentation';
 import { InteractiveExample } from './InteractiveExample';
 export { pageFromPath } from './paths';
 import { families, ShowcaseChart } from './charts';
 
-const example = `import { LineChart } from 'react-simple-charts';
-
-const revenue = [
-  { month: 'Jan', revenue: 24 },
-  { month: 'Feb', revenue: 32 },
-  { month: 'Mar', revenue: 29 },
-];
-
-export function RevenueChart() {
-  return (
-    <LineChart
-      data={revenue}
-      xKey="month"
-      yKey="revenue"
-      formatValue={(value) => \`$\${value}k\`}
-      accessibility={{
-        label: 'Monthly revenue in thousands of dollars',
-        dataTable: 'visible',
-      }}
-    />
-  );
-}`;
 function Home() {
   return (
     <>
@@ -161,95 +140,9 @@ function Examples() {
       <p className="afterword">
         Looking for the component API?{' '}
         <a href={sitePath('/documentation/')}>
-          Read the documentation introduction.
+          Read the developer documentation.
         </a>
       </p>
-    </>
-  );
-}
-function Documentation() {
-  return (
-    <>
-      <div className="page-intro">
-        <p className="eyebrow">Start with the essentials</p>
-        <h1>
-          A small API.
-          <br />
-          Room for your data.
-        </h1>
-        <p className="lead">
-          React Simple Charts provides five SVG chart components with typed data
-          mappings, tooltips, keyboard inspection, and accessible source-data
-          alternatives.
-        </p>
-      </div>
-      <div className="docs-layout">
-        <div className="prose">
-          <section>
-            <h2>Five named components</h2>
-            <p>
-              Import LineChart, AreaChart, BarChart, PieChart and DonutChart
-              from the package root. Cartesian charts use <code>xKey</code> with{' '}
-              <code>yKey</code> or <code>series</code>; Pie and Donut use{' '}
-              <code>nameKey</code> and <code>valueKey</code>.
-            </p>
-            <p>
-              The TypeScript-first API infers your record type from{' '}
-              <code>data</code> and checks field mappings. Use a string field
-              for monthly categories and a numeric field for revenue, as in this
-              example.
-            </p>
-          </section>
-          <section>
-            <h2>React compatibility</h2>
-            <p>
-              React and React DOM are peer dependencies. The supported range is
-              React 18.2+ within React 18, and React 19.x. Compatibility is
-              tested with React 18.2 and React 19 on Node 22 and 24.
-            </p>
-          </section>
-          <section>
-            <h2>Package availability</h2>
-            <p>
-              The package is private at version <code>0.0.0</code> and is not
-              published to npm. Public installation instructions will follow an
-              approved release.
-            </p>
-            <p>
-              For local development, clone the repository and run the commands
-              below. The website consumes the built package root; it does not
-              import chart source files.
-            </p>
-            <CodePreview label="Local repository workflow">{`git clone ${repository}.git\ncd react-simple-charts\nnpm ci\nnpm run dev:site\n\n# Build the static website\nnpm run build:site`}</CodePreview>
-            <p>
-              For another local application, run <code>npm pack</code> in the
-              repository and install the resulting local tarball. Provide a
-              compatible React and React DOM in that application.
-            </p>
-          </section>
-          <section>
-            <h2>Explore the source</h2>
-            <p>
-              Detailed component contracts and implementation notes live in the
-              repository’s{' '}
-              <a href={`${repository}/tree/main/docs`}>
-                developer documentation
-              </a>
-              . Browse the <a href={sitePath('/examples/')}>examples gallery</a>{' '}
-              to see each family.
-            </p>
-          </section>
-        </div>
-        <div className="docs-example">
-          <CodePreview label="TypeScript / React · approved public API">
-            {example}
-          </CodePreview>
-          <p className="chart-note">
-            Responsive width is the default. The source-data alternative remains
-            available for every chart.
-          </p>
-        </div>
-      </div>
     </>
   );
 }

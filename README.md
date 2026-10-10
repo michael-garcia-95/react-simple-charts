@@ -4,6 +4,11 @@ A lightweight, customizable React charting library built with TypeScript.
 
 ## Status
 
+M05-T03 expands the Documentation page into a developer reference with anchored
+navigation, local onboarding, all five typed chart examples, tooltips, accessibility,
+responsive rendering and SSR guidance. See [developer documentation](docs/M05_DEVELOPER_DOCUMENTATION.md).
+The package remains private at 0.0.0; deployment and publication remain separate.
+
 M05-T02 expands the public Examples page with two deterministic presets per chart,
 independent controls, synchronized runnable TSX, accessible copying and reset.
 Root and GitHub Pages project-path builds are supported; no site is deployed.
@@ -107,8 +112,8 @@ supersedes the historical Cloudflare Pages proposal.
 No website deployment is configured.
 
 `npm run test:site` covers the foundation, all interactive families and base paths.
-`npm run verify:site:snippets` compiles 22 generated TSX variants against the real
-built package declarations. `node scripts/verify-site-build.mjs /` checks root
+`npm run verify:site:snippets` compiles 32 TSX samples (22 interactive variants and
+10 documentation examples) against the real built package declarations. `node scripts/verify-site-build.mjs /` checks root
 HTML/assets; pass `/react-simple-charts/` after the Pages build. Both modes emit
 only `site-dist/`; the library package and technical playground are unchanged.
 Browser reproduction and ignored evidence locations are in the interactive report.

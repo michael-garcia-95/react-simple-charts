@@ -242,3 +242,21 @@ The path utility resolves against Vite's base without touching external GitHub
 URLs or same-page fragments. Both build modes retain `site-dist/` isolation and
 the package-boundary guard. No public API, pure engine, peer/dependency or package
 identity changes are introduced. See [M05-T02 implementation and evidence](M05_INTERACTIVE_EXAMPLES.md).
+
+## M05-T03 developer documentation extension
+
+The four-page design and M05-T01/T02 milestone evidence above are preserved.
+Documentation now has fourteen stable native fragment sections, an adjacent table
+of contents at widths above 900px and naturally stacked navigation/content below.
+Reference tables have named keyboard-scrollable containers; complete copyable TSX
+uses the existing CodePreview and contained 32rem panels. The light palette,
+system typography, rem spacing, focus treatments and GitHub links are unchanged.
+No new product dependency or chart runtime change is introduced.
+
+Ten authored documentation examples share one source between rendered code and
+strict built-root compilation, alongside all 22 existing interactive variants.
+The practical reference covers local tarball onboarding, family-specific mappings,
+configuration, interaction, source-data accessibility, responsive/SSR behavior and
+implemented limits. See [M05-T03 structure and verification](M05_DEVELOPER_DOCUMENTATION.md).
+Search infrastructure and wider assistive-technology/browser review remain deferred;
+the earlier introduction-only scope above records M05-T01, not this extension.

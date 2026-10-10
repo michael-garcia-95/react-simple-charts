@@ -84,3 +84,12 @@ A future custom domain may host the project at `/` instead. Rebuild with the
 approved base and review canonical/social metadata, DNS, HTTPS and redirects.
 Do not mechanically retain the project prefix or change external repository URLs.
 No CNAME or canonical URL is introduced before that decision.
+
+## M05-T03 documentation navigation
+
+The developer reference stays on the existing Documentation page. Native
+`#docs-*` links target stable focusable section headings within the current
+static document; gallery cross-links use `sitePath` and the approved `#chart-*`
+anchors. Both root and project-base artifacts are checked by the extended
+Chromium audit. No routing fallback, fifth page, Pages setting or active
+deployment workflow is introduced. See [M05-T03 verification](M05_DEVELOPER_DOCUMENTATION.md).
