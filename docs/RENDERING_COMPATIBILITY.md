@@ -1,3 +1,10 @@
+# Current verification — M06-T03
+
+Current packaged browser, SSR and accessibility evidence and conservative limits
+are in [distribution compatibility](M06_DISTRIBUTION_COMPATIBILITY.md). The
+[Windows NVDA plan](M06_SCREEN_READER_TEST_PLAN.md) awaits human execution.
+Historical internal-fixture evidence below does not replace current package checks.
+
 # Current public five-family rendering
 
 All five families are public as of M04-T03; see [M04 integration hardening](M04_INTEGRATION_HARDENING.md) for the combined page and current evidence.

@@ -1,3 +1,11 @@
+# Current distribution policy — M06-T03
+
+See [distribution compatibility](M06_DISTRIBUTION_COMPATIBILITY.md) for the
+current Node/source-map policy, fresh four-consumer results, focused browser
+execution and first-release limits. The package remains private and unpublished.
+Manual NVDA testing remains pending; [procedure](M06_SCREEN_READER_TEST_PLAN.md).
+Earlier sections below retain historical evidence.
+
 # Current package identity — M06-T02
 
 Current consumer imports use `@michael-garcia-95/react-simple-charts`, still
@@ -7,7 +15,8 @@ the runner reads identity from package.json and creates fresh independent apps.
 See [M06 package identity](M06_PACKAGE_IDENTITY.md) for current results and archive
 inventory. Earlier package names, instructions and measurements below and in
 milestone reports describe their historical artifacts; use the approved scoped
-root for current integration. Consumer Node engine policy remains undecided.
+root for current integration. M06-T03 removes the published engines constraint
+while retaining contributor tooling requirements; see the current report above.
 
 # Five-family packaged integration — M04-T04
 

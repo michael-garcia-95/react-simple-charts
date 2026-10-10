@@ -131,3 +131,12 @@ local build commands do not deploy the site.
 HTML/assets; pass `/react-simple-charts/` after the Pages build. Both modes emit
 only `site-dist/`; the library package and technical playground are unchanged.
 Browser reproduction and ignored evidence locations are in the interactive report.
+
+## Contributor Node environment
+
+Development and build/test tools require Node `^22.22.2 || ^24.15.0 || >=26.0.0`
+with the current lockfile (notably jsdom). CI tests Node 22 and 24; Node 26 is
+allowed by tooling but not in that matrix. This is a contributor requirement,
+not a published-library Node minimum. The distribution has no `engines` field.
+See [distribution compatibility](docs/M06_DISTRIBUTION_COMPATIBILITY.md) for
+actual tested consumers and limits, and the [manual NVDA plan](docs/M06_SCREEN_READER_TEST_PLAN.md).

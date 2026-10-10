@@ -3,7 +3,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { build } from 'tsdown';
 import ts from 'typescript';
 
@@ -13,6 +13,15 @@ assert.equal(pkg.name, '@michael-garcia-95/react-simple-charts');
 assert.equal(pkg.version, '0.0.0');
 assert.equal(pkg.private, true);
 assert.equal(pkg.type, 'module');
+assert.equal(pkg.engines, undefined);
+assert.deepEqual(pkg.peerDependencies, {
+  react: '^18.2.0 || ^19.0.0',
+  'react-dom': '^18.2.0 || ^19.0.0',
+});
+assert.deepEqual(pkg.dependencies, {
+  'd3-scale': '^4.0.2',
+  'd3-shape': '^3.2.0',
+});
 assert.deepEqual(pkg.exports, {
   '.': { types: './dist/index.d.ts', import: './dist/index.js' },
 });
@@ -20,6 +29,31 @@ const code = await readFile('dist/index.js', 'utf8');
 assert.match(code, /^\s*["']use client["'];/);
 assert.doesNotMatch(code, /\brequire\(|module\.exports/);
 assert.match(await readFile('dist/index.d.ts', 'utf8'), /export/);
+// Embedded maps deliberately expose only tracked public library implementation.
+const sourceMap = JSON.parse(await readFile('dist/index.js.map', 'utf8'));
+assert.equal(sourceMap.version, 3);
+assert.equal(sourceMap.file, 'index.js');
+assert.equal(sourceMap.sourceRoot, undefined);
+assert.equal(sourceMap.sources.length, sourceMap.sourcesContent.length);
+assert.ok(sourceMap.sources.length > 0);
+assert.equal(new Set(sourceMap.sources).size, sourceMap.sources.length);
+for (const [index, source] of sourceMap.sources.entries()) {
+  assert.match(
+    source,
+    /^\.\.\/src\/(?:[A-Za-z0-9_-]+\/)*[A-Za-z0-9_-]+\.tsx?$/,
+  );
+  const path = resolve('dist', source);
+  await execute('git', ['ls-files', '--error-unmatch', path]);
+  assert.equal(sourceMap.sourcesContent[index], await readFile(path, 'utf8'));
+}
+for (const specifier of ['d3-scale', 'd3-shape'])
+  assert.ok(
+    code.includes(`from "${specifier}"`),
+    `${specifier} remains external`,
+  );
+const forbiddenMaterial =
+  /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|npm_[A-Za-z0-9]{36,}|gh[pousr]_[A-Za-z0-9]{36,}|github_pat_[A-Za-z0-9_]{40,}|AKIA[0-9A-Z]{16}/;
+assert.doesNotMatch(JSON.stringify(sourceMap), forbiddenMaterial);
 const api = await import(pkg.name);
 assert.deepEqual(Object.keys(api).sort(), [
   'AreaChart',
@@ -173,7 +207,11 @@ try {
     JSON.parse(await readFile(join(packedRoot, 'package.json'), 'utf8')),
     pkg,
   );
-  for (const path of inventory.filter((path) => path.startsWith('dist/'))) {
+  for (const path of inventory) {
+    assert.doesNotMatch(
+      await readFile(join(packedRoot, path), 'utf8'),
+      forbiddenMaterial,
+    );
     assert.deepEqual(
       await readFile(join(packedRoot, path)),
       await readFile(path),
