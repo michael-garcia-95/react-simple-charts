@@ -1,4 +1,6 @@
-# Current public Cartesian rendering
+# Current public five-family rendering
+
+All five families are public as of M04-T03; see [M04 integration hardening](M04_INTEGRATION_HARDENING.md) for the combined page and current evidence.
 
 M03-T05 audits all three public families; see [integration hardening](M03_INTEGRATION_HARDENING.md) and [genuine consumer compatibility](CONSUMER_COMPATIBILITY.md). The following M01-T03 report is preserved as historical fixture evidence, not a description of the current public API.
 

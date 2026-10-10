@@ -130,3 +130,12 @@ policy, performance budgets, theme tokens and release approval remain Developmen
 Lead decisions. BarChart is public; Pie/Donut remain types only. The package stays private 0.0.0.
 
 M03-T05 adds shared long-text wrapping and cross-family validation; see [integration hardening](M03_INTEGRATION_HARDENING.md).
+
+## M04-T04 combined-page hardening
+
+See [five-chart integration](M04_INTEGRATION_HARDENING.md) for the shared-page
+audit, reproducible browser checks and demo handoff. The public contract and
+pure geometry are unchanged.
+Focused controls retain their roving entry and outline during pointer hover.
+Legend labels wrap, and tooltips use the rendered figure width even when an
+explicit SVG width is constrained by caller CSS.

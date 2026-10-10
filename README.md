@@ -4,6 +4,10 @@ A lightweight, customizable React charting library built with TypeScript.
 
 ## Status
 
+M04-T04 audits the five families together, adds a reusable combined playground
+fixture and corrects Cartesian focus, legend wrapping and constrained tooltip
+placement. See [integration evidence and public demo handoff](docs/M04_INTEGRATION_HARDENING.md).
+
 M04-T03 adds public `DonutChart` with genuine ring geometry, a default 0.6
 inner-radius ratio, optional accessible center content, ring labels and shared
 polar inspection. LineChart, AreaChart, BarChart and PieChart remain public.

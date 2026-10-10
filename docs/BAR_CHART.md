@@ -131,10 +131,19 @@ The genuine Vite/Next matrix and measured artifacts are recorded in
 Large data creates O(rows × series) SVG rectangles and controls; no virtualization
 or decimation is included. Tick selection uses estimates, may omit labels/titles,
 and offers no wrapping or scrolling. Tooltip positioning uses the existing bounded
-200px panel estimate; arbitrary custom content can overflow. Host CSS may change
+220px panel estimate; arbitrary custom content can overflow. Host CSS may change
 appearance, and inline styling requires compatible CSP. Chromium/axe coverage does
 not establish WCAG certification, screen-reader, Firefox/WebKit, forced-colors or
 zoom coverage. Broader accessibility/browser review, performance budgets and final
-visual tokens remain for hardening. Pie, Donut and stacking remain deferred.
+visual tokens remain for hardening. Pie and Donut subsequently became public in M04-T02/T03; stacking remains deferred.
 
 M03-T05 adds shared long-text wrapping and cross-family validation; see [integration hardening](M03_INTEGRATION_HARDENING.md).
+
+## M04-T04 combined-page hardening
+
+See [five-chart integration](M04_INTEGRATION_HARDENING.md) for the shared-page
+audit, reproducible browser checks and demo handoff. The public contract and
+pure geometry are unchanged.
+Focused controls retain their roving entry and outline during pointer hover.
+Legend labels wrap, and tooltips use the rendered figure width even when an
+explicit SVG width is constrained by caller CSS.

@@ -82,7 +82,7 @@ Date/UTC/local-time and historical rendering probes.
 `scripts/verify-integration.mjs` executes Chromium against that page. It verifies
 five widths independently at 320, 480, 768, 1200 and back to 320; SVG dimensions,
 visible tables, tooltip wrapping, focus strokes, actual keyboard navigation and
-normal forward/backward Tab exits. Additional real-browser sequences verify hover without activation, mouse click, native touchscreen tap, synthetic pen PointerEvents, delayed touch compatibility clicks, standalone accessibility-style clicks, pointer cancellation and subsequent unrelated gestures, with exactly-once counts and explicit input-method assertions. It captures all five families with focus and
+normal forward/backward Tab exits. Additional real-browser sequences verify hover without activation, mouse click, native touchscreen tap, synthetic pen PointerEvents, delayed touch compatibility clicks, standalone accessibility-style clicks, pointer cancellation and subsequent unrelated gestures, with exactly-once counts and explicit input-method assertions. It captures all five Cartesian configurations with focus and
 visible tooltips, full empty/unusable/ready states, forced colors and enlarged text.
 Focused axe scans of ready, empty and unusable integration states: zero violations.
 Console/page errors: zero. Reduced-motion emulation yields no running enhancements
@@ -217,7 +217,7 @@ All four Node 22/24 × React 18.2/19 jobs passed on implementation commit `a0b72
 | Requires approval         | Broader support policy, any color-token/theme changes, publication/versioning, future-family APIs and Milestone 04                                                                               |
 
 Manual cross-browser checklist: open the integration playground, visit every width
-and shrink/grow again, inspect all five shapes/signed baselines and visible tables;
+and shrink/grow again, inspect all five Cartesian shapes/signed baselines and visible tables;
 Tab through before/after controls, arrows/Home/End, Enter/Space/Escape and Shift+Tab;
 mouse/pen click and touchscreen tap once, then an unrelated keyboard action; switch
 empty/unusable/ready and data; resize while inspecting; test reduced motion and

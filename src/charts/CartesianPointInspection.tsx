@@ -115,11 +115,15 @@ export function CartesianPointInspection<T extends object>({
     candidate.datum.value === selection.value
       ? candidate
       : undefined;
-  const roving = active ?? observations[0];
   const controls = useRef(new Map<string, SVGElement>());
   const marks = useRef<SVGGElement>(null);
   const focused = useRef(false);
   const [focusedKey, setFocusedKey] = useState<string | null>(null);
+  // Inspection may follow hover while the keyboard entry stays with actual focus.
+  const roving =
+    (focusedKey === null ? undefined : byKey.get(focusedKey)) ??
+    active ??
+    observations[0];
   const pointerFocus = useRef<string | null>(null);
   // Evidence belongs to one source observation and expires after its click task.
   const clickSource = useRef<{
@@ -232,7 +236,7 @@ export function CartesianPointInspection<T extends object>({
               {...(hit ? hit : { cx: point.x, cy: point.y, r: 10 })}
               fill="transparent"
               stroke={
-                focusedKey === key && selection?.keyboard
+                focusedKey === key
                   ? 'var(--rsc-focus-color, #075985)'
                   : 'transparent'
               }
@@ -437,10 +441,8 @@ export function CartesianPointInspection<T extends object>({
           role="tooltip"
           style={{
             position: 'absolute',
-            left: Math.max(
-              0,
-              Math.min(active.point.x, geometry.layout.width - 220),
-            ),
+            // Bound to the rendered figure, including CSS-constrained fixed SVGs.
+            left: `clamp(0px, ${active.point.x}px, max(0px, calc(100% - 220px)))`,
             top: Math.max(0, active.point.y - 80),
             width: 220,
             boxSizing: 'border-box',

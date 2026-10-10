@@ -234,4 +234,10 @@ No full WCAG, manual screen-reader, physical-device, Firefox/WebKit, strict CSP,
 arbitrary host-style or measured collision-detection claim is made. Large SVG
 counts retain DOM cost; no performance budget or caching is introduced. Interactive
 legends, automatic totals, nested rings, drilldown, exploded slices, angle controls,
-arc morphing, publication and M04-T04 integration hardening remain deferred.
+arc morphing and publication remain deferred. M04-T04 integration evidence is recorded in [five-chart hardening](M04_INTEGRATION_HARDENING.md).
+
+## M04-T04 combined-page hardening
+
+See [five-chart integration](M04_INTEGRATION_HARDENING.md) for the shared-page
+audit, reproducible browser checks and demo handoff. The public contract and
+pure geometry are unchanged.
