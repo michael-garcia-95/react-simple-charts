@@ -25,10 +25,7 @@ interface Row {
   impossible: never;
 }
 export const data: readonly Row[] = [];
-import { LineChart, AreaChart, BarChart } from 'react-simple-charts';
-declare function PieChart<T extends object>(
-  props: PieChartProps<T>,
-): ReactElement;
+import { LineChart, AreaChart, BarChart, PieChart } from 'react-simple-charts';
 declare function DonutChart<T extends object>(
   props: DonutChartProps<T>,
 ): ReactElement;
@@ -269,11 +266,9 @@ export function describeInputMethod(method: InputMethod): string {
 // @ts-expect-error Mouse is represented by pointer, not a separate input method.
 export const invalidInputMethod: InputMethod = 'mouse';
 
-// @ts-expect-error Pie remains a future runtime component.
-import { PieChart as RuntimePie } from 'react-simple-charts';
 // @ts-expect-error Donut remains a future runtime component.
 import { DonutChart as RuntimeDonut } from 'react-simple-charts';
-export const rejectedPolarRuntimeImports = [RuntimePie, RuntimeDonut];
+export const rejectedPolarRuntimeImports = [RuntimeDonut];
 
 // Actual root Bar JSX preserves exclusive mappings and physical axis contracts.
 // prettier-ignore
@@ -303,3 +298,16 @@ export const barWrongVerticalTick = ( <BarChart data={data} xKey="name" yKey="am
 // @ts-expect-error Activation record remains data-inferred.
 // prettier-ignore
 export const barWrongRecord = ( <BarChart data={data} xKey="name" yKey="amount" onDataActivate={(p: CartesianActivation<{ other: number }>) => p.record.other.toFixed() } /> );
+
+export const pieProps = {
+  data,
+  nameKey: 'when',
+  valueKey: 'optional',
+  tooltip: (c) => c.segment.record.when.toISOString(),
+} satisfies PieChartProps<Row>;
+// @ts-expect-error Boolean labels are excluded.
+// prettier-ignore
+export const pieBoolean = <PieChart data={data} nameKey="flag" valueKey="amount" />;
+// @ts-expect-error Unknown labels cannot influence data inference.
+// prettier-ignore
+export const pieUnknown = <PieChart data={data} nameKey="other" valueKey="amount" />;

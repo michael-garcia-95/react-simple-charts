@@ -80,7 +80,7 @@ const browser = await chromium.launch({
   args: ['--no-sandbox'],
 });
 report.browser = browser.version();
-const sample = `import { LineChart, AreaChart, BarChart } from 'react-simple-charts';
+const sample = `import { LineChart, AreaChart, BarChart, PieChart } from 'react-simple-charts';
 const data = [{quarter:'Q1',value:12},{quarter:'Q2',value:24},{quarter:'Q3',value:18},{quarter:'Q4',value:32}];
 export default function Sample() {return <main><h1>Packaged public LineChart</h1>
 <section id="explicit"><LineChart data={data} xKey="quarter" yKey="value" width={640} accessibility={{label:'Explicit',description:'Quarterly values',dataTable:'visible'}} /></section>
@@ -97,13 +97,19 @@ export default function Sample() {return <main><h1>Packaged public LineChart</h1
 <section id="bar-horizontal"><BarChart width={640} orientation="horizontal" data={[{x:'A',a:-2,b:2},{x:'A',a:3,b:-3},{x:'C',a:0,b:null}]} xKey="x" series={[{key:'a'},{key:'b'}]} tooltip={{mode:'shared'}} accessibility={{label:'Horizontal Bar'}} /></section>
 <section id="bar-clipped"><BarChart width={640} data={[{x:'A',a:5,b:-1},{x:'B',a:-5,b:null}]} xKey="x" series={[{key:'a'},{key:'b'}]} yAxis={{min:0,max:4}} accessibility={{label:'Clipped Bar'}} /></section>
 <section id="bar-responsive"><BarChart data={data} xKey="quarter" yKey="value" accessibility={{label:'Responsive Bar'}} /></section>
+<section id="pie-explicit"><PieChart width={480} data={[{name:'Same',value:1},{name:'Zero',value:0},{name:'Missing',value:null},{name:'Same',value:3}]} nameKey="name" valueKey="value" showLabels accessibility={{label:'Explicit Pie',dataTable:'visible'}}/></section>
+<section id="pie-single"><PieChart width={480} data={[{name:'Complete',value:1}]} nameKey="name" valueKey="value" accessibility={{label:'Single Pie'}}/></section>
+<section id="pie-negative"><PieChart width={480} data={[{name:'Positive',value:1},{name:'Negative',value:-2}]} nameKey="name" valueKey="value" accessibility={{label:'Unavailable Pie',dataTable:'visible'}}/></section>
+<section id="pie-responsive" style={{width:'80%'}}><PieChart data={data} nameKey="quarter" valueKey="value" accessibility={{label:'Responsive Pie'}}/></section>
 <Interactive/></main>;}
 import Interactive from './Interactive';`;
 const interactive = `'use client';
-import {useState} from 'react'; import {LineChart, AreaChart, BarChart} from 'react-simple-charts';
+import {useState} from 'react'; import {LineChart, AreaChart, BarChart, PieChart} from 'react-simple-charts';
 function Inspection({area=false}:{area?:boolean}){const Chart=area?AreaChart:LineChart;const [result,setResult]=useState(''); const [count,setCount]=useState(0);return <section id={area?'area-interactive':'interactive'}><Chart width={640} data={[{x:'A',y:1},{x:'A',y:2}]} xKey="x" yKey="y" onDataActivate={p=>{setCount(n=>n+1);setResult(p.index+':'+p.inputMethod);}} accessibility={{label:area?'Interactive Area':'Interactive'}}/><output>{result}:{count}</output></section>;}
+const pieData=[{name:'Same',value:1},{name:'Same',value:1}];
+function PieInspection(){const [result,setResult]=useState('');const [count,setCount]=useState(0);return <section id="pie-interactive"><PieChart width={480} data={pieData} nameKey="name" valueKey="value" onDataActivate={p=>{setCount(n=>n+1);setResult(p.index+':'+p.inputMethod);}} accessibility={{label:'Interactive Pie'}}/><output>{result}:{count}</output></section>;}
 function BarInspection({horizontal=false}:{horizontal?:boolean}){const [result,setResult]=useState('');const [count,setCount]=useState(0);return <section id={horizontal?'bar-horizontal-interactive':'bar-interactive'}><BarChart width={640} orientation={horizontal?'horizontal':'vertical'} data={[{x:'A',y:-2},{x:'A',y:0}]} xKey="x" yKey="y" onDataActivate={p=>{setCount(n=>n+1);setResult(p.index+':'+p.inputMethod);}} accessibility={{label:'Interactive Bar'}}/><output>{result}:{count}</output></section>;}
-export default function Interactive(){return <><Inspection/><Inspection area/><BarInspection/><BarInspection horizontal/><Narrow/></>;}
+export default function Interactive(){return <><Inspection/><Inspection area/><BarInspection/><BarInspection horizontal/><PieInspection/><Narrow/></>;}
 function Narrow(){const [state,setState]=useState('ready');const data=state==='empty'?[]:[{x:state==='replacement'?'Replacement':'NorthAmericaEnterpriseSubscriptions',y:-2},{x:'Repeated',y:0}];return <section id="integrated-narrow"><button onClick={()=>setState('empty')}>Empty integrated charts</button><button onClick={()=>setState('replacement')}>Replace integrated data</button>{[LineChart,AreaChart,BarChart].map((Chart,i)=><div key={i} data-narrow={i} style={{width:320}}><Chart data={data} xKey="x" yKey="y" height={state==='unusable'?0:280} accessibility={{label:'Narrow '+i,dataTable:'visible'}}/></div>)}<button onClick={()=>setState('unusable')}>Unusable integrated charts</button></section>;}`;
 const tsconfig = {
   compilerOptions: {
@@ -203,6 +209,8 @@ async function start(dir, kind, port, major) {
         });
       };
     });
+    let pieBefore;
+    let pieResponsiveBefore;
     let barBefore;
     let barResponsiveBefore;
     let before;
@@ -212,6 +220,17 @@ async function start(dir, kind, port, major) {
     if (kind === 'next') {
       const staticPage = await browser.newPage({ javaScriptEnabled: false });
       await staticPage.goto(url);
+      pieBefore = await staticPage
+        .locator('#pie-explicit svg')
+        .evaluate((el) => el.outerHTML);
+      pieResponsiveBefore = await staticPage
+        .locator('#pie-responsive')
+        .innerHTML();
+      assert.equal(
+        await staticPage.locator('#pie-single [data-layer=marks] path').count(),
+        1,
+      );
+      assert.equal(await staticPage.locator('#pie-negative svg').count(), 0);
       barBefore = await staticPage
         .locator('#bar-horizontal svg')
         .evaluate((el) => el.outerHTML);
@@ -243,7 +262,7 @@ async function start(dir, kind, port, major) {
           .evaluate((el) => getComputedStyle(el).height),
         '280px',
       );
-      assert.equal(await staticPage.getByRole('table').count(), 21);
+      assert.equal(await staticPage.getByRole('table').count(), 26);
       await file(
         dir,
         'evidence/before.html',
@@ -254,7 +273,17 @@ async function start(dir, kind, port, major) {
     await page.goto(url);
     await page.waitForFunction(() => window.__observers.length >= 2);
     assert.equal(await page.locator('#responsive svg').count(), 0);
-    assert.equal(await page.getByRole('table').count(), 21);
+    assert.equal(await page.getByRole('table').count(), 26);
+    if (pieBefore)
+      assert.equal(
+        await page.locator('#pie-explicit svg').evaluate((el) => el.outerHTML),
+        pieBefore,
+      );
+    if (pieResponsiveBefore)
+      assert.equal(
+        await page.locator('#pie-responsive').innerHTML(),
+        pieResponsiveBefore,
+      );
     if (responsiveBefore)
       assert.equal(
         await page.locator('#responsive').innerHTML(),
@@ -359,8 +388,26 @@ async function start(dir, kind, port, major) {
       '#area-interactive',
       '#bar-interactive',
       '#bar-horizontal-interactive',
+      '#pie-interactive',
     ]) {
       await page.locator(`${section} [role=button]`).first().focus();
+      if (section === '#pie-interactive') {
+        await page.locator(`${section} [role=button]`).last().hover();
+        assert.equal(
+          await page
+            .locator(`${section} [role=button]`)
+            .first()
+            .getAttribute('tabindex'),
+          '0',
+        );
+        assert.equal(
+          await page
+            .locator(`${section} [role=button]`)
+            .last()
+            .getAttribute('tabindex'),
+          '-1',
+        );
+      }
       await page.keyboard.press('ArrowRight');
       await page.keyboard.press('Enter');
       assert.equal(
@@ -456,6 +503,37 @@ async function start(dir, kind, port, major) {
         .evaluate((el) => getComputedStyle(el).clipPath),
       'inset(50%)',
     );
+    await page.locator('#pie-responsive svg').waitFor();
+    const pieWidth = Number(
+      await page.locator('#pie-responsive svg').getAttribute('width'),
+    );
+    await page.setViewportSize({ width: 480, height: 1200 });
+    await page.waitForFunction(
+      (previous) =>
+        Number(
+          document.querySelector('#pie-responsive svg')?.getAttribute('width'),
+        ) < previous,
+      pieWidth,
+    );
+    assert.equal(
+      await page.locator('#pie-explicit [data-layer=marks] path').count(),
+      2,
+    );
+    assert.equal(await page.locator('#pie-explicit table tbody tr').count(), 4);
+    assert.equal(await page.locator('#pie-explicit li').count(), 2);
+    assert.equal(await page.locator('#pie-explicit text').count(), 2);
+    await page.locator('#pie-explicit [role=button]').first().focus();
+    assert(
+      (
+        await page.locator('#pie-explicit [role=tooltip]').textContent()
+      ).includes('25.0%'),
+    );
+    await page.screenshot({
+      path: join(dir, 'evidence/pie-focus.png'),
+      fullPage: true,
+    });
+    await page.keyboard.press('Escape');
+    await page.setViewportSize({ width: 700, height: 1200 });
     await page.locator('#area-responsive svg').waitFor();
     await page.locator('#area-time svg').waitFor();
     for (const section of [
@@ -637,7 +715,7 @@ async function start(dir, kind, port, major) {
       await page.waitForFunction(() => window.__observers.length >= 2);
       await page.evaluate(() => window.__release());
       await page.locator('#responsive svg').waitFor();
-      assert.equal(await page.getByRole('table').count(), 21);
+      assert.equal(await page.getByRole('table').count(), 26);
       assert.deepEqual(errors, []);
     } else {
       await page.evaluate(() => window.__unmount());
@@ -658,6 +736,10 @@ async function start(dir, kind, port, major) {
         .locator('[id]')
         .evaluateAll((elements) => elements.map((el) => el.id));
       assert.equal(new Set(rootIds).size, rootIds.length);
+      assert.equal(await page.locator('table').count(), 5);
+      await page.evaluate(() => window.__release());
+      await page.locator('#root4 svg').waitFor();
+      assert.equal(await page.locator('svg').count(), 5);
       assert.deepEqual(errors, []);
       await file(dir, 'evidence/separate-roots.html', rootsBefore);
     }
@@ -724,7 +806,7 @@ try {
         `import assert from 'node:assert/strict';
 import * as api from 'react-simple-charts';
 import {readFileSync} from 'node:fs';
-assert.deepEqual(Object.keys(api).sort(), ['AreaChart','BarChart','LineChart']); assert.equal(typeof api.LineChart,'function'); assert.equal(typeof api.AreaChart,'function'); assert.equal(typeof api.BarChart,'function');
+assert.deepEqual(Object.keys(api).sort(), ['AreaChart','BarChart','LineChart','PieChart']); assert.equal(typeof api.LineChart,'function'); assert.equal(typeof api.AreaChart,'function'); assert.equal(typeof api.BarChart,'function'); assert.equal(typeof api.PieChart,'function');
 const p=JSON.parse(readFileSync('node_modules/react-simple-charts/package.json'));
 assert.equal(p.private,true); assert.deepEqual(Object.keys(p.exports),['.']);
 assert(p.peerDependencies.react && p.peerDependencies['react-dom']);
@@ -785,9 +867,9 @@ for(const path of ['src/internal/RenderingProbe','dist/index.js','internal']) { 
           'roots-server.mjs',
           `import {createElement,StrictMode} from 'react';
 import {renderToString} from 'react-dom/server';
-import {LineChart,AreaChart,BarChart} from 'react-simple-charts';
+import {LineChart,AreaChart,BarChart,PieChart} from 'react-simple-charts';
 import {writeFileSync} from 'node:fs';
-const parts=['alpha-','beta-','gamma-'].map((prefix,i)=>'<div id="root'+i+'">'+renderToString(createElement(StrictMode,null,createElement([LineChart,AreaChart,BarChart][i],{width:640,data:[{x:new Date('2026-01-01T00:00:00Z'),y:1}],xKey:'x',yKey:'y'})),{identifierPrefix:prefix})+'</div>');
+const parts=['alpha-','beta-','gamma-','pie-explicit-','pie-responsive-'].map((prefix,i)=>'<div id="root'+i+'">'+renderToString(createElement(StrictMode,null,createElement([LineChart,AreaChart,BarChart,PieChart,PieChart][i],{...(i===4?{}:{width:640}),data:[{x:new Date('2026-01-01T00:00:00Z'),y:1}],...(i<3?{xKey:'x',yKey:'y'}:{nameKey:'x',valueKey:'y'})})),{identifierPrefix:prefix})+'</div>');
 writeFileSync('roots.html','<!doctype html><html lang="en"><head><title>Separate roots</title><link rel="icon" href="data:,"></head><body>'+parts.join('')+'<script type="module" src="/roots.tsx"></script></body></html>');`,
         );
         await run('node', ['roots-server.mjs'], dir);
@@ -795,8 +877,8 @@ writeFileSync('roots.html','<!doctype html><html lang="en"><head><title>Separate
           dir,
           'roots.tsx',
           `import {StrictMode} from 'react'; import {hydrateRoot} from 'react-dom/client';
-import {LineChart,AreaChart,BarChart} from 'react-simple-charts';
-['alpha-','beta-','gamma-'].forEach((identifierPrefix,i)=>{const Chart=[LineChart,AreaChart,BarChart][i]!;hydrateRoot(document.getElementById('root'+i)!,<StrictMode><Chart width={640} data={[{x:new Date('2026-01-01T00:00:00Z'),y:1}]} xKey="x" yKey="y"/></StrictMode>,{identifierPrefix,onRecoverableError: error=>console.error(error)});});`,
+import {LineChart,AreaChart,BarChart,PieChart} from 'react-simple-charts';
+['alpha-','beta-','gamma-','pie-explicit-','pie-responsive-'].forEach((identifierPrefix,i)=>{const Chart=[LineChart,AreaChart,BarChart][i];hydrateRoot(document.getElementById('root'+i)!,<StrictMode>{i<3 && Chart ? <Chart width={640} data={[{x:new Date('2026-01-01T00:00:00Z'),y:1}]} xKey="x" yKey="y"/> : <PieChart {...(i===4?{}:{width:640})} data={[{x:new Date('2026-01-01T00:00:00Z'),y:1}]} nameKey="x" valueKey="y"/>}</StrictMode>,{identifierPrefix,onRecoverableError: error=>console.error(error)});});`,
         );
         await file(
           dir,
@@ -836,6 +918,16 @@ import {LineChart,AreaChart,BarChart} from 'react-simple-charts';
           clientManifest.includes(
             'node_modules/react-simple-charts/dist/index.js',
           ),
+        );
+        // Next manifests register the package namespace (*), not export names.
+        // The compiled Server Component must reference the named client export.
+        const appServer = await readFile(
+          join(dir, '.next/server/app/page.js'),
+          'utf8',
+        );
+        assert(
+          appServer.includes('dist/index.js#PieChart') ||
+            /dist\/index\.js["'],["']PieChart/.test(appServer),
         );
         await file(
           dir,

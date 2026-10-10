@@ -20,10 +20,12 @@ assert.deepEqual(Object.keys(api).sort(), [
   'AreaChart',
   'BarChart',
   'LineChart',
+  'PieChart',
 ]);
 assert.equal(typeof api.LineChart, 'function');
 assert.equal(typeof api.AreaChart, 'function');
 assert.equal(typeof api.BarChart, 'function');
+assert.equal(typeof api.PieChart, 'function');
 const { createElement } = await import('react');
 const { renderToString } = await import('react-dom/server');
 assert.match(

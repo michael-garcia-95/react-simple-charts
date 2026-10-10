@@ -17,11 +17,7 @@ export function seriesColor(
   series: NormalizedSeries,
   colors?: readonly string[],
 ) {
-  return (
-    series.color ??
-    colors?.[series.index % (colors.length || 1)] ??
-    `var(--rsc-series-${series.index + 1}-color, var(--rsc-series-color, ${palette[series.index % palette.length]}))`
-  );
+  return series.color ?? indexedColor(series.index, colors);
 }
 export function seriesLabel(series: NormalizedSeries) {
   return series.label ?? readableKey(series.key);
@@ -31,4 +27,12 @@ export function readableKey(key: string) {
     .replace(/([a-z\d])([A-Z])/g, '$1 $2')
     .replace(/[_-]+/g, ' ');
   return words ? words[0]!.toUpperCase() + words.slice(1) : 'Value';
+}
+
+/** Original source indices drive both Cartesian series and polar segment colors. */
+export function indexedColor(index: number, colors?: readonly string[]) {
+  return (
+    colors?.[index % (colors.length || 1)] ??
+    `var(--rsc-series-${index + 1}-color, var(--rsc-series-color, ${palette[index % palette.length]}))`
+  );
 }

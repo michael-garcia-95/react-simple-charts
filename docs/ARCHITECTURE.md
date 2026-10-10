@@ -2,7 +2,7 @@
 
 ## Approved direction
 
-React Simple Charts is a single npm package, a TypeScript-first React component library supporting React 18.2+ and React 19.x. Rendering is SVG-first. Planned chart families are Line, Bar, Area, Pie, and Donut; LineChart, AreaChart and BarChart are implemented; Pie/Donut remain deferred.
+React Simple Charts is a single npm package, a TypeScript-first React component library supporting React 18.2+ and React 19.x. Rendering is SVG-first. Planned chart families are Line, Bar, Area, Pie, and Donut; LineChart, AreaChart, BarChart and PieChart are implemented; Donut remains deferred.
 
 ## Module responsibilities
 
@@ -11,7 +11,7 @@ React Simple Charts is a single npm package, a TypeScript-first React component 
 - `src/internal/`: implementation details unavailable through package subpaths.
 - `src/styles/`: self-contained styling based on CSS variables. Future components must work without a mandatory external stylesheet.
 - `src/types/`: shared TypeScript contracts. `contracts.ts` contains focused chart-family unions and shared data, axis, tooltip, activation, and accessibility types. See [API type contracts](API_TYPE_CONTRACTS.md).
-- `src/index.ts`: the sole public barrel. It exports approved M01-T02 contracts as types and LineChart, AreaChart and BarChart as the only runtime chart exports.
+- `src/index.ts`: the sole public barrel. It exports approved M01-T02 contracts as types and LineChart, AreaChart, BarChart and PieChart as the only runtime chart exports.
 - `playground/`: a Vite React application, excluded from the npm package.
 - `tests/`: foundation contract and accessible playground tests.
 - `scripts/verify-package.mjs`: verifies built artifacts and probes runtime externalization using the real build configuration.
@@ -114,3 +114,23 @@ for pure Pie/Donut eligibility, scaled proportions, source-ordered d3-shape angl
 centered radii and validated arc paths. Ready/empty/unusable results preserve
 normalization provenance; negatives reject the complete chart. Public Pie/Donut
 renderers remain deferred. See [polar geometry foundations](POLAR_GEOMETRY_FOUNDATIONS.md).
+
+## Public PieChart — M04-T02
+
+PieChart is the fourth public runtime export. DonutChart remains type-only.
+`src/charts/PieChart.tsx` preserves the approved generic props and delegates to
+`src/internal/PolarRenderer.tsx`. The renderer normalizes source segments, resolves
+explicit/responsive dimensions and invokes `buildPolarGeometry` with family pie.
+It retains the normalization result for complete source tables. No Cartesian axes
+or layout are involved. `PolarMarks.tsx` renders exact translated engine paths,
+shared source-index colors and optional conservatively fitted interior labels.
+`PolarSegmentInspection.tsx` keeps independent source-provenance selection,
+roving controls, tooltip presentation, gesture evidence and decorative opacity
+animation. Its gesture model follows the tested Cartesian source-scoped policy;
+segmentId replaces series identity. No totals, percentages or paths are recalculated.
+
+`indexedColor` shares the unchanged Cartesian palette/variable precedence.
+`SegmentDataTable` preserves all normalized rows and negative raw values; the
+existing raw fallback now retains an empty semantic table for malformed nonarray
+data. No dependency, public contract or subpath is added. See [PieChart](PIE_CHART.md).
+Earlier sections above record historical milestone state.

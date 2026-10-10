@@ -1,7 +1,7 @@
 # Polar geometry foundations — M04-T01
 
-This source-internal pure engine will serve future PieChart and DonutChart
-renderers. Neither component is implemented. Package runtime exports remain
+At the M04-T01 milestone, this source-internal pure engine was prepared for future
+PieChart and DonutChart renderers; neither component was implemented in that task. Package runtime exports remain
 exactly LineChart, AreaChart and BarChart; there are no new props, dependencies
 or public subpaths. Cartesian calculations and presentation are unchanged.
 
@@ -124,3 +124,15 @@ chart. Screen-reader review and final polar accessibility design remain open.
 Center content, animation, public presentation defaults and wording, tiny-slice
 interaction policy and public Pie/Donut components are deferred. M04-T02 is not
 started; this task ends at the internal foundation and Development Lead review.
+
+## M04-T02 integration (subsequent milestone)
+
+The public PieChart now consumes this unchanged engine through normalization and
+`buildPolarGeometry({ normalized, family: 'pie', width, height })`. It renders the
+exact local paths with center metadata, uses engine percentages directly and
+retains source identity/order. The full normalization model drives the semantic
+source table; drawable positive slices drive legend and controls. Presentation,
+interaction and responsive lifecycle remain outside pure core. No geometry code
+or public radius/angle API changes. DonutChart runtime stays deferred to M04-T03.
+See [PieChart](PIE_CHART.md) for label-fitting, tiny-sector pointer, tooltip,
+accessibility and SSR policies. Earlier text above preserves the M04-T01 boundary.

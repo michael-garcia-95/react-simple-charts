@@ -4,11 +4,12 @@ A lightweight, customizable React charting library built with TypeScript.
 
 ## Status
 
-M03-T05 hardens public `BarChart`, `LineChart` and `AreaChart` together on the merged
-Cartesian engine. Bar supports vertical/horizontal grouped series, signed and zero
-values, responsive sizing, accessible tables, item/shared tooltips and activation.
-Pie and Donut remain deferred. The package stays private at 0.0.0.
-See [BarChart usage](docs/BAR_CHART.md), [LineChart](docs/LINE_CHART.md) and
+M04-T02 adds public `PieChart` on the merged pure polar engine. It provides exact
+source-ordered SVG sectors, accessible source tables, segment legends, optional
+labels, tooltips, keyboard inspection and pointer/touch activation. LineChart,
+AreaChart and BarChart remain public. DonutChart is deferred to M04-T03. The package
+stays private at 0.0.0. See [PieChart usage](docs/PIE_CHART.md),
+[BarChart](docs/BAR_CHART.md), [LineChart](docs/LINE_CHART.md) and
 [AreaChart](docs/AREA_CHART.md).
 
 ```tsx
@@ -38,7 +39,7 @@ npm ci
 npm run dev
 ```
 
-Vite serves the React playground and prints its local URL. The page shows public LineChart, AreaChart and BarChart examples alongside historical rendering fixtures. Its CSS belongs to the playground only; the prototype's essential styles are self-contained. The optional real-browser smoke workflow is documented in [rendering compatibility](docs/RENDERING_COMPATIBILITY.md).
+Vite serves the React playground and prints its local URL. The page shows public LineChart, AreaChart, BarChart and PieChart examples alongside historical rendering fixtures. Its CSS belongs to the playground only; the prototype's essential styles are self-contained. The optional real-browser smoke workflow is documented in [rendering compatibility](docs/RENDERING_COMPATIBILITY.md).
 
 | Command                    | Purpose                                                                   |
 | -------------------------- | ------------------------------------------------------------------------- |
@@ -57,7 +58,7 @@ Vite serves the React playground and prints its local URL. The page shows public
 
 ## Architecture
 
-The library targets React 18.2+ and React 19.x. Line, Bar and Area share SVG rendering infrastructure and d3-scale/d3-shape pure calculations; Pie and Donut remain deferred. Consumers supply React and React DOM as peers. Distribution is ESM-only, with declarations and a single root entry; LineChart, AreaChart and BarChart are the only named runtime exports. No internal subpaths are public.
+The library targets React 18.2+ and React 19.x. Line, Bar and Area share SVG rendering infrastructure and d3-scale/d3-shape pure calculations; Pie uses the pure polar engine; Donut remains deferred. Consumers supply React and React DOM as peers. Distribution is ESM-only, with declarations and a single root entry; LineChart, AreaChart, BarChart and PieChart are the only named runtime exports. No internal subpaths are public.
 
 See [architecture](docs/ARCHITECTURE.md), [open decisions](docs/OPEN_DECISIONS.md), and [contributor rules](AGENTS.md). CI checks Node 22/24 with React 18.2/19. The baseline uses React 18 definitions; CI also checks matching React 19 definitions.
 
@@ -65,6 +66,6 @@ See [architecture](docs/ARCHITECTURE.md), [open decisions](docs/OPEN_DECISIONS.m
 
 Licensed under the MIT License. Copyright (c) 2026 Michael Garcia. The copyright holder has been approved by the Development Lead; see `LICENSE` for the standard terms.
 
-The historical RenderingProbe and source-internal LinePreview remain available only in the repository. Genuine packaged Vite/Next validation uses all three public charts; see [consumer compatibility](docs/CONSUMER_COMPATIBILITY.md).
+The historical RenderingProbe and source-internal LinePreview remain available only in the repository. Genuine packaged Vite/Next validation uses all four public charts; see [consumer compatibility](docs/CONSUMER_COMPATIBILITY.md).
 
 See [M03 integration hardening](docs/M03_INTEGRATION_HARDENING.md) for the cross-family audit, reproducible browser matrix, fixes and remaining risks.

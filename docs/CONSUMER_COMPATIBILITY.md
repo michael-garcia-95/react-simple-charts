@@ -1,3 +1,78 @@
+# Packaged public PieChart — M04-T02
+
+The genuine private 0.0.0 tarball exports exactly LineChart, AreaChart, BarChart
+and PieChart. DonutChart remains type-only. Fresh independent installations compare
+packed ESM bytes, compile installed declarations and actual generic Pie JSX,
+reject unauthorized subpaths, verify external/deduplicated React peers, and build
+production applications. Existing Line/Area/Bar scenarios remain intact.
+
+| Consumer            | React / DOM | Installed strict types | Production / Chromium | Axe          |
+| ------------------- | ----------- | ---------------------- | --------------------- | ------------ |
+| Vite 8.3.4          | 18.2.0      | Pass                   | Pass                  | 0 violations |
+| Vite 8.3.4          | 19.3.0      | Pass                   | Pass                  | 0 violations |
+| Next 14.2.35        | 18.2.0      | Pass                   | App and Pages pass    | 0 violations |
+| Next 16.4.0 Webpack | 19.3.0      | Pass                   | App and Pages pass    | 0 violations |
+
+Executed with Node 24.19.0, npm 11.9.0, Chromium 151.0.7922.173,
+Playwright Core 1.64.0 and axe 4.13.0. TypeScript 6.0.3 is used except Next 14
+(5.4.5). React 18 definitions are 18.3.31 / DOM 18.3.7; React 19 definitions are
+19.3.0 / DOM 19.3.0. Node definitions are 24.19.1 except Next 14 (20.19.0).
+These are executed versions, not blanket framework/browser compatibility claims.
+
+Pie scenarios add explicit SVG SSR, full circle, duplicate labels, zero/missing
+source rows, negative unavailable presentation, optional labels, complete tables,
+responsive shrinking, focus/tooltip inspection, keyboard and pointer activation,
+real Chromium touchscreen taps, compatibility-click deduplication and standalone
+accessibility clicks. Hover retains the Tab entry on an already focused sector.
+The main fixtures retain 26 source tables. Vite adds two Pie roots alongside the
+three existing Cartesian roots, with distinct matching identifierPrefix values;
+responsive initial markup matches before native measurement. All browser runs
+fail on console/page/hydration errors; none occurred. Next's manifest registers
+client modules using a namespace `*`; the compiled App Router server page proves
+the actual named Pie reference (`dist/index.js#PieChart` in Next 14, or the named
+registerClientReference call in Next 16). No local wrapper substitutes for the
+actual package client boundary.
+
+Source validation retains the verified 721-test baseline with 89 new Pie tests
+(**810 total**, 40 files). All 89 focused rendering, interaction, Node SSR and
+hydration tests pass separately. Typecheck, type contracts, lint, formatting,
+package verification, playground build, dry-run packing and diff checks pass.
+The remote Node 22/24 × React 18.2/19 matrix remains a separate PR gate; local
+consumer results do not establish its outcome.
+
+| Genuine artifact    |   Bytes |
+| ------------------- | ------: |
+| Tarball (six files) |  78,439 |
+| ESM                 | 103,397 |
+| ESM gzip            |  22,921 |
+
+Reproduce with `node scripts/verify-consumers.mjs`. Its writable npm cache,
+results, HTML, client-reference artifacts and screenshots remain in ignored
+`work/consumers/`. No generated screenshots enter committed source or the package.
+
+The real Vite playground audit, `node scripts/verify-pie.mjs`, uses the same
+Chromium driver and captures ordinary/full-circle/duplicate/excluded/negative/
+custom/narrow/many/empty examples at 320, 480 and 1200px viewports, plus focused
+small-slice tooltips, visible tables and several charts together. Three focused
+axe scans report zero violations with no console/page errors. Actual screenshots
+were inspected: shapes, source ordering, full-circle closure, wrapped duplicate
+legends, conservative label fitting and unavailable messages are correct. The
+review fixed hidden-table intrinsic overflow, reserved numeric column space,
+container-relative tooltip bounds and visible tiny-slice focus treatment.
+Evidence stays in ignored `work/visual/pie/`.
+
+Accepted limits include exact-sector tiny pointer targets, estimated label fitting
+without collision detection, approximate tooltip placement and arbitrary custom
+content sizing. No full WCAG, manual screen-reader, physical touchscreen hardware,
+Firefox/WebKit or Turbopack validation is claimed. Chromium native touch input is
+executed through its emulated touchscreen. Existing Rolldown directive warnings
+and Next 14's outputFileTracingRoot warning remain; emitted client boundaries,
+production builds and browser behavior pass. No dependencies, public prop/type
+contracts, package subpaths, publication or deployment are added. See
+[PieChart](PIE_CHART.md) for behavior and limitations.
+
+The following sections preserve historical results for earlier milestones.
+
 # M03-T05 packaged integration validation
 
 The corrected private 0.0.0 package retains exactly AreaChart, BarChart and
