@@ -5,6 +5,7 @@ import { spawn } from 'node:child_process';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { join, resolve } from 'node:path';
+import { npmCommand } from './npm-command.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 const work = join(root, 'work/browser-smoke');
@@ -12,8 +13,18 @@ const app = join(work, 'app');
 const driver = join(work, 'driver');
 const pkg = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
 const env = { ...process.env, npm_config_cache: join(work, 'npm-cache') };
+const npm = await npmCommand({ env });
 async function run(cmd, args, cwd = root) {
-  const child = spawn(cmd, args, { cwd, env, stdio: 'inherit' });
+  const invocation =
+    cmd === 'npm'
+      ? npm
+      : { command: cmd === 'node' ? process.execPath : cmd, prefix: [] };
+  const child = spawn(invocation.command, [...invocation.prefix, ...args], {
+    cwd,
+    env,
+    stdio: 'inherit',
+    shell: false,
+  });
   await new Promise((res, rej) => {
     child.on('error', rej);
     child.on('exit', (code) =>
@@ -95,7 +106,7 @@ await run('npm', ['ls', 'react', 'react-dom'], app);
 await run('node', ['node_modules/vite/bin/vite.js', 'build'], app);
 if (process.argv.includes('--prepare-only')) {
   console.log(
-    `Manual fixture: cd ${app} && node node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port 4323 --strictPort`,
+    `Manual fixture directory: ${app}\nFrom that directory: node node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port 4323 --strictPort`,
   );
   process.exit(0);
 }

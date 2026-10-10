@@ -23,6 +23,14 @@ checks is neither screen-reader approval nor WCAG certification.
    independent Vite application, installs the actual tarball and builds it. It
    does not install any browser driver/binary in prepare-only mode. Reprepare
    from the repository root after source changes; record the new commit.
+   Windows npm invocations use the running Node executable with npm-cli.js rather
+   than launching npm.cmd without a shell. The script discovers that CLI from
+   npm_execpath (when run through npm), PATH or the Node installation directory.
+   Keep npm installed with Node/on PATH. Paths with spaces are passed as separate
+   arguments; use `Set-Location "C:\path with spaces\react-simple-charts"` to
+   enter your checkout. Native Windows preparation has not been executed in
+   Codex's Linux environment; see the review verification record in the
+   compatibility report. The manual NVDA checklist remains pending.
 
 3. Install current Firefox from <https://www.mozilla.org/firefox/> and NVDA from
    <https://www.nvaccess.org/download/> using their normal Windows installers.

@@ -41,7 +41,7 @@ and fresh installed consumer manifests have no engines field.
 
 | Dimension          | First-release compatibility position based on evidence                                                                                                                                                                                                                                                   |
 | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| React peers        | Unchanged `^18.2.0                                                                                                                                                                                                                                                                                       |     | ^19.0.0` for React and React DOM. Executed consumer runtimes: 18.2.0 and 19.3.0. Supply/deduplicate external peers. This does not verify every patch/minor in the range. |
+| React peers        | Unchanged `^18.2.0 \|\| ^19.0.0` for React and React DOM. Executed consumer runtimes: 18.2.0 and 19.3.0. Supply/deduplicate external peers. This does not verify every patch/minor in the range.                                                                                                         |
 | TypeScript         | Tested 5.4.5 in Next 14 and 6.0.3 elsewhere. Built-in `NoInfer` requires a compiler with that feature (introduced in 5.4); older compilers are not supported by these declarations. No claim that all newer compiler versions have been tested.                                                          |
 | Browser JavaScript | ES2022 ESM, SVG, Pointer Events and standard focus APIs. Responsive graphical mounting requires native ResizeObserver; without it, accessible placeholders/tables remain, and explicit dimensions are the graphical fallback. Optional opacity animation checks browser capabilities and reduced motion. |
 | Browsers           | Executed Chromium 151.0.7922.173. Firefox/WebKit remain unverified due blocked binary downloads; do not advertise their support. See matrix below.                                                                                                                                                       |
@@ -279,3 +279,74 @@ accessibility snapshots/screenshots, driver/cache/binaries. Final actual pack an
 extraction were inspected separately; none of that evidence is published. Final
 commit, PR and four final-head Node/React CI outcomes are in the task handoff;
 local consumer evidence is not substituted for remote CI.
+
+## PR #25 targeted review corrections
+
+Continued from reviewed commit `800e94ed655ccd158b941f69425c02085805d13c`
+on the same branch and PR. Escaped the peer-range pipe characters in the Markdown
+cell. Parsing with the existing Prettier GFM parser confirms two cells in the
+React row and the rendered inline-code value `^18.2.0 || ^19.0.0`.
+
+Windows preparation had a real portability gap: `spawn('npm', args)` without a
+shell cannot directly execute the usual npm.cmd launcher. Confirmed against
+[Node's Windows child-process guidance](https://github.com/nodejs/node/blob/v24.19.0/doc/api/child_process.md#spawning-bat-and-cmd-files-on-windows)
+and [npm 11.9.0's launcher](https://github.com/npm/cli/blob/v11.9.0/bin/npm.cmd).
+The launcher ultimately invokes node.exe with npm-cli.js.
+
+The private script helper `scripts/npm-command.mjs` now locates npm-cli.js on
+Windows, preferring npm_execpath when invoked through npm, then searching Windows
+PATH directories (including user-prefix installations), then the Node installation
+directory. It recognizes case-insensitive Path keys and quoted directories.
+Missing installations fail with a clear setup message. The runner executes that
+JavaScript CLI with process.execPath and a separate argument array, explicitly
+without a shell; paths with spaces and shell metacharacters are not interpolated.
+Other Node children use the same running executable. Linux retains its existing
+npm PATH invocation. Preparation output identifies the fixture directory separately
+instead of emitting an unquoted cd command.
+
+**Native Windows execution remains unverified.** Only a Linux executor was
+available; the existing four CI jobs also run Ubuntu. No Windows/NVDA success is
+claimed. Instead, seven focused Node tests cover Linux preservation, Windows CLI
+discovery next to Node, npm-run selection, Path casing/quotes/spaces, stale or
+npm.cmd fallbacks, missing installations, and a real shell-free Node subprocess
+with spaces in its script path/cwd and literal metacharacter arguments. Windows
+path discovery is simulated using win32 path semantics; the real process test
+runs on Linux. These tests now run in every existing Node/React CI job.
+
+The documented `node scripts/verify-browser-smoke.mjs --prepare-only` command
+also passed end to end from a copied Linux checkout under
+`work/m06-t03-review/checkout with spaces`. Development tools reused the original
+node_modules, but the consumer was freshly installed from the genuine six-file
+archive, with no library source alias or workspace link. npm packing, installation,
+peer checks and production Vite build succeeded. No browser driver or binary was
+provisioned in prepare-only mode. The manual Windows plan records these limits
+and includes a quoted PowerShell Set-Location example. Human NVDA checks remain
+pending.
+
+Review validation uses Node 24.19.0 / npm 11.9.0. All required commands in the
+local validation table above were rerun successfully: 1,115 Vitest tests / 52
+files and 32 compiled snippets. Additionally:
+
+```sh
+node --test scripts/tests/npm-command.test.mjs
+# Seven focused tests pass; also run by all four CI jobs.
+node scripts/verify-browser-smoke.mjs --prepare-only
+# Executed with the checkout containing spaces as the working directory.
+```
+
+The preserved genuine four-consumer matrix was also rerun: all Vite 8.3.4 / React
+18.2.0 and 19.3.0, Next 14.2.35 / React 18.2.0, and Next 16.4.0 Webpack / React
+19.3.0 rows passed, including strict installed types, production, SSR/hydration,
+both routers and zero representative axe violations. The updated focused runner
+passed all 15 Chromium 151.0.7922.173 checks with zero axe violations. Firefox and
+WebKit launch attempts still reported missing binaries; their checks remain
+unexecuted and the default three-engine run exited 1. Prior download-policy limits
+remain unchanged. Native Windows/NVDA and wider-browser support are not inferred
+from these Linux/Chromium checks.
+
+No package metadata, peer range, private/version safeguard, public API, source-map
+policy, browser assertion or Pages deployment workflow changed. The six-file
+archive inventory and local sizes remain 82,123 packed / 353,878 unpacked bytes.
+Detailed correction logs are ignored under work/m06-t03-review. Final pushed SHA
+and all four final-head CI outcomes are recorded in the review handoff. No new PR,
+merge, publication, release/tag or deployment is authorized or performed.
