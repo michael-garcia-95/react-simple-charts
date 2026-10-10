@@ -384,6 +384,10 @@ pre {
 pre code {
   font-size: 0.8rem;
 }
+.code-preview pre:focus-visible {
+  /* Keep all four edges visible inside the rounded panel's clipping boundary. */
+  outline-offset: -3px;
+}
 .about-layout {
   display: grid;
   grid-template-columns: 1.4fr 1fr;
@@ -591,6 +595,13 @@ button {
   min-width: 0;
   /* Hidden source tables must not impose their intrinsic width on the document. */
   overflow: clip;
+}
+.hero-chart figure svg,
+.about-aside figure svg,
+.example-preview figure svg {
+  /* These site containers clip hidden-table overflow. Keep the real library's
+     inline frame outline visible within that boundary, without changing it. */
+  outline-offset: -3px !important;
 }
 .preview-label {
   font-weight: 650;

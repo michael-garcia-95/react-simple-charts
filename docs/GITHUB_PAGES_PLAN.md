@@ -93,3 +93,17 @@ static document; gallery cross-links use `sitePath` and the approved `#chart-*`
 anchors. Both root and project-base artifacts are checked by the extended
 Chromium audit. No routing fallback, fifth page, Pages setting or active
 deployment workflow is introduced. See [M05-T03 verification](M05_DEVELOPER_DOCUMENTATION.md).
+
+## M05-T04 readiness handoff
+
+The hardening audit expands both emitted-artifact checks and the optional local
+Chromium runner to seven widths, nested-page refresh/history, clipboard races,
+keyboard/pointer/emulated-touch inspection and local size/readiness measurements.
+See [website hardening](M05_WEBSITE_HARDENING.md) for exact evidence and remaining
+review blockers. The actual project artifact is served only under the project
+prefix; a root mirror is never used to validate it. The four CI jobs retain
+read-only repository permissions and both build checks.
+
+This handoff does not activate the proposed deployment steps above. Confirm the
+final PR HEAD's four CI results and obtain Development Lead review, explicit
+squash-merge approval and subsequent deployment approval before hosting changes.

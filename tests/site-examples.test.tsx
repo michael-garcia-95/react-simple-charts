@@ -226,6 +226,53 @@ it('keeps all five states, chart identities and source snippets independent duri
   const ids = [...container.querySelectorAll('[id]')].map((node) => node.id);
   expect(new Set(ids).size).toBe(ids.length);
 });
+it.each(families)(
+  'resetting %s preserves already modified sibling articles',
+  (family) => {
+    const { container } = render(<Site page="examples" />);
+    act(measured);
+    for (const sibling of families) {
+      const ui = within(container.querySelector(`#chart-${sibling}`)!);
+      fireEvent.change(ui.getByLabelText('Dataset'), {
+        target: { value: 'alternative' },
+      });
+      fireEvent.click(ui.getByLabelText('Show source table'));
+      fireEvent.click(ui.getByLabelText('Show tooltip'));
+    }
+    const snapshots = families.map((sibling) => ({
+      source: container.querySelector(`#chart-${sibling} pre code`)!
+        .textContent,
+      table: container.querySelector(`#chart-${sibling} table`),
+    }));
+    fireEvent.click(
+      within(container.querySelector(`#chart-${family}`)!).getByRole('button', {
+        name: 'Reset',
+      }),
+    );
+    families.forEach((sibling, index) => {
+      const article = container.querySelector<HTMLElement>(
+        `#chart-${sibling}`,
+      )!;
+      const ui = within(article);
+      if (sibling === family) {
+        expect(article.querySelector('pre code')!.textContent).toBe(
+          exampleCode(sibling, defaultSettings()),
+        );
+        expect(ui.getByLabelText('Dataset')).toHaveValue('primary');
+        expect(ui.getByLabelText('Show source table')).toBeChecked();
+        expect(ui.getByLabelText('Show tooltip')).toBeChecked();
+      } else {
+        expect(article.querySelector('pre code')!.textContent).toBe(
+          snapshots[index]!.source,
+        );
+        expect(article.querySelector('table')).toBe(snapshots[index]!.table);
+        expect(ui.getByLabelText('Dataset')).toHaveValue('alternative');
+        expect(ui.getByLabelText('Show source table')).not.toBeChecked();
+        expect(ui.getByLabelText('Show tooltip')).not.toBeChecked();
+      }
+    });
+  },
+);
 it.each(['line', 'area', 'bar'] as const)(
   '%s grid changes the actual SVG and code',
   (family) => {
@@ -385,6 +432,74 @@ it('does not announce stale copy success when code changes during clipboard reso
   });
   expect(screen.getByRole('status')).toBeEmptyDOMElement();
 });
+it.each([false, true])(
+  'invalidates copy feedback across source changes and reset (pending: %s)',
+  async (pending) => {
+    let finish: (() => void) | undefined;
+    const writeText = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    vi.stubGlobal('navigator', { clipboard: { writeText } });
+    const { ui, source } = setup('line');
+    const initial = source();
+    const button = ui.getByRole('button', { name: /^Copy code:/ });
+    button.focus();
+    fireEvent.click(button);
+    if (!pending) {
+      await act(async () => finish?.());
+      expect(ui.getByRole('status')).toHaveTextContent('Code copied.');
+    }
+    fireEvent.change(ui.getByLabelText('Dataset'), {
+      target: { value: 'alternative' },
+    });
+    fireEvent.click(ui.getByRole('button', { name: 'Reset' }));
+    expect(source()).toBe(initial);
+    expect(button).toHaveFocus();
+    if (pending) await act(async () => finish?.());
+    expect(writeText).toHaveBeenCalledWith(initial);
+    expect(ui.getByRole('status')).toBeEmptyDOMElement();
+  },
+);
+it.each([false, true])(
+  'only reports the latest repeated copy request (latest denied: %s)',
+  async (denied) => {
+    const requests: { resolve: () => void; reject: () => void }[] = [];
+    vi.stubGlobal('navigator', {
+      clipboard: {
+        writeText: () =>
+          new Promise<void>((resolve, reject) => {
+            requests.push({
+              resolve,
+              reject: () => reject(new Error('Denied')),
+            });
+          }),
+      },
+    });
+    render(
+      <CodePreview label="Repeated example" copyable>
+        current source
+      </CodePreview>,
+    );
+    const button = screen.getByRole('button', { name: /^Copy code:/ });
+    button.focus();
+    fireEvent.click(button);
+    fireEvent.click(button);
+    expect(screen.getByRole('status')).toBeEmptyDOMElement();
+    await act(async () =>
+      denied ? requests[1]!.reject() : requests[1]!.resolve(),
+    );
+    const message = denied ? /Could not copy code/ : /Code copied\./;
+    expect(screen.getByRole('status')).toHaveTextContent(message);
+    await act(async () =>
+      denied ? requests[0]!.resolve() : requests[0]!.reject(),
+    );
+    expect(screen.getByRole('status')).toHaveTextContent(message);
+    expect(button).toHaveFocus();
+  },
+);
 it.each(families)(
   '%s keeps keyboard chart access, focus and independent data replacement',
   (family) => {

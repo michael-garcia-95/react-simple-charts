@@ -144,12 +144,23 @@ export function CodePreview({
   language?: string;
   copyable?: boolean;
 }) {
-  const [status, setStatus] = useState<{ source: string; message: string }>();
+  const [status, setStatus] = useState({
+    source: children,
+    revision: 0,
+    message: '',
+  });
   const request = useRef(0);
+  // A source can change and then return after Reset. Track each transition,
+  // rather than treating equal text as the same copy operation. Adjusting this
+  // component's state during render preserves the existing focused DOM nodes.
+  if (status.source !== children) {
+    setStatus({ source: children, revision: status.revision + 1, message: '' });
+  }
   async function copy() {
     const currentRequest = ++request.current;
     const source = children;
-    setStatus(undefined);
+    const revision = status.revision;
+    setStatus((current) => ({ ...current, message: '' }));
     let message: string;
     try {
       if (!navigator.clipboard?.writeText)
@@ -159,7 +170,10 @@ export function CodePreview({
     } catch {
       message = 'Could not copy code. Select the code and copy it manually.';
     }
-    if (request.current === currentRequest) setStatus({ source, message });
+    if (request.current === currentRequest)
+      setStatus((current) =>
+        current.revision === revision ? { ...current, message } : current,
+      );
   }
   return (
     <div className="code-preview">
@@ -189,7 +203,7 @@ export function CodePreview({
           aria-live="polite"
           aria-atomic="true"
         >
-          {status?.source === children ? status.message : ''}
+          {status.source === children ? status.message : ''}
         </p>
       )}
     </div>

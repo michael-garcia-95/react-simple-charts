@@ -4,6 +4,11 @@ A lightweight, customizable React charting library built with TypeScript.
 
 ## Status
 
+M05-T04 audits website integration and corrects stale copy feedback after reset
+and clipped keyboard focus outlines. See [website hardening and readiness evidence](docs/M05_WEBSITE_HARDENING.md)
+for production build/browser checks, local measurements and deployment prerequisites.
+Deployment, publication and merging remain separately authorized actions.
+
 M05-T03 expands the Documentation page into a developer reference with anchored
 navigation, local onboarding, all five typed chart examples, tooltips, accessibility,
 responsive rendering and SSR guidance. See [developer documentation](docs/M05_DEVELOPER_DOCUMENTATION.md).
