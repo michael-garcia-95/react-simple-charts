@@ -31,6 +31,7 @@ describe('package safety contract', () => {
       '.': { types: './dist/index.d.ts', import: './dist/index.js' },
     });
     expect(pkg.main).toBeUndefined();
+    expect(pkg.engines).toBeUndefined();
   });
   it('requires consumer-owned React 18.2 or React 19 runtimes', () => {
     expect(pkg.peerDependencies).toEqual({

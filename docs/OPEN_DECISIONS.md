@@ -203,3 +203,34 @@ secure bootstrap and trusted-publisher/provenance preparation, and final explici
 publication approval (M06-T03 through T07). No package reservation, publication,
 release, tag, token, organization, trusted publisher or website deployment is
 authorized by this identity implementation. Stop after M06-T02 for Lead review.
+
+## M06-T03 distribution policies and remaining gates
+
+Approved and implemented: remove the published Node engines restriction that
+originated in development tools; preserve contributor requirements separately;
+retain the public-source JavaScript map and six-file distribution inventory;
+preserve package identity, private 0.0.0, peer ranges and all public APIs. See
+[distribution compatibility](M06_DISTRIBUTION_COMPATIBILITY.md) for actual
+archive, installed-consumer and browser evidence. Earlier undecided Node/map
+statements above are historical and are superseded by these approved policies.
+No minimum older consumer Node version or widened React support is claimed.
+
+A focused genuine-installed-package three-engine smoke runner is implemented.
+Firefox and WebKit binaries are unavailable: supported downloads returned HTTP
+403 Domain forbidden. Their checks remain unexecuted, with no support claim;
+provide permitted download access or explicitly review a bounded first-release
+browser deferral. Chromium results are documented separately. No network bypass
+or local-PC software installation is implied.
+
+The [Windows NVDA + Firefox test plan](M06_SCREEN_READER_TEST_PLAN.md) is ready
+for human execution across all five families. No manual result is complete.
+Manual accessibility evidence and triage of material barriers remain a first-release
+gate; automated axe results do not certify WCAG or announcements. Physical
+mobile/assistive devices, native forced colors/zoom and strict CSP remain unverified.
+
+Release remains NO-GO pending these gates plus separately authorized release
+documentation, version/changelog/maintenance decisions, secure bootstrap and
+trusted-publisher/provenance preparation, and explicit publication approval.
+No publication, placeholder, token, tag/release, merge or deployment is performed.
+Website deployment workflow/settings are preserved. Stop after M06-T03 for
+Development Lead review; M06-T04 is not started.
