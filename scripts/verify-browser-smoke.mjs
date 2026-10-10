@@ -36,6 +36,29 @@ async function file(dir, name, content) {
   await mkdir(dir, { recursive: true });
   await writeFile(join(dir, name), content);
 }
+async function installDriver() {
+  await file(
+    driver,
+    'package.json',
+    JSON.stringify(
+      {
+        private: true,
+        type: 'module',
+        dependencies: {
+          'playwright-core': '1.64.0',
+          '@axe-core/playwright': '4.13.0',
+        },
+      },
+      null,
+      2,
+    ),
+  );
+  await run('npm', ['install', '--no-audit', '--no-fund'], driver);
+}
+if (process.argv.includes('--install-driver-only')) {
+  await installDriver();
+  process.exit(0);
+}
 await mkdir(work, { recursive: true });
 await run('npm', ['pack', '--pack-destination', work]);
 const archive = join(
@@ -110,23 +133,7 @@ if (process.argv.includes('--prepare-only')) {
   );
   process.exit(0);
 }
-await file(
-  driver,
-  'package.json',
-  JSON.stringify(
-    {
-      private: true,
-      type: 'module',
-      dependencies: {
-        'playwright-core': '1.64.0',
-        '@axe-core/playwright': '4.13.0',
-      },
-    },
-    null,
-    2,
-  ),
-);
-await run('npm', ['install', '--no-audit', '--no-fund'], driver);
+await installDriver();
 const require = createRequire(join(driver, 'package.json'));
 const engines = require('playwright-core');
 const { default: AxeBuilder } = require('@axe-core/playwright');
@@ -173,6 +180,8 @@ try {
   assert.ok(ready, 'Production fixture startup');
   for (const name of requested) {
     let browser;
+    let page;
+    const errors = [];
     const result = { engine: name, status: 'unexecuted', checks: [] };
     report.browsers.push(result);
     try {
@@ -188,10 +197,9 @@ try {
       const context = await browser.newContext({
         viewport: { width: 1100, height: 900 },
       });
-      const page = await context.newPage();
+      page = await context.newPage();
       page.setDefaultTimeout(10000);
       page.setDefaultNavigationTimeout(15000);
-      const errors = [];
       page.on('console', (m) => {
         if (m.type() === 'error') errors.push(m.text());
       });
@@ -399,8 +407,9 @@ try {
           'Hidden tables in accessibility tree',
         );
       const axe = await new AxeBuilder({ page }).include('main').analyze();
+      result.axeViolations = axe.violations.length;
+      await file(work, `${name}-axe.json`, JSON.stringify(axe, null, 2) + '\n');
       assert.deepEqual(axe.violations, []);
-      result.axeViolations = 0;
       await file(work, `${name}-accessibility.txt`, snapshot);
       await page.screenshot({
         path: join(work, `${name}.png`),
@@ -419,8 +428,27 @@ try {
       result.status = browser ? 'fail' : 'unexecuted';
       result.error = String(error.stack ?? error);
       console.error(result.error);
+      // Diagnostics never replace or retry the failed assertion.
+      if (page) {
+        const diagnostics = await Promise.allSettled([
+          page.screenshot({
+            path: join(work, `${name}-failure.png`),
+            fullPage: true,
+          }),
+          page
+            .locator('main')
+            .ariaSnapshot()
+            .then((snapshot) =>
+              file(work, `${name}-failure-accessibility.txt`, snapshot),
+            ),
+        ]);
+        result.diagnosticErrors = diagnostics
+          .filter((item) => item.status === 'rejected')
+          .map((item) => String(item.reason));
+      }
       failed = true;
     } finally {
+      result.pageErrors = errors;
       await browser?.close();
     }
     await file(work, 'results.json', JSON.stringify(report, null, 2) + '\n');

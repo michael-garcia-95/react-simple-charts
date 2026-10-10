@@ -44,7 +44,7 @@ and fresh installed consumer manifests have no engines field.
 | React peers        | Unchanged `^18.2.0 \|\| ^19.0.0` for React and React DOM. Executed consumer runtimes: 18.2.0 and 19.3.0. Supply/deduplicate external peers. This does not verify every patch/minor in the range.                                                                                                         |
 | TypeScript         | Tested 5.4.5 in Next 14 and 6.0.3 elsewhere. Built-in `NoInfer` requires a compiler with that feature (introduced in 5.4); older compilers are not supported by these declarations. No claim that all newer compiler versions have been tested.                                                          |
 | Browser JavaScript | ES2022 ESM, SVG, Pointer Events and standard focus APIs. Responsive graphical mounting requires native ResizeObserver; without it, accessible placeholders/tables remain, and explicit dimensions are the graphical fallback. Optional opacity animation checks browser capabilities and reduced motion. |
-| Browsers           | Executed Chromium 151.0.7922.173. Firefox/WebKit remain unverified due blocked binary downloads; do not advertise their support. See matrix below.                                                                                                                                                       |
+| Browsers           | Local Chromium 151.0.7922.173; GitHub Actions Chromium 156.0.8078.4, Firefox 157.0 and WebKit 27.2 passed the focused installed-package suite. See M06-T03B evidence below. Other versions and physical Safari/iOS remain unverified.                                                                    |
 | Node consumers     | Local Node 24.19.0, npm 11.9.0 for genuine SSR/consumer checks. Existing CI exercises Node 22/24 × React 18.2/19; final-head results are reported in the PR handoff. Removing engines does not verify older Node versions, and adds no consumer minimum claim.                                           |
 | Frameworks         | Four pinned installed configurations below; Next App and Pages Router with Webpack. Turbopack, other frameworks/configurations and older Node SSR are unverified. Next owns some internal React implementations; installed peers do not describe every internal renderer.                                |
 | Devices/CSP        | No physical mobile validation, universal browser claim or strict CSP promise. Chromium touchscreen emulation is event evidence only. Essential inline styles require a compatible host style/CSP policy.                                                                                                 |
@@ -143,7 +143,8 @@ violations, with no runner-reported console/page/hydration exceptions.
 Vite 8.3.4 / React 19.3.0 production app, installs the real tarball and checks ESM
 bytes and peers. Pinned Playwright Core 1.64.0 and axe Playwright 4.13.0 are isolated
 under ignored work, requiring no new root or runtime dependencies. This focused
-suite is separate from the larger four-consumer matrix and ordinary CI.
+suite is separate from the larger four-consumer matrix and ordinary Node/React
+CI; M06-T03B below adds its own dedicated browser workflow.
 
 Deterministic frozen Alpha 12 / Beta 24 / Gamma 18 datasets power all five families,
 each in explicit and responsive modes on the same page. Checks cover named groups,
@@ -157,6 +158,9 @@ legitimately fall in the Donut hole. No forced or synthetic pointer click hides
 that distinction. Screenshots are diagnostic artifacts, not visual baselines.
 This suite does not attempt every historical scenario in each browser or add a
 new browser/SSR/API contract.
+
+The following matrix records the original **local M06-T03 execution**. The later
+M06-T03B GitHub Actions matrix below supersedes its browser verification gap.
 
 | Engine   | Executed browser version                                | Result                                                                      |
 | -------- | ------------------------------------------------------- | --------------------------------------------------------------------------- |
@@ -212,9 +216,10 @@ assistive mobile devices, strict CSP, other browser versions, Turbopack and olde
 Node environments remain unverified. These are not represented as passing.
 
 **Release remains NO-GO.** Manual screen-reader evidence remains a first-release
-gate; material barriers require fixes or an explicit Lead decision. Firefox/WebKit
-execution needs download access or a separately approved conservative deferral;
-no support promise is added. Later release documentation, version/changelog/
+gate; material barriers require fixes or an explicit Lead decision. M06-T03B
+subsequently closes the three-engine smoke execution gap in GitHub Actions, as
+recorded below; local download restrictions remain. This evidence does not promise
+universal browser support. Later release documentation, version/changelog/
 maintenance policy, secure bootstrap/provenance/trusted publisher preparation and
 explicit publication approval remain separate gates/tasks. M06-T03 implementation
 can be reviewed with these limitations; it does not authorize starting M06-T04.
@@ -350,3 +355,101 @@ archive inventory and local sizes remain 82,123 packed / 353,878 unpacked bytes.
 Detailed correction logs are ignored under work/m06-t03-review. Final pushed SHA
 and all four final-head CI outcomes are recorded in the review handoff. No new PR,
 merge, publication, release/tag or deployment is authorized or performed.
+
+## M06-T03B — Isolated cross-browser CI verification
+
+Verified clean baseline `715bcd46001910bef72daf931c199cfc069befd7` after fetching
+origin/main. The dedicated `Browser verification` pull-request/manual workflow
+uses Ubuntu 24.04 and pinned Node 24.19.0, independently of the existing four
+Node/React jobs. It runs npm ci, installs the existing Playwright Core 1.64.0 /
+axe Playwright 4.13.0 driver under ignored work via `--install-driver-only`, then
+uses that driver's supported `install --with-deps chromium firefox webkit` command.
+No root dependency, package metadata, source map, chart API or Pages workflow changes.
+
+`npm run verify:browsers` explicitly requests all three engines. It still packs
+and installs the genuine six-file archive into a fresh Vite/React production
+fixture, compares installed ESM bytes and executes every existing assertion.
+There are no source aliases, forced clicks, assertion retries or browser fallbacks.
+A separate report gate requires all three engine results to pass with 15 recorded
+checks and zero axe violations each. Installation or unexecuted engines fail the job.
+
+The job uploads narrowly selected logs, results, screenshots, accessibility
+snapshots, complete axe analysis and driver manifests for 14 days, even on failure.
+Failure screenshots/snapshots are attempted before closing the browser; diagnostic
+capture failures are recorded without replacing the original assertion failure.
+Browser binaries, npm caches and node_modules are excluded from these artifacts
+and from the distributed archive. Exact executed browser versions come from
+browser.version(), not installation metadata.
+
+### Actual GitHub Actions results
+
+[PR #26](https://github.com/michael-garcia-95/react-simple-charts/pull/26), branch
+`chore/m06-t03b-browser-ci`. On 2026-10-10,
+[Browser verification run 38088441939](https://github.com/michael-garcia-95/react-simple-charts/actions/runs/38088441939)
+passed on head `c2377062ef5f72a33510c6c48ba3342a779a7b5f` (PR merge ref
+`5f520b8e5a5e626cdbaf8902a692db0b9b93a17b`). Installation, actual smoke execution,
+complete-report gate and artifact upload all succeeded. Downloaded and inspected
+the 14-file, 1,010,781-byte evidence ZIP (artifact 11683205655), including
+results.json, all three axe analyses and accessibility snapshots; job logs
+independently report the same executed versions and results.
+
+| Environment                 | Engine   | Actually executed version | Result                                        | Recorded scenario groups | Axe violations | Console/page/HTTP errors |
+| --------------------------- | -------- | ------------------------- | --------------------------------------------- | -----------------------: | -------------: | -----------------------: |
+| Local Linux                 | Chromium | 151.0.7922.173            | Pass                                          |                       15 |              0 |                        0 |
+| Local Linux                 | Firefox  | None                      | Not executed; existing CDN policy restriction |                        0 |   Not executed |             Not executed |
+| Local Linux                 | WebKit   | None                      | Not executed; existing CDN policy restriction |                        0 |   Not executed |             Not executed |
+| GitHub Actions Ubuntu 24.04 | Chromium | 156.0.8078.4              | Pass                                          |                       15 |              0 |                        0 |
+| GitHub Actions Ubuntu 24.04 | Firefox  | 157.0                     | Pass                                          |                       15 |              0 |                        0 |
+| GitHub Actions Ubuntu 24.04 | WebKit   | 27.2                      | Pass                                          |                       15 |              0 |                        0 |
+
+Each engine executed ten family/sizing scenario groups plus five shared groups
+(45 groups total, each containing multiple assertions). All existing keyboard,
+pointer, SVG, tooltip/focus, table, resize, empty/unavailable and error assertions
+passed without modification. This is the focused Vite 8.3.4 / React 19.3.0 fixture,
+not a Firefox/WebKit rerun of the historical four-framework consumer matrix.
+The separate [Node/React CI run 38088441809](https://github.com/michael-garcia-95/react-simple-charts/actions/runs/38088441809)
+also passed all four jobs on that head. The final documentation commit's CI is
+reported separately in the task handoff; browser workflow/driver/assertion code
+is unchanged by that evidence update.
+
+Axe-core 4.13.0 reported 30 passing rules, zero violations, two incomplete rules
+and 58 inapplicable rules in each engine. **Incomplete does not mean passing:**
+color-contrast could not determine backgrounds for 60 SVG text nodes; the empty
+Line table's header has no data cells (`th-has-data-cells`, one node), matching the
+intentional empty dataset. These remain explicit human review items, not suppressed
+rules or proof of a defect. All five visually hidden responsive source-table
+names were present in each accessibility snapshot. Screenshots are diagnostics,
+not visual baseline assertions. No library compatibility defect or test-driver
+assumption failure was discovered; no rendering, geometry or interaction fix was
+needed.
+
+The three-engine smoke verification gate is complete for these exact executed
+builds. This does not establish physical Safari/macOS/iOS, Windows/NVDA, mobile
+devices, strict CSP, every supported React patch or real screen-reader announcements.
+Manual NVDA checks remain pending; automated axe is not WCAG certification.
+First publication remains NO-GO pending manual accessibility evidence and the
+separate release-policy/security/documentation/authorization gates.
+
+Reproduce on a Linux machine with permitted Playwright downloads:
+
+```sh
+npm ci
+node scripts/verify-browser-smoke.mjs --install-driver-only
+export PLAYWRIGHT_BROWSERS_PATH="$PWD/work/browser-smoke/binaries"
+node work/browser-smoke/driver/node_modules/playwright-core/cli.js install --with-deps chromium firefox webkit
+RSC_SMOKE_BROWSERS=chromium,firefox,webkit npm run verify:browsers
+```
+
+`--prepare-only` retains the independent Windows manual-fixture workflow and does
+not provision browser drivers. `--install-driver-only` provisions only the driver,
+without packing the library or building a consumer. Normal browser verification
+continues to perform both preparation and driver setup.
+
+M06-T03B local validation on Node 24.19.0 / npm 11.9.0 passed: npm ci (274
+packages), typecheck, test:types, lint, format:check, 1,115 Vitest tests / 52 files,
+seven npm-command tests, verify:package (six files, 82,123 packed / 353,878 unpacked
+bytes), verify:site:snippets (32 samples), both site builds and base checks,
+build:playground, npm pack --dry-run and git diff --check. Isolated driver-only
+provisioning also passed. Exact commands match the local validation table above;
+focused command: `node --test scripts/tests/npm-command.test.mjs`. These are local
+results, not substitutes for GitHub Actions engine execution.
