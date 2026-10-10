@@ -5,7 +5,15 @@ import globals from 'globals';
 import prettier from 'eslint-config-prettier';
 
 export default tseslint.config(
-  { ignores: ['dist/**', 'playground-dist/**', 'coverage/**', 'work/**'] },
+  {
+    ignores: [
+      'dist/**',
+      'playground-dist/**',
+      'site-dist/**',
+      'coverage/**',
+      'work/**',
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

@@ -9,3 +9,4 @@ work/
 .env.*
 !.env.example
 .DS_Store
+site-dist/
