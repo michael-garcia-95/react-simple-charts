@@ -216,11 +216,15 @@ statements above are historical and are superseded by these approved policies.
 No minimum older consumer Node version or widened React support is claimed.
 
 A focused genuine-installed-package three-engine smoke runner is implemented.
-Firefox and WebKit binaries are unavailable: supported downloads returned HTTP
-403 Domain forbidden. Their checks remain unexecuted, with no support claim;
-provide permitted download access or explicitly review a bounded first-release
-browser deferral. Chromium results are documented separately. No network bypass
-or local-PC software installation is implied.
+M06-T03B adds a dedicated GitHub Actions browser job, separate from the four
+Node/React jobs. Chromium 156.0.8078.4, Firefox 157.0 and WebKit 27.2 actually
+passed all 15 focused installed-tarball scenario groups each with zero axe
+violations; see the distribution report for run/artifact evidence. The original
+local Firefox/WebKit download restrictions remain historical environment limits.
+The three-engine smoke execution gate is complete for these builds; physical
+Safari/iOS, other versions and real screen-reader behavior are not established.
+Axe incomplete contrast/empty-table checks remain human review items. No network
+bypass or local-PC software installation is implied.
 
 The [Windows NVDA + Firefox test plan](M06_SCREEN_READER_TEST_PLAN.md) is ready
 for human execution across all five families. No manual result is complete.
