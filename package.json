@@ -39,7 +39,7 @@
     "dev:site": "npm run build && vite --config vite.site.config.ts",
     "build:site": "npm run build && vite build --config vite.site.config.ts",
     "preview:site": "vite preview --config vite.site.config.ts",
-    "test:site": "npm run build && vitest run tests/site.test.tsx tests/site-examples.test.tsx tests/site-paths.test.ts",
+    "test:site": "npm run build && vitest run tests/site.test.tsx tests/site-examples.test.tsx tests/site-paths.test.ts tests/site-documentation.test.tsx",
     "build:site:pages": "npm run build && vite build --config vite.site.config.ts --base=/react-simple-charts/",
     "verify:site:snippets": "npm run build && node scripts/verify-site-snippets.mjs"
   },

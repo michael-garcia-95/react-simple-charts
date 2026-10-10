@@ -130,3 +130,16 @@ await separate authorization. Proposed deployment steps remain inactive.
 Manual screen-reader review, broader browser/native-device policy, syntax
 highlighting, richer tutorials and production performance measurement remain
 future work. M05-T03, merge, release and npm publication are not authorized here.
+
+## M05-T03 developer documentation
+
+M05-T03 is authorized as website/documentation work and expands the earlier
+introduction into a practical reference. Fourteen anchored sections and ten
+strictly compiled TSX samples document the existing five public components and
+local tarball workflow. See [developer documentation](M05_DEVELOPER_DOCUMENTATION.md).
+Earlier task-boundary statements above remain historical records.
+
+Package release/publication, Pages settings/deployment, custom domains, manual
+screen-reader and wider browser/device validation, strict CSP and dense-data
+performance budgets remain separate decisions. Documentation does not expand the
+public API or imply availability on npm. M05-T04 and merge remain unapproved.

@@ -341,7 +341,7 @@ main {
 }
 .docs-layout {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
   gap: var(--space-12);
   align-items: start;
 }
@@ -622,7 +622,7 @@ button {
   padding: var(--space-2) var(--space-4);
   font-weight: 600;
 }
-.copy-status {
+.code-preview .copy-status {
   margin: 0;
   padding: var(--space-2) var(--space-6);
   min-height: 2.5rem;
@@ -637,4 +637,94 @@ button {
 
 .chart-card pre {
   max-height: 26rem;
+}
+
+/* Documentation shares the site's palette, focus treatment and contained code panels. */
+.docs-toc {
+  display: block;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--space-3);
+  padding: var(--space-4);
+}
+.docs-toc .eyebrow {
+  margin-bottom: var(--space-2);
+}
+.docs-toc ol {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.docs-toc a {
+  display: flex;
+  align-items: center;
+  padding: var(--space-2);
+  color: var(--text);
+  font-size: 0.875rem;
+}
+.docs-content {
+  max-width: 100%;
+}
+.docs-section {
+  padding-bottom: var(--space-8);
+  border-bottom: 1px solid var(--border);
+}
+.docs-section h2 {
+  scroll-margin-top: var(--space-6);
+}
+.docs-section h3 {
+  margin-top: var(--space-8);
+}
+.docs-content .code-preview {
+  margin-block: var(--space-6);
+}
+.docs-content pre {
+  max-height: 32rem;
+}
+.docs-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  margin-block: var(--space-6);
+  border: 1px solid var(--border);
+  border-radius: var(--space-3);
+  background: var(--surface);
+}
+.docs-table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 28rem;
+  font-size: 0.875rem;
+  text-align: left;
+}
+.docs-table caption {
+  text-align: left;
+  font-weight: 650;
+  padding: var(--space-4);
+}
+.docs-table th,
+.docs-table td {
+  vertical-align: top;
+  border-top: 1px solid var(--border);
+  padding: var(--space-3) var(--space-4);
+}
+.docs-table thead {
+  background: var(--background);
+}
+.docs-table td {
+  color: var(--muted);
+}
+.docs-table th[scope='row'] {
+  width: 30%;
+  font-weight: 600;
+}
+@media (max-width: 900px) {
+  .docs-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-8);
+  }
+  .docs-toc ol {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+    gap: var(--space-1);
+  }
 }

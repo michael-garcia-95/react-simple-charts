@@ -113,7 +113,7 @@ describe('public website foundation', () => {
     expect(content).not.toContain('npm install react-simple-charts');
     expect(
       screen.getAllByRole('generic', {
-        name: /Local repository workflow|TypeScript \/ React/,
+        name: /Local repository workflow|LineChart · monthly revenue/,
       }),
     ).toHaveLength(2);
   });

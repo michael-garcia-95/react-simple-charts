@@ -13,6 +13,7 @@ const server = await createServer({
   optimizeDeps: { noDiscovery: true, include: [] },
 });
 const files = [];
+let documentationCount = 0;
 try {
   const { exampleCode, defaultSettings } =
     await server.ssrLoadModule('/example-code.ts');
@@ -48,11 +49,25 @@ try {
       }
     }
   }
+  assert.equal(files.length, 22, 'Retain all interactive variants');
+  const { documentationCode } = await server.ssrLoadModule(
+    '/documentation-code.ts',
+  );
+  for (const [name, sample] of Object.entries(documentationCode)) {
+    const file = resolve(dir, `documentation-${name}.tsx`);
+    await writeFile(file, sample.source);
+    files.push(file);
+    documentationCount++;
+  }
 } finally {
   await server.close();
 }
 const program = ts.createProgram(files, {
   strict: true,
+  exactOptionalPropertyTypes: true,
+  noUncheckedIndexedAccess: true,
+  noUnusedLocals: true,
+  noUnusedParameters: true,
   noEmit: true,
   skipLibCheck: true,
   target: ts.ScriptTarget.ES2022,
@@ -75,5 +90,5 @@ assert.equal(
   'Generated TSX must compile against public declarations',
 );
 console.log(
-  `${files.length} generated TSX examples compile against the built public root`,
+  `${files.length} TSX examples (22 interactive + ${documentationCount} documentation) compile against the built public root`,
 );

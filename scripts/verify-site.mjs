@@ -117,7 +117,7 @@ try {
         assert.ok(chart.left >= -1 && chart.right <= width + 1);
         assert.ok(Math.abs(chart.width - chart.figureWidth) < 2);
       }
-      assert.equal(await page.locator('main table').count(), count);
+      assert.equal(await page.locator('main figure table').count(), count);
       if (count)
         assert.match(await page.locator('main').ariaSnapshot(), /table/);
       const footerBottom = await page
@@ -153,15 +153,231 @@ try {
         `${route} axe at ${width}: ${JSON.stringify(scan.violations)}`,
       );
       report.widths.push({ width, route, ...measured });
-      if (route === '/' || route === '/examples/')
+      if (
+        route === '/' ||
+        route === '/examples/' ||
+        route === '/documentation/'
+      )
         await page.screenshot({
           path: resolve(
             evidence,
-            `${route === '/' ? 'home' : 'examples'}-${width}.png`,
+            `${route === '/' ? 'home' : route === '/documentation/' ? 'documentation' : 'examples'}-${width}.png`,
           ),
           fullPage: true,
         });
     }
+  }
+  // Documentation is verified against the actual emitted static page in each base.
+  const sectionIds = [
+    'introduction',
+    'getting-started',
+    'choose-a-chart',
+    'data-mapping',
+    'line-chart',
+    'area-chart',
+    'bar-chart',
+    'pie-chart',
+    'donut-chart',
+    'common-configuration',
+    'tooltips-and-interactions',
+    'accessibility',
+    'responsive-and-server-rendering',
+    'limitations-and-troubleshooting',
+  ];
+  report.documentation = [];
+  for (const width of [320, 480, 768, 1200]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto(origin + pathFor('/documentation/'));
+    const toc = page.getByRole('navigation', {
+      name: 'Documentation sections',
+    });
+    assert.equal(await toc.getByRole('link').count(), sectionIds.length);
+    assert.equal(await page.locator('main pre').count(), 12);
+    assert.equal(await page.locator('main table').count(), 6);
+    const ids = await page
+      .locator('[id]')
+      .evaluateAll((nodes) => nodes.map((node) => node.id));
+    assert.equal(new Set(ids).size, ids.length);
+    for (const id of sectionIds) {
+      const fragment = `#docs-${id}`;
+      const link = toc.locator(`a[href="${fragment}"]`);
+      assert.equal(await link.count(), 1);
+      await link.focus();
+      await page.keyboard.press('Enter');
+      await page.waitForURL(
+        `${origin}${pathFor('/documentation/')}${fragment}`,
+      );
+      assert.equal(
+        await page.locator(':focus').getAttribute('id'),
+        `docs-${id}`,
+      );
+      const heading = await page.locator(fragment).boundingBox();
+      assert.ok(
+        heading.y >= -1 && heading.y < 900,
+        `Anchor not visible: ${id}`,
+      );
+    }
+    // DOM focus order is native: TOC, introductory gallery link, copy button, code.
+    await toc.getByRole('link').last().focus();
+    await page.keyboard.press('Tab');
+    assert.equal(
+      await page.locator(':focus').getAttribute('href'),
+      pathFor('/examples/'),
+    );
+    await page.keyboard.press('Tab');
+    assert.equal(
+      await page.locator(':focus').getAttribute('aria-label'),
+      'Copy code: Local repository workflow',
+    );
+    await page.keyboard.press('Tab');
+    assert.equal(
+      await page.locator(':focus').getAttribute('aria-label'),
+      'Local repository workflow',
+    );
+    const sources = await page.locator('main pre code').allTextContents();
+    for (const [index, button] of (
+      await page.locator('main .copy-code').all()
+    ).entries()) {
+      await button.click();
+      await page
+        .locator('main .code-preview')
+        .nth(index)
+        .getByRole('status')
+        .filter({ hasText: 'Code copied.' })
+        .waitFor();
+      assert.equal(
+        await page.evaluate(() => navigator.clipboard.readText()),
+        sources[index],
+      );
+      assert.ok(
+        await button.evaluate((node) => node === document.activeElement),
+      );
+    }
+    const copiedScan = await new AxeBuilder({ page })
+      .include('.docs-content')
+      .analyze();
+    assert.deepEqual(copiedScan.violations, []);
+    report.axe.push({
+      width,
+      route: 'documentation copy feedback',
+      violations: copiedScan.violations,
+    });
+    for (const panel of await page.locator('main pre').all()) {
+      assert.equal(await panel.getAttribute('tabindex'), '0');
+      assert.ok((await panel.getAttribute('aria-label')).length > 0);
+      assert.ok(
+        await panel.evaluate((node) => {
+          const style = getComputedStyle(node);
+          return style.overflowX === 'auto' && style.fontSize !== '0px';
+        }),
+      );
+    }
+    if (width === 320) {
+      const panel = page.getByLabel('BarChart · horizontal grouped balances', {
+        exact: true,
+      });
+      await panel.focus();
+      assert.ok(
+        await panel.evaluate((node) => node.scrollWidth > node.clientWidth),
+      );
+      await page.keyboard.press('ArrowRight');
+      await page.waitForFunction(
+        () =>
+          document.querySelector(
+            'pre[aria-label="BarChart · horizontal grouped balances"]',
+          ).scrollLeft > 0,
+      );
+      const table = page.getByRole('region', {
+        name: 'Shared public properties',
+      });
+      await table.focus();
+      assert.ok(
+        await table.evaluate((node) => node.scrollWidth > node.clientWidth),
+      );
+      await page.keyboard.press('ArrowRight');
+      await page.waitForFunction(
+        () =>
+          document.querySelector(
+            '.docs-table-scroll[aria-label="Shared public properties"]',
+          ).scrollLeft > 0,
+      );
+    }
+    const columns = await page
+      .locator('.docs-layout')
+      .evaluate(
+        (node) => getComputedStyle(node).gridTemplateColumns.split(' ').length,
+      );
+    assert.equal(columns, width > 900 ? 2 : 1);
+    if (width === 320 || width === 1200) {
+      await page
+        .locator('#docs-line-chart')
+        .locator('..')
+        .locator('.code-preview')
+        .first()
+        .screenshot({
+          path: resolve(evidence, `documentation-sample-${width}.png`),
+        });
+      await page.locator('#docs-line-chart').scrollIntoViewIfNeeded();
+      await page.screenshot({
+        path: resolve(evidence, `documentation-code-${width}.png`),
+      });
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await page.screenshot({
+        path: resolve(evidence, `documentation-top-${width}.png`),
+      });
+    }
+    report.documentation.push({
+      width,
+      sections: sectionIds.length,
+      samples: 10,
+      nativeClipboard: true,
+      focusOrder: true,
+      columns,
+    });
+  }
+  for (const family of ['line', 'area', 'bar', 'pie', 'donut']) {
+    await page.goto(origin + pathFor('/documentation/'));
+    await page
+      .getByRole('link', { name: `Try the ${family} interactive example →` })
+      .click();
+    await page.waitForURL(`${origin}${pathFor('/examples/')}#chart-${family}`);
+    assert.equal(await page.locator(`#chart-${family}`).count(), 1);
+  }
+  for (const mode of ['unsupported', 'denied']) {
+    await page.goto(origin + pathFor('/documentation/'));
+    await page.evaluate((mode) => {
+      Object.defineProperty(navigator, 'clipboard', {
+        configurable: true,
+        value:
+          mode === 'unsupported'
+            ? undefined
+            : {
+                writeText: async () => {
+                  throw new Error('Denied');
+                },
+              },
+      });
+    }, mode);
+    const sample = page
+      .locator('#docs-pie-chart')
+      .locator('..')
+      .locator('.code-preview');
+    const button = sample.getByRole('button', { name: /^Copy code:/ });
+    await button.click();
+    await sample
+      .getByRole('status')
+      .filter({ hasText: 'Could not copy code.' })
+      .waitFor();
+    assert.equal(
+      await sample.getByText('Code copied.', { exact: true }).count(),
+      0,
+    );
+    assert.ok(await button.evaluate((node) => node === document.activeElement));
+    assert.ok(
+      (await sample.locator('pre code').textContent()).includes(
+        'import { PieChart }',
+      ),
+    );
   }
   // Exercise every family and current-code synchronization at each required width.
   for (const width of [320, 480, 768, 1200]) {
@@ -490,6 +706,25 @@ try {
       `${route} enlarged text overflow`,
     );
   }
+  await page.screenshot({
+    path: resolve(evidence, 'about-text-200.png'),
+    fullPage: true,
+  });
+  await page.goto(origin + pathFor('/documentation/'));
+  await page.evaluate(() => {
+    document.documentElement.style.fontSize = '200%';
+  });
+  const docsScan = await new AxeBuilder({ page }).include('main').analyze();
+  assert.deepEqual(docsScan.violations, []);
+  report.axe.push({
+    width: 320,
+    route: 'documentation 200% text / reduced motion',
+    violations: docsScan.violations,
+  });
+  await page.screenshot({
+    path: resolve(evidence, 'documentation-text-200.png'),
+    fullPage: true,
+  });
   report.enlargedText =
     'All four pages at 320px / 200% root font size, no document overflow';
   const manifest = JSON.parse(
