@@ -21,13 +21,20 @@ five chart components are implemented. The website is live on GitHub Pages.
   environments are in [distribution compatibility](M06_DISTRIBUTION_COMPATIBILITY.md).
   No older consumer Node minimum has been verified. Broader framework/SSR policy,
   including Turbopack, remains open; removal of engines is not evidence of support.
-- **Release policy:** Decide the initial version (0.1.0 remains a recommendation),
-  changelog/breaking-change conventions, maintenance expectations and support channels.
+- **Release policy (proposed, not approved):** Review [release policy](RELEASE_POLICY.md)
+  and the [draft changelog](../CHANGELOG.md). Initial 0.1.0 remains recommended
+  and unpublished; compatible patches, explicitly announced breaking 0.x minors,
+  latest-minor maintenance and GitHub Issues support are proposals awaiting Lead
+  and owner approval. Documentation acceptance alone is not release authorization.
   Published-package onboarding must describe the actual release when available.
 - **Publication security and authorization:** First-publication bootstrap,
   restricted release permissions, provenance/trusted-publisher setup and final
   publication approval remain separate work. Namespace identity is settled; that
   does not authorize publication, placeholders, tags or releases.
+  The [M06-T06 questions](RELEASE_POLICY.md#publication-security-questions-for-m06-t06)
+  cover manual versus staged bootstrap, public placeholder consent, exact OIDC
+  permissions, toolchain minima, provenance, 2FA/recovery and artifact approval.
+  No security configuration or subsequent task is started by this policy draft.
 
 First publication remains blocked by manual accessibility evidence and the separate
 release/security/authorization gates. The [release readiness assessment](M06_RELEASE_READINESS.md)
