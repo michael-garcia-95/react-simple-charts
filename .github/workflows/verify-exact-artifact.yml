@@ -72,8 +72,8 @@ jobs:
             work/exact-artifact/current.json
             work/exact-artifact/runs/
             work/exact-verification.log
-            work/candidate/*.tgz
             work/consumers/driver/package.json
             work/consumers/driver/package-lock.json
             work/browser-smoke/driver/package.json
             work/browser-smoke/driver/package-lock.json
+            !work/**/*.tgz

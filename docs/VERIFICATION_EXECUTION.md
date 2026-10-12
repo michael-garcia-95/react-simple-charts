@@ -325,8 +325,15 @@ account/security/bootstrap, provenance and owner-operation approvals in
 The separate `Exact artifact verification` PR workflow prepares one private local
 archive on its actual checked-out head, computes its digest once and passes that
 archive to the coordinator for all four consumers and all three engines. It keeps
-`contents: read`, uses no publication permission and uploads only the single
-candidate plus compact evidence and driver manifests/locks. It does not consume a
-workstation-selected archive; compare reported digests before making any identity
-claim. Existing PR CI, development browser verification and Pages deployment remain
+`contents: read`, uses no publication permission and uploads compact JSON reports,
+archive/file SHA-256 digests, source identity, verification logs, browser diagnostics
+and driver manifests/locks. The raw npm archive is not uploaded while publication
+remains unauthorized. CI still generates and verifies that single archive internally;
+the upload paths omit the candidate directory and explicitly exclude `work/**/*.tgz`,
+including copies left inside evidence directories after interrupted cleanup. This
+retains an auditable verification decision without distributing the development
+package. Downloadable evidence cannot supply the original archive for independent
+installation; any future archive distribution needs separate authorization. It does
+not consume a workstation-selected archive; compare reported digests before making
+any identity claim. Existing PR CI, development browser verification and Pages deployment remain
 independent. The CI Node suite includes the focused archive/evidence regressions.
