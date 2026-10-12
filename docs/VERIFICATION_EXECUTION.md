@@ -73,11 +73,28 @@ complete run uses `running`/`passed`/`failed`.
 
 `current.json` is a pointer containing the run ID, directory and start timestamp.
 Read the pointed-to `results.json` to determine its outcome; the pointer itself
-does not claim success. It is claimed only at startup so an older concurrent run
-cannot replace a newer current run when it finishes. Report writes use a temporary
-file and rename. `running`, missing, malformed or mismatched reports are never
+does not claim success. Pointer claims use an exclusive `.current-claim` directory
+created with non-recursive `mkdir`. An overlapping initializer on the same base
+is rejected and must retry; IDs and timestamps are assigned after acquiring the
+guard. Admission order is guard acquisition order, not invocation arrival time or
+wall-clock comparison. Initialized runs may execute concurrently, but completion
+never updates the pointer. Thus a delayed older claim cannot finish after a newer
+accepted claim and replace it. Report writes use a temporary file and rename.
+`running`, missing, malformed or mismatched reports are never
 acceptable release evidence. The browser workflow checks pointer identity, normal
 run name, complete outcome and all three engines before accepting the report.
+
+The guard's `owner.json` records run ID, host and PID. Its owner checks the run ID
+before releasing it. Handled initialization failure releases its own guard and
+rejects; release/ownership failure also rejects. A changed or unreleased guard
+remains blocked.
+Interruption can leave the guard without metadata or with an incomplete pointer
+claim. There is no expiry, PID-based takeover or automatic stale-guard deletion.
+Confirm that no initializer is active on any host using that evidence base before
+manually removing only `.current-claim`, then retry. Never remove an active guard;
+the guarantee assumes participating runs obey this ownership protocol. Reports and
+prior evidence do not need removal. Rejection avoids a platform-specific locking
+dependency or a waiting queue, at the cost of manual interrupted-start recovery.
 
 Old fixed-path `results.json` files are historical evidence, not current results.
 They are deliberately preserved. Full website QA uses
@@ -120,6 +137,10 @@ before returning. Run-level SIGINT/SIGTERM similarly request command/browser
 cancellation. Browser launches have a fifteen-second limit. Required cleanup
 failure turns the complete run into failure; secondary errors cannot replace the
 original assertion failure. Finalized evidence rejects subsequent report writes.
+Final outcome is reconciled after cleanup against every required phase and the
+cleanup/diagnostic error arrays. A cleanup callback that records an error and
+returns normally still produces a failed cleanup phase, failed overall outcome
+and caller rejection. An existing primary error remains the caller's error.
 
 Arbitrary JavaScript callbacks cannot be forcibly terminated in the same process.
 An unsupported callback that ignores cancellation is reported as nonsettling;

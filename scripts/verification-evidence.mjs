@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import { mkdir, rename, writeFile } from 'node:fs/promises';
+import { mkdir, rename, writeFile, rm, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { hostname } from 'node:os';
 import { within } from './owned-process.mjs';
 
 export function errorDetails(error) {
@@ -36,9 +37,21 @@ export async function createEvidenceRun(
   data = {},
   { write = atomicJson } = {},
 ) {
+  await mkdir(base, { recursive: true });
+  const claim = join(base, '.current-claim');
+  try {
+    await mkdir(claim);
+  } catch (cause) {
+    throw new Error(
+      `Cannot own evidence pointer claim at ${claim}: ${cause.code === 'EEXIST' ? 'claim in progress or interrupted; retry after it completes, or confirm no initializer is active before manually removing this guard' : cause.message}`,
+      { cause },
+    );
+  }
+  let startupError;
+  let startupFailed = false;
+  let releaseClaim;
   const runId = `${new Date().toISOString().replaceAll(':', '-')}-${randomUUID()}`;
   const directory = join(base, 'runs', runId);
-  await mkdir(directory, { recursive: true });
   const report = {
     ...data,
     runId,
@@ -70,14 +83,60 @@ export async function createEvidenceRun(
     writing = operation;
     return operation;
   }
-  // Claim the current pointer once. An older concurrent run finishing later must
-  // not replace a newer run; its outcome stays in its own results.json.
-  await write(join(base, 'current.json'), {
-    runId,
-    directory,
-    startedAt: report.startedAt,
-  });
-  await persist(); // Before manifest reads, pack, driver installation or launch.
+  // Admission is ordered by exclusive guard acquisition, not call arrival.
+  // Never steal a guard: an interrupted owner requires explicit idle recovery.
+  try {
+    await writeFile(
+      join(claim, 'owner.json'),
+      JSON.stringify({
+        runId,
+        pid: process.pid,
+        host: hostname(),
+        startedAt: report.startedAt,
+      }),
+    );
+    await mkdir(directory, { recursive: true });
+    await write(join(base, 'current.json'), {
+      runId,
+      directory,
+      startedAt: report.startedAt,
+    });
+    await persist(); // Before manifest reads, pack, driver installation or launch.
+  } catch (error) {
+    startupError = error;
+    startupFailed = true;
+  }
+  try {
+    const owner = JSON.parse(await readFile(join(claim, 'owner.json'), 'utf8'));
+    if (owner.runId !== runId)
+      throw new Error(
+        `Evidence pointer claim ownership changed at ${claim}; refusing to remove it`,
+      );
+    await rm(claim, { recursive: true });
+  } catch (error) {
+    releaseClaim = error;
+    if (!startupFailed) {
+      startupError = error;
+      startupFailed = true;
+    } else if (startupError && typeof startupError === 'object')
+      startupError.cleanupErrors = [
+        ...(startupError.cleanupErrors ?? []),
+        error,
+      ];
+  }
+  if (startupFailed) {
+    report.status = 'failed';
+    report.error = errorDetails(startupError);
+    report.failingPhase = 'initialization';
+    report.phases[0].status = 'failed';
+    if (releaseClaim) report.cleanupErrors.push(errorDetails(releaseClaim));
+    try {
+      await persist();
+    } catch (error) {
+      console.error('Startup evidence write also failed:', error);
+    }
+    throw startupError;
+  }
   const controller = new AbortController();
   const cancellation = [];
   let cancellationWork;
@@ -227,8 +286,33 @@ export async function createEvidenceRun(
           report.failingPhase = 'cleanup';
         }
       }
+      // Callbacks may record Error instances or already serialized details.
+      for (const key of ['cleanupErrors', 'diagnosticErrors'])
+        report[key] = report[key].map((item) =>
+          item instanceof Error ? errorDetails(item) : item,
+        );
+      const failedPhase = report.phases.find(
+        (phase) => phase.status === 'failed',
+      );
+      if (
+        failedPhase ||
+        report.cleanupErrors.length ||
+        report.diagnosticErrors.length
+      ) {
+        if (!failed) {
+          original = new Error(
+            'Verification phases, diagnostics or cleanup failed; see recorded errors',
+          );
+          failed = true;
+          report.error = errorDetails(original);
+          report.failingPhase ??= failedPhase?.name ?? 'cleanup';
+        }
+      }
       report.status = failed ? 'failed' : 'passed';
-      cleanupPhase.status = report.cleanupErrors.length ? 'failed' : 'passed';
+      cleanupPhase.status =
+        report.cleanupErrors.length || report.diagnosticErrors.length
+          ? 'failed'
+          : 'passed';
       report.phase = 'final outcome';
       report.finishedAt = new Date().toISOString();
       const finalPhase = { name: 'final outcome', status: report.status };
