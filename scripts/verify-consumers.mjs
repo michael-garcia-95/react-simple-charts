@@ -1,5 +1,5 @@
 // Optional release gate: disposable packages and independent applications only.
-/* global document, window, getComputedStyle */
+/* global document, window, getComputedStyle, DOMPoint */
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import {
@@ -114,16 +114,18 @@ export default function Sample() {return <main><h1>Packaged public LineChart</h1
 <section id="pie-negative"><PieChart width={480} data={[{name:'Positive',value:1},{name:'Negative',value:-2}]} nameKey="name" valueKey="value" accessibility={{label:'Unavailable Pie',dataTable:'visible'}}/></section>
 <section id="pie-responsive" style={{width:'80%'}}><PieChart data={data} nameKey="quarter" valueKey="value" accessibility={{label:'Responsive Pie'}}/></section>
 <section id="donut-explicit"><DonutChart width={480} data={[{name:'Same',value:1},{name:'Zero',value:0},{name:'Missing',value:null},{name:'Same',value:3}]} nameKey="name" valueKey="value" centerContent={<span>Allocation</span>} showLabels accessibility={{label:'Explicit Donut',dataTable:'visible'}}/></section>
-<section id="donut-single"><DonutChart width={480} data={[{name:'Complete',value:1}]} nameKey="name" valueKey="value" innerRadiusRatio={0.8} centerContent={0} accessibility={{label:'Single Donut'}}/></section>
+<SingleDonutInspection/>
 <section id="donut-negative"><DonutChart width={480} data={[{name:'Negative',value:-2}]} nameKey="name" valueKey="value" centerContent="Must not appear" accessibility={{label:'Unavailable Donut',dataTable:'visible'}}/></section>
 <section id="donut-responsive" style={{width:'80%'}}><DonutChart data={data} nameKey="quarter" valueKey="value" innerRadiusRatio={0.4} centerContent={<strong>Responsive allocation</strong>} accessibility={{label:'Responsive Donut'}}/></section>
 <Interactive/></main>;}
-import Interactive from './Interactive';`;
+import Interactive, {SingleDonutInspection} from './Interactive';`;
 const interactive = `'use client';
 import {useState} from 'react'; import {LineChart, AreaChart, BarChart, PieChart, DonutChart} from '${packageName}';
 function Inspection({area=false}:{area?:boolean}){const Chart=area?AreaChart:LineChart;const [result,setResult]=useState(''); const [count,setCount]=useState(0);return <section id={area?'area-interactive':'interactive'}><Chart width={640} data={[{x:'A',y:1},{x:'A',y:2}]} xKey="x" yKey="y" onDataActivate={p=>{setCount(n=>n+1);setResult(p.index+':'+p.inputMethod);}} accessibility={{label:area?'Interactive Area':'Interactive'}}/><output>{result}:{count}</output></section>;}
 const pieData=[{name:'Same',value:1},{name:'Same',value:1}];
 function PieInspection(){const [result,setResult]=useState('');const [count,setCount]=useState(0);return <section id="pie-interactive"><PieChart width={480} data={pieData} nameKey="name" valueKey="value" onDataActivate={p=>{setCount(n=>n+1);setResult(p.index+':'+p.inputMethod);}} accessibility={{label:'Interactive Pie'}}/><output>{result}:{count}</output></section>;}
+const singleDonutData=[{name:'Complete',value:1}];
+export function SingleDonutInspection(){const [result,setResult]=useState('None');const [count,setCount]=useState(0);return <section id="donut-single"><DonutChart width={480} data={singleDonutData} nameKey="name" valueKey="value" innerRadiusRatio={0.8} centerContent={0} onDataActivate={p=>{setResult(p.index+':'+p.label+':'+p.value+':'+p.inputMethod);setCount(n=>n+1);}} accessibility={{label:'Single Donut'}}/><output aria-label="Single Donut activation">{result}:{count}</output></section>;}
 function DonutInspection(){const [result,setResult]=useState('');const [count,setCount]=useState(0);const [center,setCenter]=useState(0);return <section id="donut-interactive"><DonutChart width={480} data={pieData} nameKey="name" valueKey="value" centerContent={<button onClick={()=>setCenter(n=>n+1)}>Details {center}</button>} onDataActivate={p=>{setCount(n=>n+1);setResult(p.index+':'+p.inputMethod);}} accessibility={{label:'Interactive Donut'}}/><output>{result}:{count}</output></section>;}
 function BarInspection({horizontal=false}:{horizontal?:boolean}){const [result,setResult]=useState('');const [count,setCount]=useState(0);return <section id={horizontal?'bar-horizontal-interactive':'bar-interactive'}><BarChart width={640} orientation={horizontal?'horizontal':'vertical'} data={[{x:'A',y:-2},{x:'A',y:0}]} xKey="x" yKey="y" onDataActivate={p=>{setCount(n=>n+1);setResult(p.index+':'+p.inputMethod);}} accessibility={{label:'Interactive Bar'}}/><output>{result}:{count}</output></section>;}
 export default function Interactive(){return <><Inspection/><Inspection area/><BarInspection/><BarInspection horizontal/><PieInspection/><DonutInspection/><Narrow/></>;}
@@ -789,15 +791,110 @@ async function start(dir, kind, port, major, identity) {
       await page.evaluate(() => document.activeElement?.textContent),
       'Details 1',
     );
-    const emptyHole = await page.locator('#donut-single svg').boundingBox();
-    await page.mouse.click(
-      emptyHole.x + emptyHole.width / 2,
-      emptyHole.y + emptyHole.height / 2,
-    );
+    const singleDonut = page.locator('#donut-single');
+    const singleOutput = singleDonut.getByRole('status', {
+      name: 'Single Donut activation',
+    });
+    const singleControl = singleDonut.locator('svg [role=button]');
     assert.equal(
-      await interactiveDonut.locator('output').textContent(),
-      previous,
+      await singleControl.count(),
+      1,
+      'Single Donut has one segment',
     );
+    assert.equal(await singleOutput.textContent(), 'None:0');
+    // Read the full ring's actual arc radii and current SVG screen transform.
+    // The off-center hole point avoids the inscribed center-content overlay.
+    async function singleDonutPoint(kind) {
+      await singleControl.scrollIntoViewIfNeeded();
+      return singleControl.evaluate((path, kind) => {
+        const svg = path.ownerSVGElement;
+        const radii = [
+          ...path.getAttribute('d').matchAll(/A([\d.eE+-]+),([\d.eE+-]+)/g),
+        ].map((match) => {
+          if (Number(match[1]) !== Number(match[2]))
+            throw new Error('Single Donut must have circular arcs');
+          return Number(match[1]);
+        });
+        if (
+          radii.length !== 4 ||
+          radii.some((r) => !Number.isFinite(r) || r <= 0)
+        )
+          throw new Error(
+            'Single Donut full ring must expose four finite arcs',
+          );
+        const inner = Math.min(...radii),
+          outer = Math.max(...radii);
+        if (!(inner < outer))
+          throw new Error('Single Donut needs an empty hole');
+        const box = path.getBBox();
+        const point = new DOMPoint(
+          box.x + box.width / 2,
+          box.y +
+            box.height / 2 -
+            (kind === 'hole' ? inner * 0.9 : (inner + outer) / 2),
+        );
+        if (path.isPointInFill(point) !== (kind === 'ring'))
+          throw new Error(
+            'Single Donut ' + kind + ' point contradicts rendered fill',
+          );
+        const matrix = path.getScreenCTM();
+        if (!matrix) throw new Error('Single Donut has no screen transform');
+        const screen = point.matrixTransform(matrix);
+        const hit = document.elementFromPoint(screen.x, screen.y);
+        if (hit !== (kind === 'hole' ? svg : path))
+          throw new Error(
+            'Single Donut ' +
+              kind +
+              ' must hit ' +
+              (kind === 'hole' ? 'uncovered SVG' : 'its segment'),
+          );
+        return { x: screen.x, y: screen.y };
+      }, kind);
+    }
+    let singleActivations = 0;
+    for (const viewport of [700, 480]) {
+      await page.setViewportSize({ width: viewport, height: 1200 });
+      const label = `Single Donut at ${viewport}px (${kind}, React ${major})`;
+      const beforeHole = await singleOutput.textContent();
+      const hole = await singleDonutPoint('hole');
+      await page.mouse.click(hole.x, hole.y);
+      assert.equal(
+        await singleOutput.textContent(),
+        beforeHole,
+        label + ': hole must not activate its segment',
+      );
+      assert.equal(
+        await interactiveDonut.locator('output').textContent(),
+        previous,
+        label + ': hole must not affect sibling Donut',
+      );
+      const ring = await singleDonutPoint('ring');
+      await page.mouse.click(ring.x, ring.y);
+      singleActivations++;
+      assert.equal(
+        await singleOutput.textContent(),
+        `0:Complete:1:pointer:${singleActivations}`,
+        label + ': ring must activate the intended source segment exactly once',
+      );
+      assert.equal(
+        await interactiveDonut.locator('output').textContent(),
+        previous,
+        label + ': ring must not affect sibling Donut',
+      );
+      const afterRing = await singleOutput.textContent();
+      const holeAfterRing = await singleDonutPoint('hole');
+      await page.mouse.click(holeAfterRing.x, holeAfterRing.y);
+      assert.equal(
+        await singleOutput.textContent(),
+        afterRing,
+        label + ': hole after ring activation must remain inert',
+      );
+      assert.equal(
+        await interactiveDonut.locator('output').textContent(),
+        previous,
+        label + ': later hole must not affect sibling Donut',
+      );
+    }
     await page.setViewportSize({ width: 650, height: 1200 });
     await page.waitForTimeout(100);
     const resized = await page.locator('#donut-responsive').evaluate((el) => {
@@ -873,6 +970,8 @@ async function start(dir, kind, port, major, identity) {
       ssr: kind === 'next',
       browser: true,
       axeViolations: 0,
+      donutHole:
+        'same-chart hole/ring positive control and sibling isolation at 700/480px',
     });
   }
   try {
