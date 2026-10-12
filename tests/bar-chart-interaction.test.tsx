@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { CartesianTooltipContext } from '../src';
+import type { BarChartProps, CartesianTooltipContext } from '../src';
 import { BarChart } from '../src';
 import { installResizeObserver, latestObserver } from './resize-observer';
 
@@ -53,30 +53,61 @@ describe.each(['vertical', 'horizontal'] as const)(
       expect(points()[0]!.closest('[clip-path]')).toBeNull();
       expect(screen.queryByRole('tooltip')).toBeNull();
     });
-    it.each([undefined, true, { mode: 'shared' }] as const)(
-      'shared tooltip %j groups by source row and excludes missing',
-      (tooltip) => {
-        const renderTooltip = vi.fn<
-          (context: CartesianTooltipContext<(typeof data)[number]>) => null
-        >(() => null);
+    it.each([
+      ['omitted', {}, 'item'],
+      // Explicit undefined is a JavaScript runtime case; exact optional TS
+      // props normally require omission. Keep the cast confined to this input.
+      [
+        'undefined',
+        { tooltip: undefined } as unknown as Pick<
+          BarChartProps<(typeof data)[number]>,
+          'tooltip'
+        >,
+        'item',
+      ],
+      ['true', { tooltip: true }, 'item'],
+      ['shared', { tooltip: { mode: 'shared' } }, 'shared'],
+    ] as const)(
+      'tooltip %s preserves its mode and original source-row grouping',
+      (variant, tooltipProps, mode) => {
+        const label = `Bar ${orientation} tooltip=${variant}`;
+        // Bypass the shared-mode helper: omission, undefined and true are real
+        // Bar inputs, whose public default is item mode rather than shared.
         render(
-          chart({
-            tooltip:
-              typeof tooltip === 'object'
-                ? { ...tooltip, render: renderTooltip }
-                : { mode: 'shared' },
-          }),
+          <Chart
+            data={data}
+            orientation={orientation}
+            xKey="x"
+            series={series}
+            width={640}
+            {...tooltipProps}
+          />,
+        );
+        fireEvent.focus(points()[0]!);
+        expect(screen.getByRole('tooltip'), label).toHaveTextContent(
+          'Actual: 10',
+        );
+        if (mode === 'shared')
+          expect(screen.getByRole('tooltip'), label).toHaveTextContent(
+            'Forecast: 12',
+          );
+        else
+          expect(screen.getByRole('tooltip'), label).not.toHaveTextContent(
+            'Forecast',
+          );
+        expect(screen.getByRole('tooltip'), label).not.toHaveTextContent(
+          'Actual: 20',
         );
         fireEvent.focus(points()[2]!);
-        if (typeof tooltip === 'object') {
-          expect(renderTooltip.mock.calls[0]?.[0]).toMatchObject({
-            mode: 'shared',
-            items: [{ index: 1, value: 20 }],
-          });
-        } else {
-          expect(screen.getByRole('tooltip')).toHaveTextContent('Actual: 20');
-          expect(screen.getByRole('tooltip')).not.toHaveTextContent('Forecast');
-        }
+        expect(screen.getByRole('tooltip'), label).toHaveTextContent(
+          'Actual: 20',
+        );
+        expect(screen.getByRole('tooltip'), label).not.toHaveTextContent(
+          'Actual: 10',
+        );
+        expect(screen.getByRole('tooltip'), label).not.toHaveTextContent(
+          'Forecast',
+        );
       },
     );
     it('preserves full datum identity and configured order in custom shared renderers', () => {
@@ -112,6 +143,18 @@ describe.each(['vertical', 'horizontal'] as const)(
       });
       if (ctx?.mode !== 'shared') throw new Error('Expected shared context');
       expect(ctx.items[0]!.record).toBe(data[0]);
+      fireEvent.focus(points()[2]!);
+      expect(
+        callback.mock.calls.at(-1)![0],
+        `Bar ${orientation} shared missing series`,
+      ).toEqual({
+        mode: 'shared',
+        category: 'Jan',
+        items: [{ ...ctx.items[0], record: data[1], index: 1, value: 20 }],
+      });
+      const missing = callback.mock.calls.at(-1)![0];
+      if (missing.mode !== 'shared') throw new Error('Expected shared context');
+      expect(missing.items[0]!.record).toBe(data[1]);
     });
     it('item renderer receives exactly the selected original item', () => {
       const callback = vi.fn<
