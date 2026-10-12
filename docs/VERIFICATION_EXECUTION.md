@@ -169,3 +169,57 @@ node --test scripts/tests/*.test.mjs
 Linux regression tests exercise real child termination, descendant listeners,
 server death and cancellation. Windows npm resolution remains simulated; a green
 Ubuntu CI matrix does not establish native Windows process-tree behavior.
+
+## Installed-consumer module boundaries — M06-T06B0D
+
+`node scripts/verify-consumers.mjs` remains the development-mode entry point.
+It owns the evidence run, isolated scratch directory, browser, phase sequence,
+configuration iteration, completeness checks and final resource cleanup.
+Four cohesive modules under `scripts/consumers/` take explicit arguments:
+
+| Module                  | Responsibility                                                                                                                                                                               |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `fixtures.mjs`          | Frozen four-row version matrix; manifests, strict/app TypeScript configuration, public declaration probe, chart fixtures, both Next routing models and independent Vite SSR/hydration roots. |
+| `installed-package.mjs` | Separate development archive preparation; genuine installed-byte comparison, root API/export probe execution, peer resolution, strict compilation and production builds.                     |
+| `browser.mjs`           | Owned fixture-server lifetime and the existing native browser, SSR/hydration, geometry, interaction, accessibility and resize scenarios.                                                     |
+| `evidence.mjs`          | Existing report schema and phase-aware IO adapters; Next client-reference evidence, Vite source maps, bundle metrics and explicit row completeness.                                          |
+
+Data flow is archive preparation → per-row fixture generation → installation and
+type/build verification → production evidence/metrics → owned-server browser
+verification → row completion. Vite independent-root files are prepared after
+installation, retaining their SSR command order. Browser contexts close per row;
+the orchestrator owns final browser and scratch cleanup. The existing evidence,
+command, driver and server utilities retain ownership, atomic reporting,
+cancellation, deadlines and original/secondary-error semantics. There is no
+second reporting system or mutable module-global report.
+
+The matrix remains Vite 8.3.4 with React 18.2.0/19.3.0 and Next
+14.2.35/16.4.0 with the corresponding React versions. All existing compiler and
+type-package pins remain in `consumerConfigurations`, in the original execution
+order: Vite 18, Next 18, Vite 19, Next 19. Next application configuration retains
+its standard `skipLibCheck`; the separate public-package contract compilation
+retains `skipLibCheck: false`. Both App and Pages routes remain required.
+
+The pre-refactor scenario inventory is preserved:
+
+| Layer             | Required coverage retained                                                                                                                                                                                                                           |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Archive/package   | Real npm pack/install; client directive and React externalization; installed ESM equality; exactly five root exports, strict public contracts and rejected internal subpaths; peer resolution.                                                       |
+| Shared browser    | Deferred ResizeObserver and hydration equality; explicit/responsive sizing; accessible tables/names/row headers, IDs/relationships, focus outlines and axe; source-table retention and native observer behavior.                                     |
+| Cartesian         | Line/Area/Bar focus and tooltip behavior; vertical/horizontal Bar; signed/clipped/missing data, independent Area gaps and time scales; keyboard, mouse/touch activation and deduplication; narrow, empty/replaced/unusable data.                     |
+| Polar             | Pie and Donut arcs, full circles/rings, labels, ratios, source tables and invalid data; responsive sizing; keyboard/pointer/touch; center content; same-target Donut empty-hole rejection, ring positive control and sibling isolation at 700/480px. |
+| Framework         | Next App/Pages SSR and hydration plus genuine client references; Vite seven independently prefixed StrictMode hydration roots; production source maps and bundle measurements.                                                                       |
+| Lifetime/evidence | Fixture identity and incumbent-port safeguards, bounded owned processes, unexecuted rows, original errors, cleanup and retained unique evidence.                                                                                                     |
+
+Decomposition preserves the 102 original direct assertion call sites and generated
+fixture/probe contents. Three additional completeness guards require exact,
+nonduplicated configuration/check row identities and successful browser results.
+Focused Node tests protect pins, fixture wiring, command ordering, strictness,
+independent roots, missing/duplicate/failed rows, evidence routing and failure
+propagation; they do not simulate the full browser suite.
+
+`prepareDevelopmentArchive` returns the locally built archive, its current build
+bytes and existing size metadata before consumer installation begins. This is a
+distinct future artifact boundary. No external-tarball argument, digest validation,
+release mode or release-candidate metadata is implemented; current development
+guards and npm archive construction remain unchanged.
