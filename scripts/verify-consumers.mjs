@@ -1,3 +1,5 @@
+import { artifactOptions, forbidExactRepack } from './artifact/selection.mjs';
+import { verifyInstalledInventory } from './artifact/archive.mjs';
 // Optional development gate: real archives, disposable apps, and retained evidence.
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
@@ -10,6 +12,7 @@ import {
 } from './consumers/fixtures.mjs';
 import {
   prepareDevelopmentArchive,
+  prepareExactArchive,
   installAndVerifyConsumer,
 } from './consumers/installed-package.mjs';
 import { verifyConsumerBrowser } from './consumers/browser.mjs';
@@ -21,15 +24,22 @@ import {
 } from './consumers/evidence.mjs';
 
 const root = resolve(import.meta.dirname, '..');
-const base = join(root, 'work/consumers');
+const exact = artifactOptions();
+const base = exact?.['evidence-base']
+  ? resolve(exact['evidence-base'])
+  : join(root, 'work/consumers');
 const evidenceRun = await createEvidenceRun(
   base,
   'installed-consumers',
   initialConsumerReport(consumerConfigurations),
 );
 const report = evidenceRun.report;
+report.mode = exact ? 'exact-artifact' : 'development';
+report.parentRunId = exact?.['parent-run'];
+if (exact) report.selectionRequest = exact;
 let browser;
 let scratch;
+let artifact;
 evidenceRun.onCancel(() => browser?.close());
 await evidenceRun.execute(
   async () => {
@@ -40,17 +50,24 @@ await evidenceRun.execute(
     const installedEntry = `node_modules/${packageName}/dist/index.js`;
     const env = {
       ...process.env,
-      npm_config_cache: join(base, 'npm-cache'),
+      npm_config_cache: join(root, 'work/consumers/npm-cache'),
       NEXT_TELEMETRY_DISABLED: '1',
     };
-    const { run, file, json } = createConsumerIO({ root, evidenceRun, env });
-    const { genuine, js, metadata } = await prepareDevelopmentArchive({
-      root,
-      work,
-      run,
-    });
+    const io = createConsumerIO({ root, evidenceRun, env });
+    const { file, json } = io;
+    const run = (cmd, args, cwd) => {
+      forbidExactRepack(exact, cmd, args);
+      return io.run(cmd, args, cwd);
+    };
+    artifact = exact
+      ? await evidenceRun.phase('exact archive selection', () =>
+          prepareExactArchive({ root, work, options: exact }),
+        )
+      : await prepareDevelopmentArchive({ root, work, run });
+    const { genuine, js, metadata } = artifact;
+    if (exact) report.artifact = artifact.identity;
     report.artifacts.genuine = metadata;
-    const driver = join(base, 'driver');
+    const driver = join(root, 'work/consumers/driver');
     await evidenceRun.phase('driver preparation', () =>
       installBrowserDriver(driver, { env, signal: evidenceRun.signal }),
     );
@@ -93,6 +110,7 @@ await evidenceRun.execute(
         configuration: row,
         installedEntry,
         js,
+        artifact: exact ? artifact : undefined,
         packageName,
         file,
         run,
@@ -121,19 +139,32 @@ await evidenceRun.execute(
           file,
         }),
       );
+      if (exact) {
+        await artifact.verify();
+        await verifyInstalledInventory(
+          join(dir, 'node_modules', packageName),
+          artifact.files,
+        );
+        configuration.artifactSha256 = artifact.identity.sha256;
+        report.checks.at(-1).artifactSha256 = artifact.identity.sha256;
+      }
       configuration.status = 'passed';
       await evidenceRun.persist();
     }
+    if (exact) await artifact.verify();
     assertConsumerCompleteness(report, consumerConfigurations);
   },
   async () => {
+    const integrity = await Promise.allSettled([
+      exact && artifact ? artifact.verify() : Promise.resolve(),
+    ]);
     const cleanup = await Promise.allSettled([
       browser?.close(),
       scratch
         ? rm(scratch, { recursive: true, force: true })
         : Promise.resolve(),
     ]);
-    const errors = cleanup
+    const errors = [...integrity, ...cleanup]
       .filter((item) => item.status === 'rejected')
       .map((item) => item.reason);
     if (errors.length)

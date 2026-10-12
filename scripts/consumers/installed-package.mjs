@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { mkdir, readFile, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
+import { selectArtifact } from '../artifact/selection.mjs';
+import { verifyInstalledInventory } from '../artifact/archive.mjs';
 import { prepareIndependentRoots } from './fixtures.mjs';
 
 export async function prepareDevelopmentArchive({ root, work, run }) {
@@ -28,17 +30,30 @@ export async function prepareDevelopmentArchive({ root, work, run }) {
   return { genuine, js, metadata };
 }
 
+export async function prepareExactArchive({ root, work, options }) {
+  return selectArtifact({ root, work, options });
+}
+
 export async function installAndVerifyConsumer({
   dir,
   configuration,
   installedEntry,
   js,
+  artifact,
   packageName,
   file,
   run,
 }) {
   const { kind, major } = configuration;
+  await artifact?.verify();
   await run('npm', ['install', '--no-audit', '--no-fund'], dir);
+  if (artifact) {
+    await artifact.verify();
+    await verifyInstalledInventory(
+      join(dir, 'node_modules', packageName),
+      artifact.files,
+    );
+  }
   assert.deepEqual(
     await readFile(join(dir, installedEntry)),
     js,
@@ -66,4 +81,11 @@ export async function installAndVerifyConsumer({
         ],
     dir,
   );
+  if (artifact) {
+    await artifact.verify();
+    await verifyInstalledInventory(
+      join(dir, 'node_modules', packageName),
+      artifact.files,
+    );
+  }
 }

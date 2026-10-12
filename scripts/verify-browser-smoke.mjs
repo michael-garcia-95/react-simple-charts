@@ -1,3 +1,9 @@
+import {
+  artifactOptions,
+  selectArtifact,
+  forbidExactRepack,
+} from './artifact/selection.mjs';
+import { verifyInstalledInventory } from './artifact/archive.mjs';
 import { createEvidenceRun, errorDetails } from './verification-evidence.mjs';
 import { runVerificationCommand } from './verification-command.mjs';
 import { installBrowserDriver, loadBrowserDriver } from './browser-driver.mjs';
@@ -13,7 +19,10 @@ import {
 } from './verification-server.mjs';
 
 const root = resolve(import.meta.dirname, '..');
-const base = join(root, 'work/browser-smoke');
+const exact = artifactOptions();
+const base = exact?.['evidence-base']
+  ? resolve(exact['evidence-base'])
+  : join(root, 'work/browser-smoke');
 const setupOnly = process.argv.includes('--install-driver-only');
 const prepareOnly = process.argv.includes('--prepare-only');
 const requested = (
@@ -38,8 +47,12 @@ const evidenceRun = await createEvidenceRun(
   },
 );
 const report = evidenceRun.report;
-const driver = join(base, 'driver');
+report.mode = exact ? 'exact-artifact' : 'development';
+report.parentRunId = exact?.['parent-run'];
+if (exact) report.selectionRequest = exact;
+const driver = join(root, 'work/browser-smoke/driver');
 let scratch;
+let artifact;
 let activeBrowser;
 let launching;
 evidenceRun.onCancel(async () => {
@@ -48,8 +61,15 @@ evidenceRun.onCancel(async () => {
 });
 await evidenceRun.execute(
   async () => {
+    assert(
+      !(exact && (setupOnly || prepareOnly)),
+      'Exact mode requires complete browser execution',
+    );
     const work = evidenceRun.directory;
-    const env = { ...process.env, npm_config_cache: join(base, 'npm-cache') };
+    const env = {
+      ...process.env,
+      npm_config_cache: join(root, 'work/browser-smoke/npm-cache'),
+    };
     for (const name of requested)
       assert.ok(['chromium', 'firefox', 'webkit'].includes(name));
     if (setupOnly) {
@@ -63,6 +83,7 @@ await evidenceRun.execute(
     const identity = fixtureIdentity('browser-smoke');
     const pkg = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
     async function run(cmd, args, cwd = root) {
+      forbidExactRepack(exact, cmd, args);
       return evidenceRun.phase(
         cmd === 'npm' && args[0] === 'pack'
           ? 'package creation'
@@ -89,11 +110,20 @@ await evidenceRun.execute(
       );
     }
     await mkdir(work, { recursive: true });
-    await run('npm', ['pack', '--pack-destination', scratch]);
-    const archive = join(
-      scratch,
-      `${pkg.name.replace(/^@/, '').replaceAll('/', '-')}-${pkg.version}.tgz`,
-    );
+    let archive;
+    if (exact) {
+      artifact = await evidenceRun.phase('exact archive selection', () =>
+        selectArtifact({ root, work: scratch, options: exact }),
+      );
+      archive = artifact.genuine;
+      report.artifact = artifact.identity;
+    } else {
+      await run('npm', ['pack', '--pack-destination', scratch]);
+      archive = join(
+        scratch,
+        `${pkg.name.replace(/^@/, '').replaceAll('/', '-')}-${pkg.version}.tgz`,
+      );
+    }
     await rm(app, { recursive: true, force: true });
     await file(
       app,
@@ -144,10 +174,18 @@ function App(){return h('main',null,h('h1',null,'Installed five-family compatibi
 }
 createRoot(document.getElementById('root')).render(h(App));`,
     );
+    await artifact?.verify();
     await run('npm', ['install', '--no-audit', '--no-fund'], app);
+    if (exact) {
+      await artifact.verify();
+      await verifyInstalledInventory(
+        join(app, 'node_modules', pkg.name),
+        artifact.files,
+      );
+    }
     assert.deepEqual(
       await readFile(join(app, `node_modules/${pkg.name}/dist/index.js`)),
-      await readFile(join(root, 'dist/index.js')),
+      exact ? artifact.js : await readFile(join(root, 'dist/index.js')),
     );
     const installed = JSON.parse(
       await readFile(
@@ -180,11 +218,19 @@ createRoot(document.getElementById('root')).render(h(App));`,
       report.server.status = 'ready';
       for (const name of requested) {
         assertRunning();
+        if (exact) {
+          await artifact.verify();
+          await verifyInstalledInventory(
+            join(app, 'node_modules', pkg.name),
+            artifact.files,
+          );
+        }
         let browser;
         let page;
         const errors = [];
         const result = report.browsers.find((item) => item.engine === name);
         result.status = 'running';
+        if (exact) result.artifactSha256 = artifact.identity.sha256;
         await evidenceRun.persist();
         try {
           const executablePath =
@@ -539,6 +585,13 @@ createRoot(document.getElementById('root')).render(h(App));`,
       console.error(report.server.error);
       failed = true;
     }
+    if (exact) {
+      await artifact.verify();
+      await verifyInstalledInventory(
+        join(app, 'node_modules', pkg.name),
+        artifact.files,
+      );
+    }
     if (failed) throw originalFailure;
     assert.ok(
       report.browsers.every((item) => item.status === 'pass'),
@@ -546,13 +599,16 @@ createRoot(document.getElementById('root')).render(h(App));`,
     );
   },
   async () => {
+    const integrity = await Promise.allSettled([
+      exact && artifact ? artifact.verify() : Promise.resolve(),
+    ]);
     const cleanup = await Promise.allSettled([
       activeBrowser?.close(),
       scratch && !report.preparedFixture
         ? rm(scratch, { recursive: true, force: true })
         : Promise.resolve(),
     ]);
-    const errors = cleanup
+    const errors = [...integrity, ...cleanup]
       .filter((item) => item.status === 'rejected')
       .map((item) => item.reason);
     if (errors.length)

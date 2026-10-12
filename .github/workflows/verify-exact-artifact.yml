@@ -1,0 +1,79 @@
+name: Exact artifact verification
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  exact-artifact:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/work/browser-smoke/binaries
+      RSC_SMOKE_BROWSERS: chromium,firefox,webkit
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.19.0'
+          cache: npm
+      - run: npm ci
+      - name: Prepare isolated drivers and all engines
+        run: |
+          node scripts/browser-driver.mjs --install
+          node scripts/browser-driver.mjs --install --smoke
+          node work/browser-smoke/driver/node_modules/playwright-core/cli.js install --with-deps chromium firefox webkit
+      - name: Prepare one private local archive and record its identity
+        run: |
+          mkdir -p work/candidate
+          npm run build
+          npm pack --ignore-scripts --pack-destination work/candidate
+          node --input-type=module <<'NODE'
+          import {readFileSync, appendFileSync} from 'node:fs';
+          import {createHash} from 'node:crypto';
+          const path = 'work/candidate/michael-garcia-95-react-simple-charts-0.0.0.tgz';
+          const digest = createHash('sha256').update(readFileSync(path)).digest('hex');
+          appendFileSync(process.env.GITHUB_ENV, `RSC_EXACT_SHA256=${digest}\n`);
+          NODE
+      - name: Verify that single archive through all genuine gates
+        run: |
+          set -o pipefail
+          node scripts/verify-exact-artifact.mjs \
+            --artifact work/candidate/michael-garcia-95-react-simple-charts-0.0.0.tgz \
+            --sha256 "$RSC_EXACT_SHA256" \
+            --source-sha "$(git rev-parse HEAD)" 2>&1 | tee work/exact-verification.log
+      - name: Summarize finalized exact evidence
+        if: always()
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import {readFileSync, appendFileSync} from 'node:fs';
+          const pointer = JSON.parse(readFileSync('work/exact-artifact/current.json', 'utf8'));
+          const report = JSON.parse(readFileSync(`${pointer.directory}/results.json`, 'utf8'));
+          assert.equal(pointer.runId, report.runId);
+          appendFileSync(process.env.GITHUB_STEP_SUMMARY, `Exact run ${report.runId}: ${report.status}\nArchive SHA-256: ${report.artifact?.sha256 ?? 'not selected'}\nSource: ${report.artifact?.source.checkoutSha ?? 'not established'}\n`);
+          assert.equal(report.status, 'passed');
+          assert.equal(report.artifact.sha256, process.env.RSC_EXACT_SHA256);
+          assert.equal(report.package.status, 'passed');
+          assert.deepEqual(report.gates.map(gate => [gate.name, gate.status]), [['installed-consumers', 'passed'], ['browser-smoke', 'passed']]);
+          NODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: exact-artifact-${{ github.sha }}
+          retention-days: 14
+          if-no-files-found: warn
+          path: |
+            work/exact-artifact/current.json
+            work/exact-artifact/runs/
+            work/exact-verification.log
+            work/consumers/driver/package.json
+            work/consumers/driver/package-lock.json
+            work/browser-smoke/driver/package.json
+            work/browser-smoke/driver/package-lock.json
+            !work/**/*.tgz
