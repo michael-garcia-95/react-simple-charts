@@ -58,7 +58,7 @@ export function loadBrowserDriver(directory = consumerDriver) {
 
 export async function installBrowserDriver(
   directory,
-  { env = process.env } = {},
+  { env = process.env, timeoutMs = 300000, signal } = {},
 ) {
   await mkdir(directory, { recursive: true });
   await writeFile(
@@ -72,6 +72,8 @@ export async function installBrowserDriver(
   await runVerificationCommand('npm', ['install', '--no-audit', '--no-fund'], {
     cwd: directory,
     env,
+    timeoutMs,
+    signal,
   });
   return loadBrowserDriver(directory);
 }

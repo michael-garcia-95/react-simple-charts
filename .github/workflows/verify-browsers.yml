@@ -38,18 +38,23 @@ jobs:
           node --input-type=module <<'NODE'
           import assert from 'node:assert/strict';
           import { existsSync, readFileSync, appendFileSync } from 'node:fs';
-          const path = 'work/browser-smoke/results.json';
-          if (!existsSync(path)) {
+          const currentPath = 'work/browser-smoke/current.json';
+          if (!existsSync(currentPath)) {
             appendFileSync(process.env.GITHUB_STEP_SUMMARY, 'Browser smoke report unavailable: Chromium, Firefox and WebKit are not verified. Inspect installation and job logs.\n');
             process.exit(1);
           }
-          const report = JSON.parse(readFileSync(path, 'utf8'));
+          const current = JSON.parse(readFileSync(currentPath, 'utf8'));
+          const report = JSON.parse(readFileSync(`${current.directory}/results.json`, 'utf8'));
+          assert.equal(current.runId, report.runId);
           const lines = ['| Engine | Executed version | Status | Checks | Axe violations |', '| --- | --- | --- | ---: | ---: |'];
           for (const name of ['chromium', 'firefox', 'webkit']) {
             const result = report.browsers.find(item => item.engine === name);
             lines.push(`| ${name} | ${result?.version ?? 'not executed'} | ${result?.status ?? 'not executed'} | ${result?.checks.length ?? 0} | ${result?.axeViolations ?? 'not executed'} |`);
           }
           appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\n') + '\n');
+          appendFileSync(process.env.GITHUB_STEP_SUMMARY, `Run ${report.runId}: ${report.status}; failing phase: ${report.failingPhase ?? 'none'}.\n`);
+          assert.equal(report.name, 'browser-smoke');
+          assert.equal(report.status, 'passed');
           assert.deepEqual(report.browsers.map(item => item.engine), ['chromium', 'firefox', 'webkit']);
           for (const result of report.browsers) {
             assert.equal(result.status, 'pass', result.engine);
@@ -65,10 +70,8 @@ jobs:
           retention-days: 14
           if-no-files-found: warn
           path: |
-            work/browser-smoke/results.json
+            work/browser-smoke/current.json
+            work/browser-smoke/runs/
             work/browser-smoke/*.log
-            work/browser-smoke/*.png
-            work/browser-smoke/*-accessibility.txt
-            work/browser-smoke/*-axe.json
             work/browser-smoke/driver/package.json
             work/browser-smoke/driver/package-lock.json

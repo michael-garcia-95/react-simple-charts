@@ -110,3 +110,85 @@ test('inherited stream execution completes successfully', async () => {
     { stdout: '', stderr: '' },
   );
 });
+
+test(
+  'command timeout bounds an unresponsive owned child and retains output',
+  { timeout: 5000 },
+  async () => {
+    await assert.rejects(
+      runVerificationCommand(
+        'node',
+        [
+          '-e',
+          'process.stdout.write("before timeout");process.on("SIGTERM",()=>{});setInterval(()=>{},1000)',
+        ],
+        { capture: true, timeoutMs: 300, shutdownMs: 100 },
+      ),
+      (error) => error.kind === 'timeout' && error.stdout === 'before timeout',
+    );
+  },
+);
+test(
+  'cancellation waits for owned process cleanup',
+  { timeout: 5000 },
+  async () => {
+    const controller = new AbortController();
+    const timer = setTimeout(
+      () => controller.abort(new Error('controlled cancellation')),
+      300,
+    );
+    try {
+      await assert.rejects(
+        runVerificationCommand('node', ['-e', 'setInterval(()=>{},1000)'], {
+          capture: true,
+          signal: controller.signal,
+          shutdownMs: 100,
+        }),
+        (error) => error.kind === 'cancelled',
+      );
+    } finally {
+      clearTimeout(timer);
+    }
+  },
+);
+test('pre-cancelled command does not spawn', { timeout: 5000 }, async () => {
+  const controller = new AbortController();
+  controller.abort();
+  await assert.rejects(
+    runVerificationCommand(
+      'node',
+      ['-e', 'throw new Error("must not execute")'],
+      { signal: controller.signal },
+    ),
+    /cancelled before spawn/,
+  );
+});
+
+test(
+  'POSIX command timeout terminates descendant listeners that ignore SIGTERM',
+  { timeout: 5000, skip: process.platform === 'win32' },
+  async () => {
+    const { createServer } = await import('node:net');
+    const probe = createServer();
+    await new Promise((resolve) => probe.listen(0, '127.0.0.1', resolve));
+    const port = probe.address().port;
+    await new Promise((resolve) => probe.close(resolve));
+    const descendant = `require('node:http').createServer((q,r)=>r.end('owned')).listen(${port},'127.0.0.1',()=>process.stdout.write('listener-ready'));process.on('SIGTERM',()=>{});`;
+    const parent = `require('node:child_process').spawn(process.execPath,['-e',${JSON.stringify(descendant)}],{stdio:'inherit'});process.on('SIGTERM',()=>{});setInterval(()=>{},1000);`;
+    await assert.rejects(
+      runVerificationCommand('node', ['-e', parent], {
+        capture: true,
+        timeoutMs: 1000,
+        shutdownMs: 100,
+      }),
+      (error) =>
+        error.kind === 'timeout' && error.stdout.includes('listener-ready'),
+    );
+    const released = createServer();
+    await new Promise((resolve, reject) => {
+      released.once('error', reject);
+      released.listen(port, '127.0.0.1', resolve);
+    });
+    await new Promise((resolve) => released.close(resolve));
+  },
+);
