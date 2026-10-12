@@ -1,19 +1,18 @@
+import { loadBrowserDriver } from './browser-driver.mjs';
 /* global document, window, getComputedStyle, requestAnimationFrame */
 /** Optional Chromium audit of the real playground; driver lives in ignored work/. */
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
-import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 const root = resolve(import.meta.dirname, '..');
-const require = createRequire(
-  resolve(root, 'work/consumers/driver/package.json'),
-);
-const { chromium } = require('playwright-core');
-const { default: AxeBuilder } = require('@axe-core/playwright');
+const {
+  engines: { chromium },
+  AxeBuilder,
+} = loadBrowserDriver();
 const evidence = resolve(root, 'work/visual/integration');
 await mkdir(evidence, { recursive: true });
 const browser = await chromium.launch({
-  executablePath: process.env.RSC_BROWSER_PATH ?? '/usr/bin/chromium',
+  executablePath: process.env.RSC_BROWSER_PATH,
   args: ['--no-sandbox'],
 });
 const context = await browser.newContext({

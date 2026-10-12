@@ -1,13 +1,10 @@
+import { loadBrowserDriver } from './browser-driver.mjs';
 /* global document, window, getComputedStyle, requestAnimationFrame */
 // Additional production integration checks; invoked by verify-site.mjs in both modes.
 import assert from 'node:assert/strict';
 import { resolve } from 'node:path';
-import { createRequire } from 'node:module';
 import { assertApprovedExternalLink } from './site-verification-contracts.mjs';
-const require = createRequire(
-  resolve(import.meta.dirname, '../work/consumers/driver/package.json'),
-);
-const { default: AxeBuilder } = require('@axe-core/playwright');
+const { AxeBuilder } = loadBrowserDriver();
 const families = ['line', 'area', 'bar', 'pie', 'donut'];
 const routes = ['/', '/examples/', '/documentation/', '/about/'];
 

@@ -1,7 +1,8 @@
+import { runVerificationCommand } from './verification-command.mjs';
+import { installBrowserDriver, loadBrowserDriver } from './browser-driver.mjs';
 // Optional release gate: disposable packages and independent applications only.
 /* global document, window, getComputedStyle, DOMPoint */
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
 import {
   cp,
   mkdir,
@@ -11,7 +12,6 @@ import {
   stat,
   rm,
 } from 'node:fs/promises';
-import { createRequire } from 'node:module';
 import { resolve, join } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import {
@@ -32,14 +32,9 @@ const env = {
 };
 async function run(cmd, args, cwd = root) {
   console.log(cwd, cmd, ...args);
-  const child = spawn(cmd, args, { cwd, env, stdio: 'inherit' });
-  await new Promise((res, rej) => {
-    child.on('error', rej);
-    child.on('exit', (code) =>
-      code === 0 ? res() : rej(new Error(`${cmd} exited ${code}`)),
-    );
-  });
+  return runVerificationCommand(cmd, args, { cwd, env });
 }
+
 async function file(dir, name, content) {
   const path = join(dir, name);
   await mkdir(resolve(path, '..'), { recursive: true });
@@ -74,20 +69,13 @@ report.artifacts.genuine = {
   esmGzipBytes: gzipSync(js).length,
 };
 const driver = join(work, 'driver');
-await json(driver, 'package.json', {
-  private: true,
-  type: 'module',
-  dependencies: {
-    'playwright-core': '1.64.0',
-    '@axe-core/playwright': '4.13.0',
-  },
-});
-await run('npm', ['install', '--no-audit', '--no-fund'], driver);
-const require = createRequire(join(driver, 'package.json'));
-const { chromium } = require('playwright-core');
-const { default: AxeBuilder } = require('@axe-core/playwright');
+await installBrowserDriver(driver, { env });
+const {
+  engines: { chromium },
+  AxeBuilder,
+} = loadBrowserDriver(driver);
 const browser = await chromium.launch({
-  executablePath: process.env.RSC_BROWSER_PATH ?? '/usr/bin/chromium',
+  executablePath: process.env.RSC_BROWSER_PATH,
   headless: true,
   args: ['--no-sandbox'],
 });

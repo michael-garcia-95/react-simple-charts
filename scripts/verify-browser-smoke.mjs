@@ -1,11 +1,10 @@
+import { runVerificationCommand } from './verification-command.mjs';
+import { installBrowserDriver, loadBrowserDriver } from './browser-driver.mjs';
 // Focused installed-tarball browser gate; fixtures and drivers stay in ignored work/.
 /* global document, getComputedStyle */
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
-import { createRequire } from 'node:module';
 import { join, resolve } from 'node:path';
-import { npmCommand } from './npm-command.mjs';
 import {
   fixtureIdentity,
   fixtureMeta,
@@ -19,47 +18,16 @@ const driver = join(work, 'driver');
 const identity = fixtureIdentity('browser-smoke');
 const pkg = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
 const env = { ...process.env, npm_config_cache: join(work, 'npm-cache') };
-const npm = await npmCommand({ env });
 async function run(cmd, args, cwd = root) {
-  const invocation =
-    cmd === 'npm'
-      ? npm
-      : { command: cmd === 'node' ? process.execPath : cmd, prefix: [] };
-  const child = spawn(invocation.command, [...invocation.prefix, ...args], {
-    cwd,
-    env,
-    stdio: 'inherit',
-    shell: false,
-  });
-  await new Promise((res, rej) => {
-    child.on('error', rej);
-    child.on('exit', (code) =>
-      code === 0 ? res() : rej(new Error(`${cmd}: ${code}`)),
-    );
-  });
+  return runVerificationCommand(cmd, args, { cwd, env });
 }
+
 async function file(dir, name, content) {
   await mkdir(dir, { recursive: true });
   await writeFile(join(dir, name), content);
 }
 async function installDriver() {
-  await file(
-    driver,
-    'package.json',
-    JSON.stringify(
-      {
-        private: true,
-        type: 'module',
-        dependencies: {
-          'playwright-core': '1.64.0',
-          '@axe-core/playwright': '4.13.0',
-        },
-      },
-      null,
-      2,
-    ),
-  );
-  await run('npm', ['install', '--no-audit', '--no-fund'], driver);
+  await installBrowserDriver(driver, { env });
 }
 if (process.argv.includes('--install-driver-only')) {
   await installDriver();
@@ -140,9 +108,7 @@ if (process.argv.includes('--prepare-only')) {
   process.exit(0);
 }
 await installDriver();
-const require = createRequire(join(driver, 'package.json'));
-const engines = require('playwright-core');
-const { default: AxeBuilder } = require('@axe-core/playwright');
+const { engines, AxeBuilder } = loadBrowserDriver(driver);
 const requested = (
   process.env.RSC_SMOKE_BROWSERS ?? 'chromium,firefox,webkit'
 ).split(',');
