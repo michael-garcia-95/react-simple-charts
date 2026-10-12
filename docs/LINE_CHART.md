@@ -1,4 +1,4 @@
-# Public LineChart — M03-T02
+# LineChart
 
 ```tsx
 import { LineChart } from '@michael-garcia-95/react-simple-charts';
@@ -139,25 +139,26 @@ retains a built `use client` boundary, and externalizes React peers (18.2/19).
 
 ## Limits
 
-No nearest-path search, decimation, zoom, pan, interactive legend, portals or
-Pie/Donut public charts are included. Rendering and lookup construction scale with
+No nearest-path search, decimation, zoom, pan, interactive legend or portals
+are implemented. Rendering and lookup construction scale with
 valid points; each point has an SVG marker/control, so large datasets incur DOM
 and sorting costs. Pointer handlers use precomputed identities rather than
 normalization or DOM measurements. Overlapping points can obscure pointer targets;
 keyboard traversal and the source table preserve all eligible observations.
 Tooltip placement is bounded approximately, without measuring arbitrary custom
-content. Inline styles may conflict with strict CSP/host styles. Chromium/automated
-accessibility checks do not establish screen-reader or all-browser conformance.
-See [consumer compatibility](CONSUMER_COMPATIBILITY.md) for exact tested versions
-and evidence. The package remains private 0.0.0; no release is claimed.
+content. Inline styles may conflict with strict CSP/host styles. Focused automated
+Chromium, Firefox and WebKit checks passed; see
+[distribution compatibility](M06_DISTRIBUTION_COMPATIBILITY.md) for exact builds
+and limits. Manual NVDA and physical Safari/iOS remain unverified; automated
+checks do not establish screen-reader behavior or WCAG certification.
 
-M03-T05 adds shared long-text wrapping and cross-family validation; see [integration hardening](M03_INTEGRATION_HARDENING.md).
+## Shared presentation
 
-## M04-T04 combined-page hardening
-
-See [five-chart integration](M04_INTEGRATION_HARDENING.md) for the shared-page
-audit, reproducible browser checks and demo handoff. The public contract and
-pure geometry are unchanged.
-Focused controls retain their roving entry and outline during pointer hover.
+Visible tables and tooltips wrap long text. Focused controls retain their roving
+entry and outline during pointer hover.
 Legend labels wrap, and tooltips use the rendered figure width even when an
 explicit SVG width is constrained by caller CSS.
+
+See [Cartesian integration](M03_INTEGRATION_HARDENING.md) and
+[five-chart integration](M04_INTEGRATION_HARDENING.md) for historical audits and
+regression evidence.

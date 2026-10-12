@@ -229,7 +229,7 @@ it.each([
   for (const phrase of phrases)
     expect(text.toLowerCase()).toContain(phrase.toLowerCase());
 });
-it('separates current local availability from future public release installation', () => {
+it('distinguishes the live website from unpublished package availability', () => {
   render(<Documentation />);
   const text = document.querySelector('#docs-getting-started')!.parentElement!
     .textContent!;
@@ -238,7 +238,7 @@ it('separates current local availability from future public release installation
     'private',
     '0.0.0',
     'not published to npm',
-    'not deployed',
+    'website is live on GitHub Pages',
     'ESM only',
     'single root entry',
     'React 18.2+',
@@ -250,6 +250,13 @@ it('separates current local availability from future public release installation
     'michael-garcia-95-react-simple-charts-0.0.0.tgz',
   ])
     expect(text).toContain(phrase);
+  expect(
+    screen.getByRole('link', { name: 'website is live on GitHub Pages' }),
+  ).toHaveAttribute(
+    'href',
+    'https://michael-garcia-95.github.io/react-simple-charts/',
+  );
+  expect(text).not.toContain('not deployed');
   expect(text).not.toContain('npm install react-simple-charts');
   expect(text).not.toContain(
     'npm install @michael-garcia-95/react-simple-charts',
@@ -358,3 +365,31 @@ it.each(['unsupported', 'denied'])(
     expect(button).toHaveFocus();
   },
 );
+
+it('reports executed browser versions while keeping manual accessibility and devices unverified', () => {
+  render(<Documentation />);
+  const section = document.querySelector(
+    '#docs-limitations-and-troubleshooting',
+  )!.parentElement!;
+  const text = section.textContent!;
+  for (const phrase of [
+    'Chromium 156.0.8078.4',
+    'Firefox 157.0',
+    'WebKit 27.2',
+    'installed package archive',
+    'GitHub Actions',
+    'physical Safari/iOS',
+    'Manual NVDA testing is pending',
+    'Zero axe violations',
+    'human review',
+  ])
+    expect(text).toContain(phrase);
+  expect(
+    within(section).getByRole('link', {
+      name: 'compatibility evidence and limitations',
+    }),
+  ).toHaveAttribute(
+    'href',
+    'https://github.com/michael-garcia-95/react-simple-charts/blob/main/docs/M06_DISTRIBUTION_COMPATIBILITY.md',
+  );
+});

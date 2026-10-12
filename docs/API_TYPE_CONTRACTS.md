@@ -1,7 +1,8 @@
-# Public TypeScript contracts — M01-T02
+# Public TypeScript contracts
 
-RSC-026/RSC-027 contracts are preserved. LineChart is a public runtime component
-as of M03-T02; AreaChart is public as of M03-T03. BarChart is public as of M03-T04; PieChart is public as of M04-T02; DonutChart is public as of M04-T03.
+LineChart, AreaChart, BarChart, PieChart and DonutChart are the five public
+runtime components. Their generic props and shared types are exported alongside
+them from the package root.
 See [LineChart behavior](LINE_CHART.md) for runnable examples and runtime defaults. Import every public type from the package root.
 
 ```ts
@@ -93,7 +94,7 @@ keys before assignment, so annotate them or use `satisfies` at construction.
 on `orientation`. A horizontal Bar still uses `xKey` for category and `yKey` or
 `series` for values. Axes refer to physical screen directions, so their types
 reverse. Bar exposes no `xScale` option. Area shares the current Line contract;
-family-specific visual controls remain outside this milestone.
+custom fill opacity and interpolation controls are not exposed.
 
 `AxisConfig<V>` supports `show`, `label`, `tickCount`, and `formatTick(value)`.
 `NumericAxisConfig` additionally supports `min` and `max`. Date axes receive
@@ -175,22 +176,24 @@ grid, x-scale, or Cartesian series configuration.
 
 Accessibility options are `label`, `description`, and `dataTable` with only
 `visible` and `visually-hidden`. There is no mode that removes the accessible
-data alternative. LineChart and AreaChart implement source tables and roving point inspection; BarChart implements source tables and roving rectangle inspection; PieChart implements source tables and roving segment inspection.
+data alternative. LineChart and AreaChart implement source tables and roving point inspection; BarChart implements source tables and roving rectangle inspection; PieChart and DonutChart implement source tables and roving segment inspection.
 
-## Intended defaults and runtime responsibilities
+## Defaults and runtime validation
 
-This section began as M01-T02 implementation intentions. Cartesian defaults are implemented in M03 and Pie defaults in M04-T02; Donut defaults are implemented in M04-T03:
-width `100%`, height `280` (280px), animation disabled for LineChart, axes visible, grid enabled for
+Defaults are width `100%`, height `280` (280px), animation disabled, axes visible, grid enabled for
 Cartesian charts, legend enabled, tooltip enabled (Line/Area shared, Bar item, Pie/Donut segment inspection), category
 x-scale, vertical Bar orientation, segment labels hidden, accessible table
 visually hidden, Donut inner radius ratio `0.6`. Cartesian palette fallbacks, automatic series labels, default formatting, accessible naming and pure tick generation are implemented; see the public chart documents. Pie presentation is documented in [PieChart](PIE_CHART.md); Donut presentation is documented in [DonutChart](DONUT_CHART.md). No default is encoded by making a property required.
 
-Runtime must validate dimensions, ratios, finite numbers, min/max ordering,
+Runtime validates dimensions, ratios, finite numbers, min/max ordering,
 tick counts, empty data/series, and label/color resolution. Null/undefined numeric
 fields are valid mappings, not valid numbers for inspection: emitted datum values
-are numbers, and runtime must decide how missing/invalid records are handled.
-Cartesian signed values, ordering, scale domains, date validity, normalization and missing categories are implemented in the pure engine; this file is not its algorithm specification. M04-T01 implements pure polar negative rejection, zero-total states and exact percentages. Inputs are preserved in payloads. LineChart runtime normalization and rendering
-now implement these Cartesian responsibilities; PieChart now implements the polar presentation responsibilities; Donut implements ring presentation in M04-T03.
+are numbers, and normalization classifies missing/invalid records separately.
+The pure engine owns Cartesian signed values, ordering, domains, date validity
+and missing categories, as well as polar negative rejection, zero-total states
+and exact percentages. Payloads preserve source inputs. See [normalization](DATA_NORMALIZATION.md),
+[Cartesian geometry](GEOMETRY_FOUNDATIONS.md) and [polar geometry](POLAR_GEOMETRY_FOUNDATIONS.md)
+for algorithm policies; this guide describes their public type contracts.
 
 TypeScript is structurally typed: excess-property checks protect fresh literals
 and JSX, but do not make object types exact. Extra fields on previously assigned
@@ -208,12 +211,18 @@ internal-subpath rejection, client-boundary, and React externalization checks re
 The regular typecheck excludes this dedicated suite so its source alias cannot
 accidentally substitute for package consumer verification.
 
-The supported development compiler is the foundation's TypeScript 6.x.
+Development uses TypeScript 6.0.3; installed Next 14 verification uses 5.4.5.
+See [distribution compatibility](M06_DISTRIBUTION_COMPATIBILITY.md) for exact configurations.
 `NoInfer` requires TypeScript 5.4 or newer; compatibility with older compilers is
 not promised or tested. ReactNode and CSSProperties use only shared React 18/19
 APIs. Test declarations return ReactElement, avoiding the React 18/19 differences
 in allowable component return types. CI pairs React 18 and 19 runtimes with their
 matching type definitions on Node 22/24. No global JSX namespace is required.
+
+### Historical foundation verification
+
+The following results record the original type-contract validation, not current
+unit-test counts. Later verification is in the compatibility report linked above.
 
 Local validation used Node 24.19.0 and TypeScript 6.0.3. Typechecking, source
 type tests, and built-package verification passed with React types 18.3.31
@@ -222,34 +231,35 @@ The four foundation unit tests, ESLint, formatting, library/playground builds,
 and dry-run packing passed. Runtime tests used React 19.3.0; the full Node
 22/24 and React 18/19 CI matrix is separate from these local checks.
 
-M03-T03 preserves AreaChartProps without changes. Actual packaged AreaChart JSX
-now exercises the contract; see [AreaChart behavior](AREA_CHART.md).
+## Family-specific contract checks
 
-## M03-T04 public BarChart
+Packaged AreaChart JSX exercises `AreaChartProps`; see [AreaChart behavior](AREA_CHART.md).
 
-BarChart now consumes existing grouped rectangle geometry in both orientations.
+### BarChart
+
+BarChart consumes grouped rectangle geometry in both orientations.
 Physical formatter routing preserves semantic xKey categories; shared presentation
 and corrected gesture handling also serve Line/Area. Item inspection is the Bar
 default; visible rectangle intersections and in-plot zero targets determine
 eligibility. Exact decorative extents, stable missing slots, source tables and
-SSR policy are preserved. No public props, dependencies, core math changes or
-subpaths are added. See [BarChart](BAR_CHART.md). M03-T05 preserves these contracts and validates integration; see [integration hardening](M03_INTEGRATION_HARDENING.md).
+SSR policy are preserved. See [BarChart](BAR_CHART.md) for behavior and [integration hardening](M03_INTEGRATION_HARDENING.md)
+for historical regression evidence.
 
-## M04-T02 public PieChart
+### PieChart
 
-PieChart now uses the actual root runtime import in JSX inference and installed
+PieChart uses the actual root runtime import in JSX inference and installed
 consumer tests. Its existing `PieChartProps<T>`, `SegmentDatum<T>`, activation and
 tooltip contracts are unchanged; no new public types or props are exported.
 Labels/values remain data-driven NoInfer mappings. Percentage remains 0–100 and
 source segmentId remains original index. Default labels are off; legend/tooltips
-are on. Root runtime exports are exactly LineChart, AreaChart, BarChart, PieChart.
-As of M04-T02, DonutChart remained type-only; M04-T03 implements it. See [PieChart](PIE_CHART.md) and [DonutChart](DONUT_CHART.md).
+are on. Root runtime exports include all five components. Earlier four-export/type-only
+statements are superseded by the current implementation. See [PieChart](PIE_CHART.md) and [DonutChart](DONUT_CHART.md).
 
-## M04-T03 public DonutChart
+### DonutChart
 
-The actual root import now exercises generic Donut JSX through both source and
+The actual root import exercises generic Donut JSX through both source and
 installed declarations. DonutChartProps<T> still extends PieChartProps<T> with
 only optional numeric innerRadiusRatio and ReactNode centerContent. Runtime ratio
 validation belongs to the pure engine; omitted defaults to 0.6. All five runtime
-chart exports retain their approved type exports and root-only ESM contract.
+chart exports retain their type exports and root-only ESM contract.
 See [DonutChart](DONUT_CHART.md).

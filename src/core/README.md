@@ -1,12 +1,22 @@
-# core
+# Core
 
-Shared chart infrastructure and pure calculations. M02-T01 implements internal
-data normalization in `data/`; M02-T02 implements Cartesian scales and domains in
-`scales/`. See [data normalization](../../docs/DATA_NORMALIZATION.md) and
-[scales and domains](../../docs/SCALES_AND_DOMAINS.md). All helpers remain internal.
-Public LineChart, AreaChart and BarChart consume these source-internal calculations.
+Pure calculations shared by the five chart families. These modules do not import
+React or read the DOM, and none is a public package export.
 
-M02-T03 adds pure internal Cartesian layout in `layout/`: plot bounds, adaptive margins, physical axes, estimated tick-label selection, value grids, and baseline coordinates. See [layout and axes](../../docs/LAYOUT_AND_AXES.md). M02-T04 adds pure Cartesian geometry in `geometry/`: shared point mapping, independent gap runs, Line/Area path data, grouped Bar rectangles and clipping metadata. See [geometry foundations](../../docs/GEOMETRY_FOUNDATIONS.md). Milestone 02 is complete and merged. M03-T03 extends Area runs with a pure-core outlinePath from the existing linePath, reusing mapped points and gaps. No mathematical calculation moves into React.
+- `data/`: validate field mappings and classify/normalize records while preserving
+  source references, indices, duplicates and missing/invalid values.
+- `scales/`: Cartesian category, numeric and temporal domains, mappings and ticks.
+- `layout/`: plot bounds, adaptive margins, physical axes, estimated tick-label
+  selection, value grids and zero-baseline coordinates.
+- `geometry/`: Cartesian gap runs, Line/Area paths and grouped Bar rectangles;
+  polar eligibility, scaled proportions, angles, radii and Pie/Donut arc paths.
 
-M04-T01 adds pure internal polar geometry in `geometry/polar*.ts`, reusing segment
-normalization for future Pie/Donut renderers. See [polar geometry foundations](../../docs/POLAR_GEOMETRY_FOUNDATIONS.md). No public polar runtime export is added.
+Geometry carries clipping and numerical-safety metadata; React renderers consume
+these results rather than recalculating paths, totals or percentages. Area outline
+paths reuse the same mapped runs as their fills. Polar negatives reject the entire
+geometry instead of presenting a misleading partial chart.
+
+References: [normalization](../../docs/DATA_NORMALIZATION.md),
+[scales](../../docs/SCALES_AND_DOMAINS.md), [layout](../../docs/LAYOUT_AND_AXES.md),
+[Cartesian geometry](../../docs/GEOMETRY_FOUNDATIONS.md) and
+[polar geometry](../../docs/POLAR_GEOMETRY_FOUNDATIONS.md).

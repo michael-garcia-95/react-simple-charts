@@ -1,162 +1,146 @@
 # Architecture
 
-## Approved direction
+React Simple Charts is a single TypeScript-first React component library with
+SVG rendering. Its five runtime exports are **LineChart, AreaChart, BarChart,
+PieChart and DonutChart**. All public components and types come from the package
+root; pure helpers and internal subpaths are not public APIs.
 
-React Simple Charts is a single npm package, a TypeScript-first React component library supporting React 18.2+ and React 19.x. Rendering is SVG-first. All five chart families—Line, Bar, Area, Pie and Donut—are implemented.
+## Module boundaries
 
-## Module responsibilities
+| Location                 | Responsibility                                                      |
+| ------------------------ | ------------------------------------------------------------------- |
+| `src/index.ts`           | Public runtime and type exports; client boundary                    |
+| `src/charts/`            | Generic component wrappers and local inspection/activation          |
+| `src/core/`              | Pure normalization, scales, layout and geometry                     |
+| `src/internal/`          | React orchestration, responsive measurement and shared presentation |
+| `src/internal/svg/`      | SVG frames/marks/axes, hit regions, tables and formatting/styles    |
+| `src/types/contracts.ts` | Public prop unions, field mappings and callback payloads            |
+| `src/styles/`            | Styling conventions; no runtime stylesheet currently                |
+| `playground/`            | Technical examples and repository-only compatibility fixtures       |
+| `site/`                  | Public website, examples and documentation                          |
+| `tests/` and `scripts/`  | Contract, rendering, package and installed-consumer verification    |
 
-- `src/charts/`: specialized chart renderers and family-specific orchestration.
-- `src/core/`: shared chart infrastructure. Data normalization, scales, layout, and geometry must be pure calculations separated from React lifecycle and DOM access.
-- `src/internal/`: implementation details unavailable through package subpaths.
-- `src/styles/`: self-contained styling based on CSS variables. Future components must work without a mandatory external stylesheet.
-- `src/types/`: shared TypeScript contracts. `contracts.ts` contains focused chart-family unions and shared data, axis, tooltip, activation, and accessibility types. See [API type contracts](API_TYPE_CONTRACTS.md).
-- `src/index.ts`: the sole public barrel. It exports approved M01-T02 contracts as types and LineChart, AreaChart, BarChart, PieChart and DonutChart as the only runtime chart exports.
-- `playground/`: a Vite React application, excluded from the npm package.
-- `tests/`: foundation contract and accessible playground tests.
-- `scripts/verify-package.mjs`: verifies built artifacts and probes runtime externalization using the real build configuration.
+Mathematical calculations do not import React or read the DOM. Renderers consume
+retained engine paths and metadata instead of recalculating values, totals or
+percentages. This keeps numerical policies independently testable and shared
+between browser and server execution.
 
-Directory README files preserve the intended structure in Git without prematurely creating abstractions.
+## Data and geometry pipeline
 
-## Build and dependencies
+`core/data/` validates mappings, classifies values and normalizes Cartesian or
+segment records. Original references, indices, order, duplicate categories and
+raw values are retained. Configuration errors return no model; row problems retain
+classified records for complete source tables. Numeric strings are not coerced.
+See [data normalization](DATA_NORMALIZATION.md).
 
-TypeScript uses strict checking, exact optional properties, unchecked indexed access protection, and bundler resolution. Type-only imports remain explicit through verbatim module syntax. A single no-emit configuration checks the current codebase; tsdown separately emits library declarations.
+Cartesian scales support category, linear, UTC and local-time X for Line/Area;
+Bar uses categories in either orientation. Only valid-X rows occupy category bands,
+and only valid-X rows with valid series values contribute value extents. Observed
+extents are distinct from baseline, override, expansion and fallback domains.
+Physical axis types follow orientation rather than changing the meaning of `xKey`.
+See [scales](SCALES_AND_DOMAINS.md) and [layout](LAYOUT_AND_AXES.md).
 
-tsdown produces ESM and declarations from one entry. React and React DOM, including JSX and DOM client subpaths, stay external. They are peers for consumers and development dependencies for the playground/tests. d3-scale and d3-shape are the approved runtime math dependencies. M02-T02 uses d3-scale internally for band, linear, UTC, and local-time calculations; M02-T04 uses d3-shape internally for linear Line and zero-baseline Area path data. No animation runtime is included.
+Layout uses two deterministic scale passes for bounded margins, plot bounds,
+estimated label fitting, ticks and grids. Unsafe arithmetic returns an explicit
+unusable result. Geometry preserves independent gaps and singleton observations,
+zero-baseline Area fills, grouped Bar slots and clipping metadata. Area's separate
+outline follows observed data rather than stroking baseline/closing walls. Bar
+slots use 80% category groups and 90% per-series occupancy. No stacking or automatic
+decimation is implemented. See [Cartesian geometry](GEOMETRY_FOUNDATIONS.md).
 
-The package exposes only `.` with declaration and import conditions, and has no CommonJS output. A files allowlist excludes playground, tests, and source from packing. `sideEffects: false` is appropriate for self-contained components with no imported/global CSS; revisit it if future implementation introduces global effects or imported CSS.
+Polar geometry reuses segment normalization. Finite positives contribute
+source-ordered scaled weights, totals, angles and d3-shape arcs; zero/missing/invalid
+rows remain in tables. Any finite negative rejects the entire chart. Ready, empty
+and unusable states never invent partial or placeholder proportions. The center is
+half the viewport dimensions, outer radius is half its smaller dimension minus 8px,
+and Donut's default inner-radius ratio is 0.6. Unsafe ratios/radii/arcs return
+unavailable content rather than being clamped. See [polar geometry](POLAR_GEOMETRY_FOUNDATIONS.md).
 
-## React and server rendering
+## React rendering and interaction
 
-The source barrel and tsdown banner preserve `"use client"` in built JavaScript. The banner also covers future shared output chunks. This prepares framework boundaries without introducing a component or DOM-dependent import. It does not prove SSR support.
+Line/Area/Bar share `CartesianPointRenderer` and `CartesianPointInspection`.
+`LineRenderer` and `LineInspection` are internal aliases; `LinePreview` disables
+interaction and `RenderingProbe` retains a fixed repository-only fixture.
+Decorative marks are clipped to plot bounds; interaction controls use eligible
+visible geometry while source tables retain clipped observations.
 
-M01-T03 validates dimension-aware SSR in an internal rendering fixture. Positive finite numeric dimensions produce complete SVG; unknown responsive widths produce a stable accessible 280px-height placeholder until a per-container ResizeObserver reports a valid width. Pure layout calculations do not read browser globals. Node SSR and jsdom hydration tests cover deterministic initial markup, useId references, Strict Mode, observer cleanup, and multiple instances. Headless Chromium verifies responsive layout, focus, accessible table exposure, and self-contained inline/CSS-variable styling. See [rendering compatibility](RENDERING_COMPATIBILITY.md) for evidence and limitations. M01-T04 uses separate genuine and temporary probe tarballs in independent Vite/Next consumers; see [consumer compatibility](CONSUMER_COMPATIBILITY.md) for framework results, reproduction, and limitations. No public runtime API is added.
+Pie/Donut share `PolarRenderer`, `PolarMarks` and `PolarSegmentInspection`.
+Exact sectors are pointer targets without expansion across neighboring slices.
+Donut's center content is HTML in an inscribed square derived from the actual hole,
+with proportional placement under SVG scaling. Large custom content is clipped;
+ordinary center controls remain focusable and do not activate slices.
 
-## Validation
+Each chart owns its inspection and gesture state. One roving SVG Tab entry,
+arrows/Home/End, Enter/Space and Escape provide navigation, activation and dismissal.
+Pointer/touch evidence is source-scoped to prevent delayed compatibility clicks
+from activating twice. Payloads preserve source provenance. Tooltip defaults are
+shared for Line/Area and item-based for Bar; polar contexts describe one segment.
+Selection invalidates when source identity/value changes. Geometry does not live
+in event handlers. See the five chart guides for exact contracts.
 
-Vitest tests the foundation playground with React Testing Library and the package safety contract in Node. The package verification script checks actual output, typechecks generated declarations, rejects internal subpath imports, and builds a disposable React import probe because an empty entry alone cannot demonstrate externalization. CI runs formatting, linting, typechecking, tests, artifact verification, playground build, and dry-run packing for both React generations on Node 22/24.
+Interactive SVGs are named groups with exposed controls and hidden decorative
+layers. React useId connects names, descriptions, tooltips and tables. Every chart
+state includes a semantic source table, visible or visually hidden. Custom tooltip
+semantics remain the caller's responsibility. Optional 180ms decorative opacity
+animation respects reduced motion; geometry/controls remain static.
 
-## Public contract milestone
+Essential styles are inline with CSS-variable palette fallbacks, so no external
+stylesheet is required. Legends and visible tables wrap long text. The shared
+220px tooltip panel uses bounded approximate positioning without portals or
+arbitrary-content measurement. Strict CSP, host styling and measured collision
+handling are documented limitations, not guaranteed contracts.
 
-M01-T02 implements RSC-026/RSC-027 as types, with data-driven generic inference, exclusive single/multi-series mappings, scale-specific keys, and physical-axis typing for horizontal Bars. Compile-time tests use test-only generic declarations; they are not chart implementations. Dedicated source tests and package-root consumer verification exercise both JSX and props objects. React 18/19 type definitions now accompany the runtime CI matrix. Public Cartesian rendering, interaction and source-table accessibility are implemented in M03; polar presentation is implemented in M04-T02/T03. M02-T01 now implements internal data normalization and its mapping/value validation; see [data normalization](DATA_NORMALIZATION.md).
+## Server rendering and responsive dimensions
 
-## Internal data foundation — M02-T01
+Explicit finite positive numeric dimensions render deterministic category/linear/
+UTC SVG in Node. Responsive widths initially render stable accessible placeholders
+and tables until per-container ResizeObserver supplies a valid width. Without the
+observer, that alternative remains; no server width is guessed. Local-time scales
+wait for client timezone layout. Prefer UTC and deterministic custom formatters
+when server/client consistency matters.
 
-`src/core/data/` separates mapping validation, value classification, structured diagnostics, Cartesian normalization, and shared Pie/Donut segment normalization. Results preserve source references, indices, order, and raw values. Configuration errors return no model; row issues retain classified records. No React runtime, DOM, scales, geometry, or public runtime exports are introduced. Milestone 01 and M02-T01 are complete.
+Effects own browser measurement/animation and clean up under Strict Mode. Imports
+and pure calculations do not access browser globals. Independent hydrated roots
+require matching, distinct `identifierPrefix` values on server and client.
+The built `use client` banner preserves Next App Router boundaries; it does not
+make pure helpers publicly server-importable. Genuine Next fixtures verify client
+references and hydration rather than inferring behavior from the directive.
 
-## Internal scales foundation — M02-T02
+## Build and distribution
 
-`src/core/scales/` consumes the normalization result union and separates domain policies, category identity, numerical and temporal interpolation, tick/range validation, and internal result types. Only valid-X rows occupy category bands; only valid-X rows with valid series values contribute value extents. Category indices preserve duplicate labels; continuous domains preserve exact observed extents separately from baseline, override, expansion, and fallback metadata. Empty scales expose no mapping, and unsafe arithmetic returns explicit diagnostics. No layout, geometry, rendering, or public exports are added. See [scales and domains](SCALES_AND_DOMAINS.md). M02-T03 now connects these results to physical dimensions; see below.
+Strict TypeScript checking includes exact optional properties, unchecked indexed
+access protection, explicit type imports and bundler resolution. Generic inference
+comes from `data`; `NoInfer` and discriminated unions constrain mappings, axes and
+exclusive single/multi-series props. See [type contracts](API_TYPE_CONTRACTS.md).
 
-## Internal layout foundation — M02-T03
+tsdown emits ES2022 ESM, declarations and a retained public-source map from one
+entry. React/React DOM and their subpaths are external peers; d3-scale/d3-shape are
+external runtime math dependencies. The package has only a root types/import
+entry, no CommonJS or default export, and `sideEffects: false` with no global CSS.
+Revisit that flag if global effects or imported styles are introduced.
 
-`src/core/layout/` separates internal input/result types, estimated label formatting, bounded margins and plot bounds, physical axis dispatch, linear tick selection, value gridlines, and Cartesian composition. Two deterministic scale-construction passes reuse the existing domain policies and preserve duplicate category bands. Horizontal Bar maps semantic categories vertically and values horizontally without transposing records. Ready/empty/unusable results expose safe scales and finite metadata, with hidden axes omitted and required zero-baseline coordinates retained. Formatting has no browser measurement or additional timezone-sensitive defaults; local-time ticks still require consistent execution timezone for SSR. See [layout and axes](LAYOUT_AND_AXES.md). The public LineChart now consumes this internal engine. M02-T04 now adds the geometry layer below.
+The six-file archive includes the ESM, declarations, map, manifest, README and MIT
+license. Site, playground, sources, tests, drivers and local evidence are excluded.
+The package remains private `0.0.0` and unpublished. Contributor Node requirements
+come from build/test tools; the package has no engines declaration.
 
-## Internal geometry foundation — M02-T04
+## Validation and historical evidence
 
-`src/core/geometry/` separates readonly result types, shared datum mapping and gap runs, d3-shape Line/Area paths, grouped Bar slots/rectangles, numerical diagnostics, and orchestration. `buildCartesianGeometry` calls layout internally from the same normalized input, preventing unrelated model/layout pairs. It preserves source and series references, handles independent gaps and singleton points, uses physical zero baselines, and flags finite geometry outside explicit bounds for future plot clipping. Unsafe mappings/slots/paths expose no partial marks. See [geometry foundations](GEOMETRY_FOUNDATIONS.md). Milestone 02 is complete and merged. Public Line/Area rendering now consumes this foundation; stacking remains future work; polar geometry follows in M04-T01.
+Unit/component tests cover engine policies, interactions, SSR, hydration, lifecycle
+and accessibility relationships. Type tests and package verification compile the
+real declarations, reject internal imports, inspect the actual archive and probe
+React externalization. Installed Vite/Next consumers use genuine tarballs.
 
-## Internal SVG rendering — M03-T01
+CI checks Node 22/24 × React 18.2/19. A separate three-engine job validates the
+installed production fixture in Chromium, Firefox and WebKit. Exact tested versions,
+axe incomplete checks and pending human/device verification are recorded in
+[distribution compatibility](M06_DISTRIBUTION_COMPATIBILITY.md).
 
-Milestone 02 is merged. The source-internal `LinePreview` now consumes actual
-normalization and Cartesian geometry, using focused shared frame, axes/grid,
-color and table modules under `src/internal/svg/`. React/DOM presentation stays
-outside the pure core. Explicit category/linear/UTC dimensions support SSR;
-responsive widths and local-time mode use accessible initial placeholders.
-See [SVG rendering foundation](SVG_RENDERING_FOUNDATION.md). The historical preview remains internal; tooltip/activation/animation are excluded from the internal
-contract. M03-T02 adds public LineChart below.
-
-## Public LineChart — M03-T02
-
-`src/charts/LineChart.tsx` preserves the approved generic contract and delegates
-shared dimensions, geometry assembly, axes, legend and source table to
-`src/internal/LineRenderer.tsx`. LinePreview delegates to the same renderer with
-interaction disabled. `LineInspection.tsx` consumes exact engine results and
-adds source-row/series lookup maps, roving SVG buttons, tooltips, activation and
-optional client opacity animation. Interactive SvgFrame is a named group;
-noninteractive fixtures remain named images. Decorative layers are hidden,
-point controls are exposed. Root imports now contain exactly LineChart, AreaChart and BarChart plus existing
-type exports. Genuine consumer verification now installs that real tarball.
-See [LineChart](LINE_CHART.md) for behavioral defaults and limitations.
-
-## Public AreaChart — M03-T03
-
-AreaChart uses the unchanged approved generic contract. CartesianPointRenderer
-shares sizing, normalization, family dispatch, states, tables, legends and SSR
-policy. CartesianPointInspection shares corrected point interaction, tooltips,
-activation and animation for both families. Historical LineRenderer/LineInspection
-names delegate to these modules; LinePreview and RenderingProbe remain internal.
-AreaMarks presents exact core fills at 0.2 opacity without polygon stroke and
-separate pure-core `outlinePath` boundaries. Core derives that Area-only optional
-run field from the existing linePath using the same mapped points, without new
-mapping/segmentation. Singletons have null fill and outline paths. No public
-contract, dependency, subpath or future-family abstraction is added.
-See [AreaChart](AREA_CHART.md).
-
-## M03-T04 public BarChart
-
-BarChart now consumes existing grouped rectangle geometry in both orientations.
-Physical formatter routing preserves semantic xKey categories; shared presentation
-and corrected gesture handling also serve Line/Area. Item inspection is the Bar
-default; visible rectangle intersections and in-plot zero targets determine
-eligibility. Exact decorative extents, stable missing slots, source tables and
-SSR policy are preserved. No public props, dependencies, core math changes or
-subpaths are added. See [BarChart](BAR_CHART.md). M03-T05 integration hardening is documented below.
-
-## M03-T05 integration hardening
-
-The shared inspection tooltip uses a 220px border-box matching its positioning estimate and wraps long text. Visible normalized/raw source tables wrap long fields without changing semantic data or hidden-table exposure. Cross-family tests and the playground/browser matrix verify independent lifecycle and state transitions. Genuine consumers add narrow text and three separately hydrated Strict Mode roots. No pure-core math or public contract changes. See [integration hardening](M03_INTEGRATION_HARDENING.md).
-
-## Internal polar geometry — M04-T01
-
-`src/core/geometry/polar*.ts` consumes the existing segment normalization result
-for pure Pie/Donut eligibility, scaled proportions, source-ordered d3-shape angles,
-centered radii and validated arc paths. Ready/empty/unusable results preserve
-normalization provenance; negatives reject the complete chart. Public Pie/Donut
-renderers remained deferred as of M04-T01. See [polar geometry foundations](POLAR_GEOMETRY_FOUNDATIONS.md).
-
-## Public PieChart — M04-T02
-
-As of M04-T02, PieChart was the fourth public runtime export and DonutChart remained type-only; M04-T03 implements Donut.
-`src/charts/PieChart.tsx` preserves the approved generic props and delegates to
-`src/internal/PolarRenderer.tsx`. The renderer normalizes source segments, resolves
-explicit/responsive dimensions and invokes `buildPolarGeometry` with family pie.
-It retains the normalization result for complete source tables. No Cartesian axes
-or layout are involved. `PolarMarks.tsx` renders exact translated engine paths,
-shared source-index colors and optional conservatively fitted interior labels.
-`PolarSegmentInspection.tsx` keeps independent source-provenance selection,
-roving controls, tooltip presentation, gesture evidence and decorative opacity
-animation. Its gesture model follows the tested Cartesian source-scoped policy;
-segmentId replaces series identity. No totals, percentages or paths are recalculated.
-
-`indexedColor` shares the unchanged Cartesian palette/variable precedence.
-`SegmentDataTable` preserves all normalized rows and negative raw values; the
-existing raw fallback now retains an empty semantic table for malformed nonarray
-data. No dependency, public contract or subpath is added. See [PieChart](PIE_CHART.md).
-Earlier sections above record historical milestone state.
-
-## Public DonutChart — M04-T03
-
-DonutChart is the fifth runtime export. The approved generic contract is unchanged.
-PolarRenderer accepts a discriminated family/props union; public wrappers select
-pie or donut without unsafe prop casts. Normalization, source tables, legend,
-colors, roving controls, tooltips, gesture evidence and opacity lifecycle are shared.
-The unchanged pure engine validates the default/custom ratio and generates true
-ring paths. Labels and tooltip anchors use ring midpoint; Pie keeps its original
-60%-radius label position and fitting.
-
-A Donut-only SVG frame contains an accessible HTML center region sized as an
-inscribed square from engine inner radius. Percentage positions and proportional
-SVG scaling preserve alignment under CSS constraints and non-square dimensions.
-Legend and tables sit outside that frame. Interactive user content remains exposed
-and confined to the actual hole. No default totals, portals, dependencies, public
-props or Cartesian behavior changes. See [DonutChart](DONUT_CHART.md).
-
-## Five-family integration — M04-T04
-
-All five public families now have a reusable combined playground and shared-page
-regressions. Focused Cartesian controls retain their Tab entry/outline during
-hover, legends wrap long labels, and tooltip bounds follow the rendered figure.
-No pure geometry, API, export or dependency changes are introduced. See
-[five-chart integration and demo handoff](M04_INTEGRATION_HARDENING.md) for
-actual browser/consumer evidence and remaining limitations.
+Historical reports remain available: [SVG foundation](SVG_RENDERING_FOUNDATION.md),
+[Cartesian integration](M03_INTEGRATION_HARDENING.md),
+[five-family integration](M04_INTEGRATION_HARDENING.md),
+[consumer verification](CONSUMER_COMPATIBILITY.md) and
+[website hardening](M05_WEBSITE_HARDENING.md). Their earlier export/availability
+statements describe their original stage and are superseded by this current overview.
+The [previous architecture chronology](https://github.com/michael-garcia-95/react-simple-charts/blob/261285f3a74c7eae5f34174d50f6f648af841a93/docs/ARCHITECTURE.md)
+is retained in repository history.

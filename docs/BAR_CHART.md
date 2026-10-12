@@ -1,4 +1,4 @@
-# Public BarChart — M03-T04
+# BarChart
 
 Import `BarChart` from `@michael-garcia-95/react-simple-charts`. The package is private at 0.0.0;
 these examples describe the packaged API, not an available npm release.
@@ -123,7 +123,7 @@ No unsafe partial marks or nonfinite SVG attributes are emitted.
 ## Validation and limits
 
 Focused real-geometry, interaction, browser-free SSR and hydration tests accompany
-existing unchanged Line/Area regressions. Package verification checks exactly three
+Line/Area regressions. Package verification checks exactly five
 runtime exports, generated generic declarations, client boundary and external React.
 The genuine Vite/Next matrix and measured artifacts are recorded in
 [consumer compatibility](CONSUMER_COMPATIBILITY.md).
@@ -132,18 +132,19 @@ Large data creates O(rows × series) SVG rectangles and controls; no virtualizat
 or decimation is included. Tick selection uses estimates, may omit labels/titles,
 and offers no wrapping or scrolling. Tooltip positioning uses the existing bounded
 220px panel estimate; arbitrary custom content can overflow. Host CSS may change
-appearance, and inline styling requires compatible CSP. Chromium/axe coverage does
-not establish WCAG certification, screen-reader, Firefox/WebKit, forced-colors or
-zoom coverage. Broader accessibility/browser review, performance budgets and final
-visual tokens remain for hardening. Pie and Donut subsequently became public in M04-T02/T03; stacking remains deferred.
+appearance, and inline styling requires compatible CSP. Focused Chromium, Firefox
+and WebKit checks passed; see [distribution compatibility](M06_DISTRIBUTION_COMPATIBILITY.md)
+for builds and limits. Manual NVDA, physical Safari/iOS, native forced colors/zoom
+and performance budgets remain unverified. Automated checks are not WCAG
+certification. Stacking is not implemented.
 
-M03-T05 adds shared long-text wrapping and cross-family validation; see [integration hardening](M03_INTEGRATION_HARDENING.md).
+## Shared presentation
 
-## M04-T04 combined-page hardening
-
-See [five-chart integration](M04_INTEGRATION_HARDENING.md) for the shared-page
-audit, reproducible browser checks and demo handoff. The public contract and
-pure geometry are unchanged.
-Focused controls retain their roving entry and outline during pointer hover.
+Visible tables and tooltips wrap long text. Focused controls retain their roving
+entry and outline during pointer hover.
 Legend labels wrap, and tooltips use the rendered figure width even when an
 explicit SVG width is constrained by caller CSS.
+
+See [Cartesian integration](M03_INTEGRATION_HARDENING.md) and
+[five-chart integration](M04_INTEGRATION_HARDENING.md) for historical audits and
+regression evidence.
