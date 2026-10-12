@@ -14,6 +14,11 @@ import {
 import { createRequire } from 'node:module';
 import { resolve, join } from 'node:path';
 import { gzipSync } from 'node:zlib';
+import {
+  fixtureIdentity,
+  fixtureMeta,
+  withVerificationServer,
+} from './verification-server.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 const work = join(root, 'work/consumers');
@@ -56,6 +61,7 @@ const report = {
   versions: [],
   artifacts: {},
   checks: [],
+  servers: [],
 };
 await mkdir(work, { recursive: true });
 const genuine = await pack(root);
@@ -138,7 +144,7 @@ const tsconfig = {
   include: ['**/*.ts', '**/*.tsx'],
   exclude: ['node_modules'],
 };
-async function start(dir, kind, port, major) {
+async function start(dir, kind, port, major, identity) {
   const args =
     kind === 'vite'
       ? [
@@ -151,32 +157,17 @@ async function start(dir, kind, port, major) {
           '--strictPort',
         ]
       : ['next', 'start', '--hostname', '127.0.0.1', '--port', String(port)];
-  const child = spawn(
-    process.execPath,
-    [
-      join(
-        dir,
-        'node_modules',
-        kind === 'vite' ? 'vite/bin/vite.js' : 'next/dist/bin/next',
-      ),
-      ...args.slice(1),
-    ],
-    { cwd: dir, env, stdio: 'inherit' },
-  );
-  try {
-    const url = `http://127.0.0.1:${port}`;
-    let response;
-    for (let i = 0; i < 120; i++) {
-      try {
-        response = await fetch(url);
-        if (response.ok) break;
-      } catch {
-        /* server starting */
-      }
-      await new Promise((res) => setTimeout(res, 250));
-    }
-    assert(response?.ok, 'Production server startup');
-    const html = await response.text();
+  const url = `http://127.0.0.1:${port}`;
+  const serverReport = {
+    kind,
+    react: major,
+    url,
+    identity,
+    status: 'starting',
+  };
+  report.servers.push(serverReport);
+  async function verifyFixture({ html }) {
+    serverReport.status = 'ready';
     await file(dir, 'evidence/response.html', html);
     const errors = [];
     const context = await browser.newContext({
@@ -231,7 +222,9 @@ async function start(dir, kind, port, major) {
     let areaBefore;
     let areaResponsiveBefore;
     if (kind === 'next') {
-      const staticPage = await browser.newPage({ javaScriptEnabled: false });
+      const staticPage = await browser.newPage({
+        javaScriptEnabled: false,
+      });
       await staticPage.goto(url);
       donutBefore = await staticPage.locator('#donut-explicit').innerHTML();
       donutResponsiveBefore = await staticPage
@@ -432,7 +425,10 @@ async function start(dir, kind, port, major) {
         await page.locator(`${section} svg`).scrollIntoViewIfNeeded();
         return page.locator(`${section} svg`).evaluate((el, side) => {
           const m = el.getScreenCTM();
-          return { x: m.a * (240 + side * 105.6) + m.e, y: m.d * 140 + m.f };
+          return {
+            x: m.a * (240 + side * 105.6) + m.e,
+            y: m.d * 140 + m.f,
+          };
         }, side);
       };
       const clickFirst = async () => {
@@ -848,7 +844,9 @@ async function start(dir, kind, port, major) {
         ),
       );
       assert.equal(await page.locator('figure').count(), 0);
-      const staticRoots = await browser.newPage({ javaScriptEnabled: false });
+      const staticRoots = await browser.newPage({
+        javaScriptEnabled: false,
+      });
       await staticRoots.goto(`${url}/roots.html`);
       const rootsBefore = await staticRoots.locator('body').innerHTML();
       await staticRoots.close();
@@ -876,8 +874,30 @@ async function start(dir, kind, port, major) {
       browser: true,
       axeViolations: 0,
     });
-  } finally {
-    child.kill();
+  }
+  try {
+    await withVerificationServer(
+      {
+        args: [
+          join(
+            dir,
+            'node_modules',
+            kind === 'vite' ? 'vite/bin/vite.js' : 'next/dist/bin/next',
+          ),
+          ...args.slice(1),
+        ],
+        cwd: dir,
+        env,
+        url,
+        identity,
+      },
+      verifyFixture,
+    );
+    serverReport.status = 'stopped';
+  } catch (error) {
+    serverReport.status = 'fail';
+    serverReport.error = String(error.stack ?? error);
+    throw error;
   }
 }
 try {
@@ -887,6 +907,7 @@ try {
   ]) {
     for (const kind of ['vite', 'next']) {
       const dir = join(work, `${kind}-${major}`);
+      const identity = fixtureIdentity(`${kind}-${major}`);
       // Same-version tarballs must never reuse a prior installation/lockfile.
       await rm(dir, { recursive: true, force: true });
       const compiler = kind === 'next' && major === 18 ? '5.4.5' : '6.0.3';
@@ -941,7 +962,7 @@ for(const path of ['src/internal/RenderingProbe','dist/index.js','internal']) { 
         await file(
           dir,
           'index.html',
-          '<!doctype html><html lang="en"><head><title>Consumer proof</title><link rel="icon" href="data:,"></head><body><div id="root"></div><script type="module" src="/main.tsx"></script></body></html>',
+          `<!doctype html><html lang="en"><head>${fixtureMeta(identity)}<title>Consumer proof</title><link rel="icon" href="data:,"></head><body><div id="root"></div><script type="module" src="/main.tsx"></script></body></html>`,
         );
         await file(
           dir,
@@ -962,12 +983,12 @@ for(const path of ['src/internal/RenderingProbe','dist/index.js','internal']) { 
         await file(
           dir,
           'app/layout.tsx',
-          `export default function Layout({children}:{children:import('react').ReactNode}) {return <html lang="en"><head><title>Consumer proof</title><link rel="icon" href="data:,"/></head><body>{children}</body></html>}`,
+          `export default function Layout({children}:{children:import('react').ReactNode}) {return <html lang="en"><head><meta name="rsc-verification" content="${identity}"/><title>Consumer proof</title><link rel="icon" href="data:,"/></head><body>{children}</body></html>}`,
         );
         await file(
           dir,
           'pages/pages-check.tsx',
-          `import Head from 'next/head'; import Sample from '../Sample'; export default function Page() {return <><Head><title>Pages consumer proof</title><link rel="icon" href="data:,"/></Head><Sample/></>} export async function getServerSideProps() { return {props:{}}; }`,
+          `import Head from 'next/head'; import Sample from '../Sample'; export default function Page() {return <><Head><meta name="rsc-verification" content="${identity}"/><title>Pages consumer proof</title><link rel="icon" href="data:,"/></Head><Sample/></>} export async function getServerSideProps() { return {props:{}}; }`,
         );
         await file(
           dir,
@@ -1108,7 +1129,7 @@ import {LineChart,AreaChart,BarChart,PieChart,DonutChart} from '${packageName}';
           sources.some((name) => name.includes(`node_modules/${packageName}/`)),
         );
       }
-      await start(dir, kind, major === 18 ? 4318 : 4319, major);
+      await start(dir, kind, major === 18 ? 4318 : 4319, major, identity);
       await json(work, 'results.json', report);
     }
   }
