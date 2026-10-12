@@ -50,7 +50,7 @@ await evidenceRun.execute(
     const installedEntry = `node_modules/${packageName}/dist/index.js`;
     const env = {
       ...process.env,
-      npm_config_cache: join(base, 'npm-cache'),
+      npm_config_cache: join(root, 'work/consumers/npm-cache'),
       NEXT_TELEMETRY_DISABLED: '1',
     };
     const io = createConsumerIO({ root, evidenceRun, env });

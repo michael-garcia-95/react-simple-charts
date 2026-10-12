@@ -66,7 +66,10 @@ await evidenceRun.execute(
       'Exact mode requires complete browser execution',
     );
     const work = evidenceRun.directory;
-    const env = { ...process.env, npm_config_cache: join(base, 'npm-cache') };
+    const env = {
+      ...process.env,
+      npm_config_cache: join(root, 'work/browser-smoke/npm-cache'),
+    };
     for (const name of requested)
       assert.ok(['chromium', 'firefox', 'webkit'].includes(name));
     if (setupOnly) {
