@@ -220,6 +220,113 @@ propagation; they do not simulate the full browser suite.
 
 `prepareDevelopmentArchive` returns the locally built archive, its current build
 bytes and existing size metadata before consumer installation begins. This is a
-distinct future artifact boundary. No external-tarball argument, digest validation,
-release mode or release-candidate metadata is implemented; current development
-guards and npm archive construction remain unchanged.
+distinct future artifact boundary. The separate exact-artifact input described below bypasses development packing.
+Current development guards and npm archive construction remain unchanged; no
+public-release manifest mode is implemented.
+
+## Exact local development artifact gate — M06-T06B1
+
+This gate verifies **one supplied archive**, without publication, staging or release
+approval. The development package stays private at `0.0.0`. Public-version policy
+is a future separately approved extension; none is implemented here.
+
+Prepare one ignored candidate from the intended clean source checkout:
+
+```sh
+mkdir -p work/candidate
+npm run build
+npm pack --ignore-scripts --pack-destination work/candidate
+node --input-type=module -e "import {readFileSync} from 'node:fs'; import {createHash} from 'node:crypto'; console.log(createHash('sha256').update(readFileSync(process.argv[1])).digest('hex'))" work/candidate/michael-garcia-95-react-simple-charts-0.0.0.tgz
+git rev-parse HEAD
+```
+
+Copy the printed digest and full checkout SHA into the explicit arguments below.
+Do not pack again between gates. Prepare the isolated drivers and all three browser
+binaries using the commands above, then run:
+
+```sh
+node scripts/verify-exact-artifact.mjs \
+  --artifact work/candidate/michael-garcia-95-react-simple-charts-0.0.0.tgz \
+  --sha256 <64-character-sha256> \
+  --source-sha <40-character-checkout-sha>
+```
+
+`work/exact-artifact/current.json` points to a unique retained `results.json`.
+The pointer is not a success claim: require finalized `status: passed`, successful
+package results, both complete child gates, all four consumer rows and all three
+engine outcomes. Chromium, Firefox and WebKit are mandatory for consolidated
+success. Missing engines produce failure, even if available engines passed. A
+standalone smoke run can still request a subset through `RSC_SMOKE_BROWSERS`;
+that report cannot satisfy the consolidated gate.
+
+The same flags work with `node scripts/verify-exact-package.mjs`,
+`node scripts/verify-consumers.mjs` and `node scripts/verify-browser-smoke.mjs`.
+For exact package validation invoke the separate Node entry: the legacy
+`verify-package.mjs` rejects exact arguments rather than repacking.
+`npm run verify:package` builds
+and verifies development packing by design. No arguments means the existing
+consumer/smoke development behavior, including packing, remains intact. Partial
+exact arguments fail; there is no fallback. Exact smoke rejects preparation-only
+and driver-only modes. The coordinator invokes its children in newly owned evidence
+bases, passes a unique parent run ID, and accepts only reports finalized inside
+that invocation window. It never imports unrelated historical success reports.
+
+Responsibilities:
+
+- `artifact/archive.mjs`: bounded gzip/ustar parsing, six regular-file allowlist,
+  safe paths, header checksums, unique entries, complete installed inventory/bytes.
+  It rejects links, directories, extended/PAX headers, malformed padding and
+  unexpected names before writing any extracted file. The supported npm archive
+  format deliberately fails closed on future format changes. Limits are 2 MiB
+  compressed, 8 MiB inflated and 4 MiB per file.
+- `artifact/selection.mjs`: explicit digest and checkout claim, unchanged private
+  development manifest, six-file checkout comparison, tracked embedded source-map
+  comparison, known credential signatures, externalization and client boundary.
+  A run copies validated bytes into its exclusively created scratch file, checks
+  its digest and marks it read-only. Original and copy digests plus source identity
+  and relevant checkout bytes are checked at install/build/browser/final-cleanup
+  boundaries. A privileged host attacker is outside this cooperative integrity
+  contract; permissions alone do not make a file universally immutable.
+- `artifact/package.mjs`: extract only allowlisted buffers into owned scratch;
+  inspect five runtime exports/SSR and compile archived declarations plus source
+  public contracts strictly. Dependencies/tooling here resolve from the development
+  checkout; the four real consumers separately install the archive's dependencies
+  and use their pinned independent compilers.
+- `artifact/results.mjs`: reject stale, malformed, running, failed, wrong-digest,
+  incomplete or cleanup-failed child evidence; check exact pinned consumer matrix
+  and all three engines, 15 scenarios each.
+- `verify-exact-artifact.mjs`: small sequential coordinator using existing evidence,
+  process and cleanup utilities. It records archive/file digests, actual manifest,
+  checkout/claim, package results, child run IDs/report digests, four configurations,
+  browser versions/outcomes and limitations. Compact child screenshots, snapshots,
+  manifests and logs remain in retained evidence. Owned installations/copies are
+  removed; shared caches/drivers and all previous evidence remain.
+
+SHA-256 establishes byte identity, not safe behavior or independently attested
+build provenance. Git HEAD validates the explicit claim and clean relevant tracked
+source; the report also records verification-infrastructure worktree changes.
+Archive files must match the current distribution/README/license/manifest, and
+embedded sources must match tracked source. This deterministic content boundary
+requires an already built matching distribution, not reproducible gzip timestamps
+or a new pack. Two independently packed archives cannot be treated as identical
+merely because name/version or ESM bytes match.
+
+Unit tests, source typecheck, website builds/snippets and ordinary CI still operate
+on source. The existing three-engine CI smoke workflow uses its own development
+pack, **not** this externally selected archive. Its success is separate evidence.
+The exact gate covers archive/API/declarations and real installed builds, consumer
+SSR/hydration/native Chromium assertions plus independent three-engine smoke.
+It does not authorize publication, satisfy manual NVDA/human accessibility review,
+prove native Windows/physical Safari support or resolve version, release-policy,
+account/security/bootstrap, provenance and owner-operation approvals in
+[release policy](RELEASE_POLICY.md) and
+[publishing security plan](M06_PUBLISHING_SECURITY_PLAN.md).
+
+The separate `Exact artifact verification` PR workflow prepares one private local
+archive on its actual checked-out head, computes its digest once and passes that
+archive to the coordinator for all four consumers and all three engines. It keeps
+`contents: read`, uses no publication permission and uploads only the single
+candidate plus compact evidence and driver manifests/locks. It does not consume a
+workstation-selected archive; compare reported digests before making any identity
+claim. Existing PR CI, development browser verification and Pages deployment remain
+independent. The CI Node suite includes the focused archive/evidence regressions.

@@ -8,6 +8,13 @@ import { join, resolve } from 'node:path';
 import { build } from 'tsdown';
 import ts from 'typescript';
 
+import { artifactOptions } from './artifact/selection.mjs';
+
+if (artifactOptions())
+  throw new Error(
+    'Exact archive input cannot use development packing; run node scripts/verify-exact-package.mjs with the same identity flags',
+  );
+
 const execute = promisify(execFile);
 const pkg = JSON.parse(await readFile('package.json', 'utf8'));
 assert.equal(pkg.name, '@michael-garcia-95/react-simple-charts');
