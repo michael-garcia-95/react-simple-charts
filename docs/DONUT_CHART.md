@@ -1,4 +1,4 @@
-# DonutChart — M04-T03
+# DonutChart
 
 Import the component and types from the sole package root:
 
@@ -75,8 +75,7 @@ const props = {
 | `innerRadiusRatio`   | Default 0.6; finite numeric value strictly between 0 and 1         |
 | `centerContent`      | Optional ReactNode, displayed only for ready geometry              |
 
-The approved public interface is unchanged. No pixel-radius controls, angle
-settings, tooltip contracts or runtime dependencies are added. Inputs, records,
+There are no pixel-radius or angle controls. Inputs, records,
 Dates and color arrays are preserved without mutation.
 
 ## Geometry and ratio validation
@@ -101,7 +100,13 @@ buttons/links are supported. Content is not unconditionally aria-hidden and no
 artificial wrapper Tab stop is added. A genuine button follows the SVG's roving
 slice entry in document order. Its clicks do not activate a slice.
 
+The following examples reuse `props` above. Replace the handler body with your
+application's details action:
+
 ```tsx
+function openDetails() {
+  console.log('Open budget details');
+}
 <DonutChart {...props} centerContent={0} />;
 <DonutChart
   {...props}
@@ -222,22 +227,22 @@ from 0.65 to 1 over 180ms. Reduced motion disables/cancels it; geometry/ratio ch
 and unmount cancel prior animations. Center position, interaction targets and paths
 are not animated. SSR/hydration remain static and meaningful.
 
-## Validation scope and deferred work
+## Validation and limitations
 
 See [consumer compatibility](CONSUMER_COMPATIBILITY.md) for executed consumer,
-Chromium, axe and package measurements. `scripts/verify-donut.mjs` audits the
+framework, axe and package measurements. See
+[distribution compatibility](M06_DISTRIBUTION_COMPATIBILITY.md) for the passing
+focused Chromium/Firefox/WebKit suite and exact executed versions. `scripts/verify-donut.mjs` audits the
 playground at 320/480/1200px, actual center bounds, CSS-constrained non-square
 SVGs, hole nonactivation, ring gestures, focus and center buttons. Screenshots and
 machine results remain in ignored `work/visual/donut/`.
 
-No full WCAG, manual screen-reader, physical-device, Firefox/WebKit, strict CSP,
-arbitrary host-style or measured collision-detection claim is made. Large SVG
+Manual NVDA, physical Safari/iOS and mobile devices, strict CSP, arbitrary host
+styles and measured collision detection remain unverified. Automated axe results
+are not WCAG certification or screen-reader validation. Large SVG
 counts retain DOM cost; no performance budget or caching is introduced. Interactive
 legends, automatic totals, nested rings, drilldown, exploded slices, angle controls,
-arc morphing and publication remain deferred. M04-T04 integration evidence is recorded in [five-chart hardening](M04_INTEGRATION_HARDENING.md).
+arc morphing are not implemented.
 
-## M04-T04 combined-page hardening
-
-See [five-chart integration](M04_INTEGRATION_HARDENING.md) for the shared-page
-audit, reproducible browser checks and demo handoff. The public contract and
-pure geometry are unchanged.
+See [five-chart integration](M04_INTEGRATION_HARDENING.md) for historical audits
+and regression evidence.

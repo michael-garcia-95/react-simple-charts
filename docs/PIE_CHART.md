@@ -1,4 +1,4 @@
-# PieChart — M04-T02
+# PieChart
 
 Import the public component and all types from the package root:
 
@@ -54,7 +54,7 @@ const props = {
 | `showLegend`         | Default true, static positive-segment list                             |
 | `showLabels`         | Default false, conservative interior label fitting                     |
 | `tooltip`            | Default enabled; boolean, function, or `{ render }`                    |
-| `onDataActivate`     | Optional approved `SegmentActivation<T>` callback                      |
+| `onDataActivate`     | Optional `SegmentActivation<T>` callback                               |
 
 Labels accept strings, finite numbers and valid Dates, including cross-realm Dates.
 Dates use ISO text by default, without locale or timezone guessing. Numerical
@@ -92,7 +92,7 @@ Tiny/long labels are skipped visually; table, control name and tooltip retain th
 
 Hover or focus inspects; movement and focus do not activate. Default tooltips show
 label, formatted source value and percentage with **one decimal place**. The raw
-engine percentage remains exact in the payload on the approved 0–100 scale.
+engine percentage remains exact in the payload on the 0–100 scale.
 Small positive percentages can display `0.0%`; no angle or value is adjusted.
 
 ```tsx
@@ -189,22 +189,17 @@ Absent animation APIs leave fully meaningful static marks, including SSR.
 
 No interactive legend, aggregation, drilldown, center content, angle interpolation,
 Canvas, chart rotation or theme API is implemented. Pie has no center-content prop;
-DonutChart is public as of M04-T03 and provides center content. Large SVG/control counts have DOM cost;
+[DonutChart](DONUT_CHART.md) provides center content. Large SVG/control counts have DOM cost;
 no performance optimization or budget is claimed. Inline styles and host CSS/CSP
 can affect presentation; custom tooltip sizing and label fitting are approximate.
-Chromium/axe checks do not establish full WCAG conformance, manual screen-reader
-behavior, Firefox or WebKit compatibility. These remain review gaps.
+Focused Chromium, Firefox and WebKit checks passed; see
+[distribution compatibility](M06_DISTRIBUTION_COMPATIBILITY.md) for builds and
+limits. Manual NVDA and physical Safari/iOS remain unverified; automated checks
+do not establish screen-reader behavior or WCAG certification.
 
-## M04-T03 subsequent integration
+## Shared polar rendering
 
-[DonutChart](DONUT_CHART.md) is now public using the same polar renderer and
-inspection implementation. The pure geometry engine is unchanged. Pie keeps
-filled sectors, original labels, colors, tables, payloads and interaction; only
-Donut accepts ratio/center content and uses ring-aware presentation. Earlier
-milestone statements above preserve historical task boundaries.
-
-## M04-T04 combined-page hardening
-
-See [five-chart integration](M04_INTEGRATION_HARDENING.md) for the shared-page
-audit, reproducible browser checks and demo handoff. The public contract and
-pure geometry are unchanged.
+[DonutChart](DONUT_CHART.md) uses the same polar renderer and inspection modules.
+Pie uses filled sectors; Donut adds ratio/center content and ring-aware presentation.
+See [five-chart integration](M04_INTEGRATION_HARDENING.md) for historical audit
+and regression evidence.

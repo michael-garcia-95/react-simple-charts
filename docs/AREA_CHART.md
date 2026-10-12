@@ -1,4 +1,4 @@
-# Public AreaChart — M03-T03
+# AreaChart
 
 Import the generic component from the sole package root:
 
@@ -29,10 +29,10 @@ export function Revenue() {
 ```
 
 TypeScript infers records from data. Single series use `yKey="actual"` instead of
-`series`; supplying both is rejected. The approved AreaChartProps contract is
-unchanged: category X is default, linear requires a numeric field, UTC and local
-`time` require a Date field. Axes retain scale-specific formatter argument types.
-No fill opacity, stacking, baseline, interpolation or gradient props are added.
+`series`; supplying both is rejected. Category X is the default in
+`AreaChartProps`; linear requires a numeric field, and UTC/local `time` require a
+Date field. Axes retain scale-specific formatter argument types.
+Fill opacity, stacking, baseline, interpolation and gradient props are not available.
 
 ## Geometry and presentation
 
@@ -70,7 +70,7 @@ can obscure pointer targets; keyboard traversal preserves eligible points.
 
 Tooltip omission or `true` enables shared mode. `false` hides tooltips without
 disabling activation. Functions and `{ mode: 'shared' | 'item', render }` objects
-use the approved discriminated context; custom renderers may return null. Shared
+use the discriminated tooltip context; custom renderers may return null. Shared
 mode includes valid values from the same original source row, in configured series
 order, even when another series value is clipped. Repeated labels/numbers/dates
 never combine rows. Item mode contains only the inspected original datum.
@@ -124,18 +124,19 @@ zoom/pan, interactive legend or decimation is implemented. Rendering and lookup
 construction scale with points; large SVG/control counts have DOM/sorting costs.
 Pointer movement does not normalize data or measure the DOM. Arbitrary custom
 tooltip content may exceed approximate positioning. Host CSS/strict CSP can affect
-inline styling. Chromium and focused axe checks do not certify WCAG compliance,
-real screen-reader behavior or Firefox/WebKit compatibility. Broader browser
-policy, performance budgets, theme tokens and release approval remain Development
-Lead decisions. BarChart is public; Pie/Donut remain types only. The package stays private 0.0.0.
+inline styling. Focused Chromium, Firefox and WebKit tests passed; see
+[distribution compatibility](M06_DISTRIBUTION_COMPATIBILITY.md) for versions and
+limits. Manual NVDA and physical Safari/iOS remain unverified; axe checks do not
+certify WCAG compliance or real screen-reader behavior. Performance budgets and
+a stable theme API remain open.
 
-M03-T05 adds shared long-text wrapping and cross-family validation; see [integration hardening](M03_INTEGRATION_HARDENING.md).
+## Shared presentation
 
-## M04-T04 combined-page hardening
-
-See [five-chart integration](M04_INTEGRATION_HARDENING.md) for the shared-page
-audit, reproducible browser checks and demo handoff. The public contract and
-pure geometry are unchanged.
-Focused controls retain their roving entry and outline during pointer hover.
+Visible tables and tooltips wrap long text. Focused controls retain their roving
+entry and outline during pointer hover.
 Legend labels wrap, and tooltips use the rendered figure width even when an
 explicit SVG width is constrained by caller CSS.
+
+See [Cartesian integration](M03_INTEGRATION_HARDENING.md) and
+[five-chart integration](M04_INTEGRATION_HARDENING.md) for historical audits and
+regression evidence.

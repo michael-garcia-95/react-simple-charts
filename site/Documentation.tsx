@@ -178,9 +178,12 @@ export function Documentation({ idPrefix = 'docs' }: { idPrefix?: string }) {
             <h3>Build and explore locally</h3>
             <p>
               The MIT-licensed package is private at version <code>0.0.0</code>{' '}
-              and is not published to npm. The website is not deployed. Public
-              installation instructions will follow a separately approved
-              release.
+              and is not published to npm. The{' '}
+              <a href="https://michael-garcia-95.github.io/react-simple-charts/">
+                website is live on GitHub Pages
+              </a>
+              . Explore the examples there, or build a local archive to try the
+              package in your own application.
             </p>
             <p>
               The package is ESM only with a single root entry; internal and
@@ -203,11 +206,12 @@ npm run dev:site
 npm run build:site`}</CodePreview>
             <p>
               Use Node 22.22.2+, Node 24.15.0+ within those majors, or Node 26+
-              as declared by the repository. <code>npm ci</code> installs the
-              locked development dependencies. <code>npm run build</code>{' '}
-              creates the ESM and declarations in <code>dist/</code>;{' '}
-              <code>dev:site</code> also builds the package before starting
-              Vite.
+              for development tools. CI tests Node 22 and 24; these requirements
+              do not define a library consumer minimum. <code>npm ci</code>{' '}
+              installs the locked development dependencies.{' '}
+              <code>npm run build</code> creates the ESM and declarations in{' '}
+              <code>dist/</code>; <code>dev:site</code> also builds the package
+              before starting Vite.
             </p>
             <h3>Try the package in another local app</h3>
             <p>
@@ -592,8 +596,8 @@ npm install /absolute/path/react-simple-charts/michael-garcia-95-react-simple-ch
               ]}
             />
             <p>
-              Narrow the approved <code>CartesianTooltipContext&lt;T&gt;</code>{' '}
-              by <code>mode</code> before reading <code>items</code> or{' '}
+              Narrow the <code>CartesianTooltipContext&lt;T&gt;</code> by{' '}
+              <code>mode</code> before reading <code>items</code> or{' '}
               <code>item</code>. Keep tooltip content noninteractive; it has no
               focus entry and uses approximate contained positioning.
             </p>
@@ -812,9 +816,22 @@ npm install /absolute/path/react-simple-charts/michael-garcia-95-react-simple-ch
               <a href={`${repository}/tree/main/docs`}>
                 chart documentation in the repository
               </a>
-              . Wider browser, manual screen-reader and production performance
-              review remain future work. Package publication and GitHub Pages
-              deployment require separate authorization.
+              . Production performance budgets and broader device coverage
+              remain unverified.
+            </p>
+            <p>
+              Focused automated tests passed Chromium 156.0.8078.4, Firefox
+              157.0 and Playwright WebKit 27.2 using an installed package
+              archive in GitHub Actions. See the{' '}
+              <a
+                href={`${repository}/blob/main/docs/M06_DISTRIBUTION_COMPATIBILITY.md`}
+              >
+                compatibility evidence and limitations
+              </a>
+              . WebKit engine tests do not validate physical Safari/iOS devices.
+              Manual NVDA testing is pending. Zero axe violations do not
+              establish screen-reader compatibility or WCAG certification; SVG
+              text contrast and an empty-table check still require human review.
             </p>
             <p>
               <a href={`#${anchor('introduction')}`}>Back to introduction ↑</a>

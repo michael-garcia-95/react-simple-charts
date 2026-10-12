@@ -1,43 +1,33 @@
 # React Simple Charts
 
-React and TypeScript SVG charts: Line, Area, Bar, Pie and Donut.
+Five React and TypeScript chart components built with SVG: **Line, Area, Bar, Pie
+and Donut**. Map fields from your own records, inspect values with a keyboard or
+pointer, and provide source-data tables alongside the graphics.
 
-## Status
+[Live examples and documentation](https://michael-garcia-95.github.io/react-simple-charts/)
+· [Source on GitHub](https://github.com/michael-garcia-95/react-simple-charts)
 
-The website is live at <https://michael-garcia-95.github.io/react-simple-charts/>.
-The library from this repository remains unpublished on npm, private at 0.0.0.
-See [the M06 release readiness assessment](docs/M06_RELEASE_READINESS.md).
-The approved package identifier is `@michael-garcia-95/react-simple-charts`. It is not available on npm.
-See [the identity implementation report](docs/M06_PACKAGE_IDENTITY.md).
+## Current availability
 
-The milestone notes below describe their original implementation scope.
+All five components are implemented and exported from
+`@michael-garcia-95/react-simple-charts`. The library is **not published to npm**;
+the repository package remains private at version `0.0.0`. You can explore the
+live website or build a local tarball to try it in a React application.
 
-M05-T04 audits website integration and corrects stale copy feedback after reset
-and clipped keyboard focus outlines. See [website hardening and readiness evidence](docs/M05_WEBSITE_HARDENING.md)
-for production build/browser checks, local measurements and deployment prerequisites.
-Deployment, publication and merging remain separately authorized actions.
+## Features
 
-M05-T03 expands the Documentation page into a developer reference with anchored
-navigation, local onboarding, all five typed chart examples, tooltips, accessibility,
-responsive rendering and SSR guidance. See [developer documentation](docs/M05_DEVELOPER_DOCUMENTATION.md).
-The package remains private at 0.0.0; deployment and publication remain separate.
+- Typed field mappings inferred from your records; no index signature required.
+- Category, numeric and Date-based X scales for Line and Area; grouped vertical
+  and horizontal Bars; source-ordered Pie and Donut segments.
+- Responsive container sizing or explicit numeric dimensions.
+- Tooltips, roving keyboard inspection and data-activation callbacks.
+- A complete semantic source table in every chart state, visible or visually hidden.
+- Optional reduced-motion-aware opacity animation and Donut center content.
+- Self-contained styles, external React peers and ESM with TypeScript declarations.
 
-M05-T02 expands the public Examples page with two deterministic presets per chart,
-independent controls, synchronized runnable TSX, accessible copying and reset.
-Root and GitHub Pages project-path builds are supported; the site is now live.
-See [interactive examples](docs/M05_INTERACTIVE_EXAMPLES.md) and the
-[approved GitHub Pages plan](docs/GITHUB_PAGES_PLAN.md).
+## Quick example
 
-M04-T04 audits the five families together, adds a reusable combined playground
-fixture and corrects Cartesian focus, legend wrapping and constrained tooltip
-placement. See [integration evidence and public demo handoff](docs/M04_INTEGRATION_HARDENING.md).
-
-M04-T03 adds public `DonutChart` with genuine ring geometry, a default 0.6
-inner-radius ratio, optional accessible center content, ring labels and shared
-polar inspection. LineChart, AreaChart, BarChart and PieChart remain public.
-The package stays private at 0.0.0. See [DonutChart usage](docs/DONUT_CHART.md),
-[PieChart](docs/PIE_CHART.md), [BarChart](docs/BAR_CHART.md),
-[LineChart](docs/LINE_CHART.md) and [AreaChart](docs/AREA_CHART.md).
+With the local package installed in your application:
 
 ```tsx
 import { LineChart } from '@michael-garcia-95/react-simple-charts';
@@ -48,95 +38,140 @@ export function Sales() {
       data={[
         { month: 'Jan', revenue: 12 },
         { month: 'Feb', revenue: 24 },
+        { month: 'Mar', revenue: 18 },
       ]}
       xKey="month"
       yKey="revenue"
-      accessibility={{ label: 'Monthly revenue' }}
+      height={280}
+      accessibility={{
+        label: 'Monthly revenue',
+        description: 'Fictional revenue for January through March.',
+        dataTable: 'visible',
+      }}
     />
   );
 }
 ```
 
-## Development
+Omitting `width` makes the chart measure its container. Use a positive numeric
+width, such as `width={640}`, for explicit sizing and complete initial SVG during
+server rendering.
 
-Use Node.js 22.22.2+ on the 22.x line, 24.15+ on the 24.x line, or 26+ and npm (Node 24 recommended). These minimums match the development tools; they are not a browser runtime requirement. From the repository root:
+## Try a local package
+
+Clone the repository and create an archive:
 
 ```sh
+git clone https://github.com/michael-garcia-95/react-simple-charts.git
+cd react-simple-charts
 npm ci
-npm run dev
+npm pack
 ```
 
-Vite serves the React playground and prints its local URL. The page shows public LineChart, AreaChart, BarChart, PieChart and DonutChart examples alongside historical rendering fixtures. Its CSS belongs to the playground only; the prototype's essential styles are self-contained. The optional real-browser smoke workflow is documented in [rendering compatibility](docs/RENDERING_COMPATIBILITY.md).
+Then, from your existing React application, install the generated file using its
+actual path (quote paths containing spaces):
 
-| Command                    | Purpose                                                                   |
-| -------------------------- | ------------------------------------------------------------------------- |
-| `npm run build`            | ESM library and TypeScript declarations in `dist/`                        |
-| `npm run build:playground` | Static playground in `playground-dist/`                                   |
-| `npm run preview`          | Preview the built playground locally                                      |
-| `npm run typecheck`        | Strict TypeScript checking of source, playground, tests, and TS configs   |
-| `npm run test:types`       | Compile-time public API and JSX inference tests                           |
-| `npm run lint`             | ESLint, including React Hooks rules                                       |
-| `npm run format:check`     | Prettier check                                                            |
-| `npm run format`           | Apply Prettier                                                            |
-| `npm test`                 | Vitest and React Testing Library tests                                    |
-| `npm run test:watch`       | Watch tests                                                               |
-| `npm run verify:package`   | Build and verify distribution contracts, including external React imports |
-| `npm pack --dry-run`       | Build via prepack and inspect package contents without publishing         |
+```sh
+npm install "/path/to/react-simple-charts/michael-garcia-95-react-simple-charts-0.0.0.tgz"
+```
 
-## Architecture
+Supply compatible React and React DOM peers and import from the scoped package
+root. Internal subpaths and CommonJS are unavailable.
 
-The library targets React 18.2+ and React 19.x. Line, Bar and Area share SVG rendering infrastructure and d3-scale/d3-shape pure calculations; Pie and Donut share the pure polar engine and presentation. Consumers supply React and React DOM as peers. Distribution is ESM-only, with declarations and a single root entry; LineChart, AreaChart, BarChart, PieChart and DonutChart are the only named runtime exports. No internal subpaths are public.
+## API and documentation
 
-See [architecture](docs/ARCHITECTURE.md), [open decisions](docs/OPEN_DECISIONS.md), and [contributor rules](AGENTS.md). CI checks Node 22/24 with React 18.2/19. The baseline uses React 18 definitions; CI also checks matching React 19 definitions.
+| Guide                                                            | Use it for                                          |
+| ---------------------------------------------------------------- | --------------------------------------------------- |
+| [LineChart](docs/LINE_CHART.md)                                  | Trends, gaps and category/numeric/time scales       |
+| [AreaChart](docs/AREA_CHART.md)                                  | Independent unstacked areas relative to zero        |
+| [BarChart](docs/BAR_CHART.md)                                    | Grouped comparisons in either orientation           |
+| [PieChart](docs/PIE_CHART.md)                                    | Positive values as parts of a whole                 |
+| [DonutChart](docs/DONUT_CHART.md)                                | Ring geometry and optional center content           |
+| [TypeScript contracts](docs/API_TYPE_CONTRACTS.md)               | Generic props, mappings and callback payloads       |
+| [Architecture](docs/ARCHITECTURE.md)                             | Module boundaries and implementation decisions      |
+| [Compatibility evidence](docs/M06_DISTRIBUTION_COMPATIBILITY.md) | Tested configurations, reproduction and limitations |
+
+## Compatibility
+
+React and React DOM peer ranges are `^18.2.0 || ^19.0.0`. Tests cover React
+18.2.0 and 19.3.0, including genuine installed-tarball Vite and Next.js consumers.
+Declarations use `NoInfer` (introduced in TypeScript 5.4); tested compiler versions
+are 5.4.5 and 6.0.3. See the compatibility report for exact framework configurations.
+
+The browser build targets ES2022 ESM and uses SVG, Pointer Events and focus APIs.
+Responsive graphical mounting requires native ResizeObserver; without it, the
+placeholder and source table remain. Focused automated tests passed Chromium
+156.0.8078.4, Firefox 157.0 and Playwright WebKit 27.2 in GitHub Actions. These are
+engine results, not physical Safari/iOS or universal browser validation.
+
+Explicit finite numeric dimensions support SVG server rendering. Responsive
+widths initially render stable accessible placeholders, and local-time scales
+wait for the client timezone. Use UTC and deterministic formatting for predictable
+temporal SSR. The package retains a `use client` boundary for Next App Router.
+Consumer Node requirements are separate from contributor tooling; older Node
+versions remain unverified.
+
+## Accessibility and limitations
+
+Provide meaningful chart names and descriptions. Tab enters one data control;
+arrows and Home/End navigate, Enter/Space activate, and Escape dismisses inspection.
+Source tables preserve missing, invalid and clipped observations. Optional animation
+respects reduced motion.
+
+Automated axe and accessibility-tree checks passed the focused browser suite with
+zero violations, but axe left SVG text contrast and an empty-table check incomplete.
+Manual NVDA testing is pending; automated results are not WCAG certification or
+proof of screen-reader announcements. See the [manual test plan](docs/M06_SCREEN_READER_TEST_PLAN.md).
+
+Large datasets add SVG/control cost; no performance budget or decimation is
+promised. Tiny segments can be difficult pointer targets, labels use estimated
+fitting, and oversized Donut center content is clipped. Strict CSP, arbitrary host
+styles, native forced colors/zoom and physical mobile devices remain unverified.
+
+## Local development and testing
+
+Development tools require Node `^22.22.2 || ^24.15.0 || >=26.0.0` and npm with the
+current lockfile. Node 24 is recommended. CI tests Node 22 and 24; Node 26 is allowed
+by tooling but is not in that matrix. These are contributor requirements, not a
+library consumer minimum.
+
+After `npm ci`, use `npm run dev` for the technical playground or
+`npm run dev:site` for the website. Both build the package first. Rebuild/restart
+site development after library source changes.
+
+| Command                                          | Purpose                                              |
+| ------------------------------------------------ | ---------------------------------------------------- |
+| `npm run build`                                  | ESM, declarations and source map in `dist/`          |
+| `npm run typecheck` / `npm run test:types`       | Source and public API type checks                    |
+| `npm run lint` / `npm run format:check`          | Lint and formatting checks                           |
+| `npm run format`                                 | Apply formatting                                     |
+| `npm test` / `npm run test:watch`                | Run or watch unit/component tests                    |
+| `node --test scripts/tests/npm-command.test.mjs` | Portable npm invocation tests                        |
+| `npm run verify:package`                         | Verify the actual archive and distribution contracts |
+| `npm pack --dry-run`                             | Inspect package contents without publishing          |
+| `npm run test:site`                              | Website behavior and content tests                   |
+| `npm run verify:site:snippets`                   | Compile all generated website TSX examples           |
+| `npm run build:playground` / `npm run preview`   | Build/preview `playground-dist/`                     |
+| `npm run build:site` / `npm run preview:site`    | Build/preview root-mode `site-dist/`                 |
+| `npm run build:site:pages`                       | Build locally for `/react-simple-charts/`            |
+| `npm run verify:browsers`                        | Genuine installed-package browser smoke suite        |
+
+After a site build, run `node scripts/verify-site-build.mjs /`, or pass
+`/react-simple-charts/` after the Pages build. Rebuild root mode before ordinary
+root preview. Local build commands do not deploy the website. Browser setup and
+supported installation commands are in the compatibility report.
+
+## Contributing
+
+Read [the architecture](docs/ARCHITECTURE.md), [repository rules](AGENTS.md) and
+[current open decisions](docs/OPEN_DECISIONS.md). Keep changes focused, preserve
+public contracts and include relevant tests. Report defects with a reproducible
+dataset, chart props, environment versions and expected versus observed behavior
+in the [issue tracker](https://github.com/michael-garcia-95/react-simple-charts/issues).
+
+[Engineering reports](docs/) preserve design and validation history. Use current
+guides and the compatibility report for present behavior.
 
 ## License
 
-Licensed under the MIT License. Copyright (c) 2026 Michael Garcia. The copyright holder has been approved by the Development Lead; see `LICENSE` for the standard terms.
-
-The historical RenderingProbe and source-internal LinePreview remain available only in the repository. Genuine packaged Vite/Next validation uses all five public charts; see [consumer compatibility](docs/CONSUMER_COMPATIBILITY.md).
-
-See [M03 integration hardening](docs/M03_INTEGRATION_HARDENING.md) for the cross-family audit, reproducible browser matrix, fixes and remaining risks.
-
-## Public website foundation
-
-The dedicated `site/` application is separate from the technical playground.
-It contains Home, Examples, Documentation and About, using the five actual
-components through the built package root. The package is not published to npm.
-
-```sh
-npm ci
-npm run dev:site
-npm run build:site
-# Build locally for the live GitHub Pages project URL (no deployment)
-npm run build:site:pages
-# Rebuild root mode before ordinary root preview
-npm run build:site
-npm run preview:site
-npm run test:site
-```
-
-Site commands build the library before consuming its root exports; production
-output is `site-dist/`. Normal typecheck and test commands also build the library
-first for clean-checkout artifact resolution. After library source changes,
-rebuild/restart the site dev command. No source alias or new React peer policy
-is used. See [the approved website design baseline](docs/M05_WEBSITE_DESIGN_BASELINE.md)
-for architecture, design and local-build tradeoffs. The GitHub Pages plan
-supersedes the historical Cloudflare Pages proposal.
-A separate manual main-only GitHub Pages deployment workflow is configured;
-local build commands do not deploy the site.
-
-`npm run test:site` covers the foundation, all interactive families and base paths.
-`npm run verify:site:snippets` compiles 32 TSX samples (22 interactive variants and
-10 documentation examples) against the real built package declarations. `node scripts/verify-site-build.mjs /` checks root
-HTML/assets; pass `/react-simple-charts/` after the Pages build. Both modes emit
-only `site-dist/`; the library package and technical playground are unchanged.
-Browser reproduction and ignored evidence locations are in the interactive report.
-
-## Contributor Node environment
-
-Development and build/test tools require Node `^22.22.2 || ^24.15.0 || >=26.0.0`
-with the current lockfile (notably jsdom). CI tests Node 22 and 24; Node 26 is
-allowed by tooling but not in that matrix. This is a contributor requirement,
-not a published-library Node minimum. The distribution has no `engines` field.
-See [distribution compatibility](docs/M06_DISTRIBUTION_COMPATIBILITY.md) for
-actual tested consumers and limits, and the [manual NVDA plan](docs/M06_SCREEN_READER_TEST_PLAN.md).
+[MIT](LICENSE). Copyright (c) 2026 Michael Garcia.

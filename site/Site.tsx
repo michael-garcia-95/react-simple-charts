@@ -196,9 +196,16 @@ function About() {
             </p>
             <p>
               Automated accessibility checks help guide development; they do not
-              establish full WCAG certification. Wider browser testing, manual
-              assistive-technology review, and production performance evaluation
-              remain ongoing work.
+              establish WCAG certification. Chromium, Firefox and Playwright
+              WebKit passed focused tests against the installed package. Manual
+              NVDA testing and physical Safari/iOS validation remain unverified;
+              engine tests do not establish real screen-reader behavior. See the{' '}
+              <a
+                href={`${repository}/blob/main/docs/M06_DISTRIBUTION_COMPATIBILITY.md`}
+              >
+                compatibility evidence
+              </a>{' '}
+              for tested versions, incomplete accessibility checks and limits.
             </p>
             <ActionLink href={repository}>
               Explore the repository <span aria-hidden="true">→</span>

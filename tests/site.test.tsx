@@ -50,7 +50,11 @@ describe('public website foundation', () => {
             navigation.some((item) => item.href === target.split('#')[0]),
           ).toBe(true);
         else if (target.startsWith('https:'))
-          expect(target.startsWith(repository)).toBe(true);
+          expect(
+            target.startsWith(repository) ||
+              target ===
+                'https://michael-garcia-95.github.io/react-simple-charts/',
+          ).toBe(true);
       }
     },
   );
@@ -164,4 +168,21 @@ describe('public website foundation', () => {
     expect(css).toContain('overflow-x: auto');
     expect(css).toContain('min-height: 44px');
   });
+});
+
+it('keeps About browser evidence distinct from manual and physical-device verification', () => {
+  render(<Site page="about" />);
+  const text = screen.getByRole('main').textContent!;
+  expect(text).toContain(
+    'Chromium, Firefox and Playwright WebKit passed focused tests',
+  );
+  expect(text).toContain(
+    'Manual NVDA testing and physical Safari/iOS validation remain unverified',
+  );
+  expect(
+    screen.getByRole('link', { name: 'compatibility evidence' }),
+  ).toHaveAttribute(
+    'href',
+    'https://github.com/michael-garcia-95/react-simple-charts/blob/main/docs/M06_DISTRIBUTION_COMPATIBILITY.md',
+  );
 });

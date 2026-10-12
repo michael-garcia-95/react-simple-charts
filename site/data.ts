@@ -1,4 +1,4 @@
-// Fictional, deterministic samples adapted from the M04 five-chart handoff.
+// Fictional, deterministic records for the website chart previews.
 export const revenue = [
   { month: 'Jan', revenue: 24, forecast: 26 },
   { month: 'Feb', revenue: 32, forecast: 30 },

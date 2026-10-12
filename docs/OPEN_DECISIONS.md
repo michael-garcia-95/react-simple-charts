@@ -1,240 +1,86 @@
 # Open decisions
 
-The MIT copyright-holder decision is finalized: the Development Lead approved Michael Garcia. `LICENSE` includes Copyright (c) 2026 Michael Garcia.
+This page separates unresolved choices from implemented policies. The package is
+`@michael-garcia-95/react-simple-charts`, private at `0.0.0` and unpublished. All
+five chart components are implemented. The website is live on GitHub Pages.
 
-- Approve publication, final package name, initial version, and release process. Package remains private at version 0.0.0.
-- RSC-026/RSC-027 public prop and data contracts are implemented in M01-T02; see [API type contracts](API_TYPE_CONTRACTS.md). M02-T01 implements internal normalization and classification; see [data normalization](DATA_NORMALIZATION.md). M02-T04 implements internal Cartesian missing-point gaps and zero-baseline geometry. Cartesian invalid-data presentation, accessible naming and interaction are implemented in M03; M04-T01 implements internal negative rejection and explicit empty zero-total polar geometry; M04-T02 implements public Pie presentation; M04-T03 implements public Donut presentation. M02-T02 implements internal domain/scale/tick policies; see [scales and domains](SCALES_AND_DOMAINS.md).
-- M01-T03 proves explicit SVG SSR and responsive accessible placeholders with a 280px default, stable IDs, observer cleanup, and jsdom hydration. M01-T04 completes packaged Vite/Next consumer verification using a temporary probe; M03 implements positive finite explicit dimensions and accessible responsive/local-time placeholders; see [rendering compatibility](RENDERING_COMPATIBILITY.md).
-- M01-T03 proves self-contained inline styles and CSS variable fallbacks, visually hidden tables, and focus outlines. Public token API approval, strict CSP support and arbitrary host-style interactions remain open; public charts currently expose an outline on focus and keyboard target stroke.
-- Empty/unavailable messages and local-time client placeholders are implemented. Richer diagnostic UI, future spacing changes and safe rescaling for numerical spans that overflow D3 arithmetic remain design decisions. The M02-T02 rules for duplicate category identity, valid-X value eligibility, zero baselines, bounds, and constant/fallback domains are documented implementation choices, not unresolved engine behavior.
-- Decide whether pure helpers ever become public root exports or separate server-safe entries; no public internal subpaths exist now.
-- Approve a broader browser support policy for the implemented Cartesian components. Current JS target is ES2022.
-- React 18/19 type-definition coverage is added for M01-T02; M01-T03 adds internal SSR, hydration, lifecycle, accessibility, and styling tests to the existing matrix. Public Cartesian runtime components have genuine consumer integration and interaction tests; real screen-reader review and broader browser validation remain open.
+## Release and compatibility gates
 
-Milestone 01 and Milestone 02's M02-T01 through M02-T04 internal foundation tasks are complete and merged. Normalization, scales, layout, and geometry remain internal. M03-T01 provides internal SVG rendering; LineChart, AreaChart and BarChart are public; PieChart is subsequently public in M04-T02; Donut is public as of M04-T03.
+- **Manual accessibility:** Windows NVDA + Firefox testing across all five
+  families is pending. Follow the [manual plan](M06_SCREEN_READER_TEST_PLAN.md),
+  record human results and review material barriers before first publication.
+  Automated axe and accessibility-tree results do not establish announcement
+  behavior or WCAG certification. Axe's incomplete SVG contrast and empty-table
+  checks also require human review.
+- **Device and browser policy:** Focused Chromium 156.0.8078.4, Firefox 157.0 and
+  Playwright WebKit 27.2 tests passed in GitHub Actions. That engine smoke gate is
+  complete for those builds. Physical Safari/iOS, mobile/assistive devices, native
+  forced colors/zoom, strict CSP and other versions/configurations remain unverified.
+  Any broader claim or deferral needs an explicit scope and evidence.
+- **Consumer support commitments:** Tested React, TypeScript, frameworks and Node
+  environments are in [distribution compatibility](M06_DISTRIBUTION_COMPATIBILITY.md).
+  No older consumer Node minimum has been verified. Broader framework/SSR policy,
+  including Turbopack, remains open; removal of engines is not evidence of support.
+- **Release policy:** Decide the initial version (0.1.0 remains a recommendation),
+  changelog/breaking-change conventions, maintenance expectations and support channels.
+  Published-package onboarding must describe the actual release when available.
+- **Publication security and authorization:** First-publication bootstrap,
+  restricted release permissions, provenance/trusted-publisher setup and final
+  publication approval remain separate work. Namespace identity is settled; that
+  does not authorize publication, placeholders, tags or releases.
 
-M02-T03 documents bounded margin estimates, greedy tick selection, single-line formatting failures, hidden-axis title suppression, horizontal Bar mappings, and independent value grids in [layout and axes](LAYOUT_AND_AXES.md). These engine policies are explicit; future decisions concern final renderer font/title styling and fitting, diagnostic presentation, local-time SSR strategy, and final renderer visual spacing.
+First publication remains blocked by manual accessibility evidence and the separate
+release/security/authorization gates. The [release readiness assessment](M06_RELEASE_READINESS.md)
+records the original risks; later identity and Node/map/browser decisions below
+supersede its unresolved entries. This document does not start further release work.
 
-M02-T04 documents independent missing-point runs, singleton retention, Area baseline closure, stable grouped Bar slots (80% groups/90% slots), and unclamped out-of-plot metadata in [geometry foundations](GEOMETRY_FOUNDATIONS.md). These are implemented internal calculation policies. Development Lead review remains for final visual spacing, clipping/marker presentation, diagnostic UI, performance budgets and future extreme-number support. M03-T01 now provides internal SVG plot clipping; public Line/Area production rendering is implemented.
+## Future design choices
 
-M03-T01 adds the internal engine-based Line preview and actual SVG plot clipping.
-Its local-time policy is an initial placeholder followed by client-timezone
-geometry; responsive charts reuse per-container observation. Review its documented
-conservative title omission, endpoint marker clipping, internal color tokens and
-empty/unavailable presentation before promoting production behavior. M03-T02 subsequently validated public LineChart tooltips, activation and point keyboard navigation; genuine packaged-consumer verification now covers all three Cartesian families.
-See [SVG rendering foundation](SVG_RENDERING_FOUNDATION.md).
+These are proposals, not implemented features or delivery commitments:
 
-## M03-T02 resolved LineChart policies
+- Performance budgets, dense-data decimation/virtualization and safe handling of
+  numerical spans beyond the current representable geometry limits.
+- A stable public theme/token API, measured label placement/collision handling,
+  tooltip measurement and richer diagnostics. Current fitting/positioning is estimated;
+  oversized Donut center content is clipped and host styles can affect presentation.
+- Public pure helpers or a separate server-safe entry. Only the five component
+  runtime exports exist today; no internal subpaths are exposed.
+- Stacking, interpolation, gradients/custom Area baselines, interactive legends,
+  persistent selection, zoom/pan, drilldown and richer polar layouts. Donut has
+  ratio and center-content props, but no automatic totals, nested rings, angle
+  controls or arc morphing.
 
-LineChart is the first public runtime export. Its shared tooltip groups by original
-source row; item mode preserves one original datum. One roving Tab entry traverses
-source/series order, with local touch selection and explicit dismissal. Static
-SSR/default rendering and opt-in 180ms client opacity animation respect reduced
-motion. Local time retains the M03-T01 client placeholder. Source tables remain
-complete, including clipped observations. See [LineChart](LINE_CHART.md).
+## Settled policies and references
 
-Release approval, screen-reader review, broader browser testing, strict CSP,
-performance budgets and large-data decimation remain open. M03-T02 added no new public props. M03-T03 is implemented below.
+| Topic                  | Current decision and reason                                                                                                                                                 |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Identity and ownership | Personal scoped package, independently maintained; MIT copyright 2026 Michael Garcia. See [identity evidence](M06_PACKAGE_IDENTITY.md).                                     |
+| Consumer Node metadata | Removed the restrictive engines field because it came from development tools. Contributor requirements remain documented separately; no untested minimum is claimed.        |
+| Source maps            | Retain embedded public library sources and relative paths for debugging. Archive checks enforce the source allowlist and six-file inventory.                                |
+| Exports and peers      | ESM-only root, five runtime components and type exports; React/DOM remain external with unchanged React 18.2/19 peers.                                                      |
+| Data policies          | Preserve source references/order/duplicates and missing/invalid classification. Cartesian domains, gaps and zero baselines are implemented policies, not pending decisions. |
+| Polar policies         | Positive source-order slices, scaled proportions and complete negative rejection. Donut defaults to ratio 0.6; unsafe geometry is unavailable rather than clamped.          |
+| Interaction            | One roving entry; keyboard/pointer/touch inspection and source-scoped activation deduplication. Tables retain all source rows in every state.                               |
+| SSR and motion         | Explicit dimensions support deterministic SVG; responsive/local-time modes start with placeholders. Animation is optional reduced-motion-aware opacity, not path morphing.  |
+| Website hosting        | GitHub Pages at the existing project URL. This supersedes the historical Cloudflare proposal; the deployment workflow is independent of package publication.                |
 
-## M03-T03 resolved AreaChart policies
+Detailed policies are in [architecture](ARCHITECTURE.md),
+[normalization](DATA_NORMALIZATION.md), [scales](SCALES_AND_DOMAINS.md),
+[layout](LAYOUT_AND_AXES.md), [Cartesian geometry](GEOMETRY_FOUNDATIONS.md),
+[polar geometry](POLAR_GEOMETRY_FOUNDATIONS.md) and the five chart guides.
 
-Independent unstacked zero-baseline fills use internal opacity 0.2. Exact core
-polygons have no stroke; pure-core outlinePath renders only actual data boundaries.
-Singletons retain markers; missing runs remain separate. Point inspection reuses
-the corrected Line interaction implementation. See [AreaChart](AREA_CHART.md).
-Public opacity, stacking, interpolation, gradients and baseline configuration
-remain future design decisions. M03-T04 subsequently implemented public BarChart.
+## Historical record
 
-## M03-T04 public BarChart
+Milestone reports and verification results in this directory retain their original
+scope, observations and limitations. Earlier statements that families were deferred,
+the website was undeployed, identity was undecided or Firefox/WebKit were unexecuted
+are historical; the current policies above supersede them. Original local browser
+download restrictions still describe that environment, even though CI later passed.
 
-BarChart now consumes existing grouped rectangle geometry in both orientations.
-Physical formatter routing preserves semantic xKey categories; shared presentation
-and corrected gesture handling also serve Line/Area. Item inspection is the Bar
-default; visible rectangle intersections and in-plot zero targets determine
-eligibility. Exact decorative extents, stable missing slots, source tables and
-SSR policy are preserved. No public props, dependencies, core math changes or
-subpaths are added. See [BarChart](BAR_CHART.md). M03-T05 hardening is documented in [integration hardening](M03_INTEGRATION_HARDENING.md).
-
-## M03-T05 implemented and proposed decisions
-
-Implemented: shared text wrapping for visible source tables and tooltip content; tooltip outer box matches the existing anchor estimate. Public props and color behavior are unchanged. Proposed, requiring Development Lead review: broader browser policy and production performance budgets. Still open: native forced colors/zoom, manual screen-reader review, strict CSP and release approval. Chromium emulation is limited evidence, not complete compatibility.
-
-## M04-T01 polar foundation
-
-Implemented engine policies: source-order slices, exclusion of missing/invalid
-rows from totals, complete rejection of negatives, explicit zero-total states,
-scaled numerical weights, overflow metadata, centered circles and safe D3 arcs.
-See [polar geometry foundations](POLAR_GEOMETRY_FOUNDATIONS.md). Initial eight-pixel
-margin and Donut ratio 0.6 await Development Lead review as rendering policies.
-Public diagnostic wording, labels, legends, center content, tiny-slice interaction,
-source-table presentation, keyboard behavior and screen-reader validation remain
-open. No public PieChart/DonutChart renderer is approved by this task.
-
-## M04-T02 implemented Pie policies
-
-As of M04-T02, PieChart was public and DonutChart remained deferred to M04-T03. The source-ordered
-static legend includes drawable positive slices; zero/excluded rows remain in the
-complete table. Labels default off and use conservative interior estimates without
-collision detection. Colors resolve by original source index. Percentages display
-one decimal but payloads preserve engine values. Keyboard navigation clamps at
-boundaries with one roving entry. Exact-sector pointer targets avoid neighboring
-activation; tiny slices remain keyboard reachable. Negative values reject the
-entire pie; no partial chart is presented. SSR/static defaults, per-container width
-measurement and reduced-motion opacity follow established presentation policies.
-See [PieChart](PIE_CHART.md) for implemented decisions and limitations.
-
-### Future review decisions
-
-Manual screen-reader and broader browser review, host CSP/theme support, performance
-budgets and improved measured label placement remain open. Donut center content,
-public radius settings, interactive legends and later milestone integration are
-outside M04-T02. No publication, merge or release approval is implied.
-
-## M04-T03 implemented Donut policies
-
-DonutChart is public with default ratio 0.6 and no fabricated center total. The
-unchanged engine rejects invalid or unrepresentable holes rather than clamping.
-Center content uses a contained inscribed HTML region, retains semantic text and
-interactive controls, and follows actual SVG scaling. Ring labels use conservative
-estimated radial/angular fitting; tooltip anchors sit in the ring. Pie behavior
-and its 60%-radius labels are preserved. See [DonutChart](DONUT_CHART.md).
-
-Accepted presentation limitations: arbitrary large center content is clipped,
-label fitting is estimated and tooltip vertical placement is approximate. Manual
-screen-reader/broader browser review, strict CSP, performance budgets and future
-measured label placement remain open. M04-T04 integration hardening, interactive
-legends, new radius/angle controls, nested rings, publication and release remain
-deferred. No merge approval is implied.
-
-## M04-T04 integration and next-phase decisions
-
-Five-family integration hardening supersedes the M04-T03 deferral above.
-Public runtime scope remains exactly Line, Area, Bar, Pie and Donut; pure core,
-props, defaults and dependencies remain frozen. Three reproduced Cartesian
-presentation defects are corrected; see [integration report](M04_INTEGRATION_HARDENING.md).
-Manual accessibility, broader browser policy, dense-data performance budgets,
-public demo hosting/CSP and release decisions remain separate future work.
-No deployment, publication or merge approval is implied.
-
-## M05-T02 website and hosting
-
-GitHub Pages from this repository is the approved future host, at
-`https://michael-garcia-95.github.io/react-simple-charts/`. The earlier Cloudflare
-proposal is superseded. Root development and Vite project-base builds are
-implemented, with independent interactive examples and generated code; see
-[M05-T02](M05_INTERACTIVE_EXAMPLES.md) and [GitHub Pages plan](GITHUB_PAGES_PLAN.md).
-No deployment has occurred. Pages settings, deployment permissions, a deployment
-workflow, custom-domain/DNS policy, canonical/social metadata and live validation
-await separate authorization. Proposed deployment steps remain inactive.
-
-Manual screen-reader review, broader browser/native-device policy, syntax
-highlighting, richer tutorials and production performance measurement remain
-future work. M05-T03, merge, release and npm publication are not authorized here.
-
-## M05-T03 developer documentation
-
-M05-T03 is authorized as website/documentation work and expands the earlier
-introduction into a practical reference. Fourteen anchored sections and ten
-strictly compiled TSX samples document the existing five public components and
-local tarball workflow. See [developer documentation](M05_DEVELOPER_DOCUMENTATION.md).
-Earlier task-boundary statements above remain historical records.
-
-Package release/publication, Pages settings/deployment, custom domains, manual
-screen-reader and wider browser/device validation, strict CSP and dense-data
-performance budgets remain separate decisions. Documentation does not expand the
-public API or imply availability on npm. M05-T04 and merge remain unapproved.
-
-## M05-T04 website hardening
-
-M05-T04 is now authorized as the final website audit. Its focused site-level
-copy/focus corrections and deployment-readiness evidence are documented in
-[website hardening](M05_WEBSITE_HARDENING.md); earlier task-boundary statements
-above remain historical. Final-head CI verification and Development Lead review
-are required. Squash merge, Pages settings/workflow/permissions, deployment,
-release and npm publication still require explicit approval. Manual assistive
-technology, wider browsers/native devices and future production performance
-budgets remain separate review decisions. No M06 work is begun.
-
-## M06-T01 release readiness assessment
-
-See [the release readiness report](M06_RELEASE_READINESS.md). The website is live
-at <https://michael-garcia-95.github.io/react-simple-charts/>; earlier no-deployment
-statements above are historical. This repository's library remains unpublished,
-private at 0.0.0. Official npm registry verification on 2026-10-10 confirms the
-current unscoped name belongs to another publisher (latest 0.0.19; public
-maintainer samueldelesque). Inactivity does not permit an unrelated account to
-publish it. Recommend a user-controlled npm scope, verified independently of
-the GitHub username; no final name is approved or reserved.
-
-Outstanding Development Lead/user decisions: final identity and namespace
-ownership/maintainers; initial version (recommend 0.1.0, not a final choice);
-consumer Node/TypeScript and browser policy; minimum manual screen-reader gate
-and browser/device deferrals; source-map exposure; breaking-change/changelog/
-maintenance policy; secure first-publication bootstrap, 2FA, OIDC/provenance,
-restricted release permissions and manual approvals. Current npm documentation
-also supports staging new packages, which creates a public 0.0.0-stage placeholder
-and therefore requires explicit approval rather than being a harmless test.
-
-Release conclusion is NO-GO pending the report's prioritized gates. Proposed
-M06-T02 through T07 are implementation proposals, not authorizations. No runtime
-contract, identity/version, publication workflow, tag, package, Pages setting or
-deployed website is changed by this assessment. Await Lead review and user
-approval; stop after M06-T01.
-
-## M06-T02 approved package identity
-
-The user approved the personal npm scope `michael-garcia-95`, confirmed npm
-username registration and enabled 2FA. The independent, personally maintained
-React Simple Charts library now uses `@michael-garcia-95/react-simple-charts`.
-The manifest, lockfile, active imports, generators and installed-consumer tools
-are migrated together; see [implementation evidence](M06_PACKAGE_IDENTITY.md).
-Earlier naming recommendations and milestone reports remain historical evidence.
-
-The library remains unpublished, `private: true`, version `0.0.0`. Initial
-`0.1.0` is recommended but still awaits final approval. Public npm onboarding
-belongs to later M06 tasks. GitHub repository, branding and Pages base are unchanged.
-
-The existing Node engines policy is unchanged. Separating development-tool
-minimums from supported consumer SSR Node versions remains an explicit decision;
-no wider consumer Node or TypeScript support is claimed here. Remaining release
-gates include distribution/source-map and browser policy, manual screen-reader
-review, public release documentation, version/changelog/maintenance policy,
-secure bootstrap and trusted-publisher/provenance preparation, and final explicit
-publication approval (M06-T03 through T07). No package reservation, publication,
-release, tag, token, organization, trusted publisher or website deployment is
-authorized by this identity implementation. Stop after M06-T02 for Lead review.
-
-## M06-T03 distribution policies and remaining gates
-
-Approved and implemented: remove the published Node engines restriction that
-originated in development tools; preserve contributor requirements separately;
-retain the public-source JavaScript map and six-file distribution inventory;
-preserve package identity, private 0.0.0, peer ranges and all public APIs. See
-[distribution compatibility](M06_DISTRIBUTION_COMPATIBILITY.md) for actual
-archive, installed-consumer and browser evidence. Earlier undecided Node/map
-statements above are historical and are superseded by these approved policies.
-No minimum older consumer Node version or widened React support is claimed.
-
-A focused genuine-installed-package three-engine smoke runner is implemented.
-M06-T03B adds a dedicated GitHub Actions browser job, separate from the four
-Node/React jobs. Chromium 156.0.8078.4, Firefox 157.0 and WebKit 27.2 actually
-passed all 15 focused installed-tarball scenario groups each with zero axe
-violations; see the distribution report for run/artifact evidence. The original
-local Firefox/WebKit download restrictions remain historical environment limits.
-The three-engine smoke execution gate is complete for these builds; physical
-Safari/iOS, other versions and real screen-reader behavior are not established.
-Axe incomplete contrast/empty-table checks remain human review items. No network
-bypass or local-PC software installation is implied.
-
-The [Windows NVDA + Firefox test plan](M06_SCREEN_READER_TEST_PLAN.md) is ready
-for human execution across all five families. No manual result is complete.
-Manual accessibility evidence and triage of material barriers remain a first-release
-gate; automated axe results do not certify WCAG or announcements. Physical
-mobile/assistive devices, native forced colors/zoom and strict CSP remain unverified.
-
-Release remains NO-GO pending these gates plus separately authorized release
-documentation, version/changelog/maintenance decisions, secure bootstrap and
-trusted-publisher/provenance preparation, and explicit publication approval.
-No publication, placeholder, token, tag/release, merge or deployment is performed.
-Website deployment workflow/settings are preserved. Stop after M06-T03 for
-Development Lead review; M06-T04 is not started.
+See [five-family integration](M04_INTEGRATION_HARDENING.md),
+[website hardening](M05_WEBSITE_HARDENING.md),
+[release assessment](M06_RELEASE_READINESS.md),
+[package identity](M06_PACKAGE_IDENTITY.md) and
+[distribution/browser evidence](M06_DISTRIBUTION_COMPATIBILITY.md).
+The [previous decision chronology](https://github.com/michael-garcia-95/react-simple-charts/blob/261285f3a74c7eae5f34174d50f6f648af841a93/docs/OPEN_DECISIONS.md)
+remains available in repository history.
