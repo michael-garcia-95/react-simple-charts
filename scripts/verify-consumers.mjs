@@ -1,3 +1,4 @@
+import { createEvidenceRun } from './verification-evidence.mjs';
 import { runVerificationCommand } from './verification-command.mjs';
 import { installBrowserDriver, loadBrowserDriver } from './browser-driver.mjs';
 // Optional release gate: disposable packages and independent applications only.
@@ -5,6 +6,7 @@ import { installBrowserDriver, loadBrowserDriver } from './browser-driver.mjs';
 import assert from 'node:assert/strict';
 import {
   cp,
+  mkdtemp,
   mkdir,
   readFile,
   writeFile,
@@ -21,66 +23,96 @@ import {
 } from './verification-server.mjs';
 
 const root = resolve(import.meta.dirname, '..');
-const work = join(root, 'work/consumers');
-const pkg = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
-const packageName = pkg.name;
-const installedEntry = `node_modules/${packageName}/dist/index.js`;
-const env = {
-  ...process.env,
-  npm_config_cache: join(work, 'npm-cache'),
-  NEXT_TELEMETRY_DISABLED: '1',
-};
-async function run(cmd, args, cwd = root) {
-  console.log(cwd, cmd, ...args);
-  return runVerificationCommand(cmd, args, { cwd, env });
-}
-
-async function file(dir, name, content) {
-  const path = join(dir, name);
-  await mkdir(resolve(path, '..'), { recursive: true });
-  await writeFile(path, content);
-}
-async function json(dir, name, value) {
-  await file(dir, name, JSON.stringify(value, null, 2));
-}
-async function pack(dir) {
-  await run('npm', ['pack', '--pack-destination', work], dir);
-  const p = JSON.parse(await readFile(join(dir, 'package.json'), 'utf8'));
-  return join(
-    work,
-    `${p.name.replace(/^@/, '').replaceAll('/', '-')}-${p.version}.tgz`,
-  );
-}
-const report = {
-  node: process.version,
+const base = join(root, 'work/consumers');
+const evidenceRun = await createEvidenceRun(base, 'installed-consumers', {
   versions: [],
   artifacts: {},
   checks: [],
   servers: [],
-};
-await mkdir(work, { recursive: true });
-const genuine = await pack(root);
-const js = await readFile(join(root, 'dist/index.js'));
-assert(js.toString().startsWith('"use client";'));
-assert(!/react.production|react.development|\.css["']/.test(js.toString()));
-report.artifacts.genuine = {
-  tarballBytes: (await stat(genuine)).size,
-  esmBytes: js.length,
-  esmGzipBytes: gzipSync(js).length,
-};
-const driver = join(work, 'driver');
-await installBrowserDriver(driver, { env });
-const {
-  engines: { chromium },
-  AxeBuilder,
-} = loadBrowserDriver(driver);
-const browser = await chromium.launch({
-  executablePath: process.env.RSC_BROWSER_PATH,
-  headless: true,
-  args: ['--no-sandbox'],
+  configurations: [18, 19].flatMap((react) =>
+    ['vite', 'next'].map((kind) => ({ kind, react, status: 'unexecuted' })),
+  ),
 });
-report.browser = browser.version();
-const sample = `import { LineChart, AreaChart, BarChart, PieChart, DonutChart } from '${packageName}';
+const report = evidenceRun.report;
+let browser;
+evidenceRun.onCancel(() => browser?.close());
+let scratch;
+await evidenceRun.execute(
+  async () => {
+    scratch = await mkdtemp(join(base, 'temporary-'));
+    const work = scratch;
+    const pkg = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
+    const packageName = pkg.name;
+    const installedEntry = `node_modules/${packageName}/dist/index.js`;
+    const env = {
+      ...process.env,
+      npm_config_cache: join(base, 'npm-cache'),
+      NEXT_TELEMETRY_DISABLED: '1',
+    };
+    async function run(cmd, args, cwd = root) {
+      console.log(cwd, cmd, ...args);
+      return evidenceRun.phase(
+        cmd === 'npm' && args[0] === 'pack'
+          ? 'package creation'
+          : cmd === 'npm' && args[0] === 'install'
+            ? 'consumer installation'
+            : 'build/type verification',
+        () =>
+          runVerificationCommand(cmd, args, {
+            cwd,
+            env,
+            timeoutMs: 600000,
+            signal: evidenceRun.signal,
+          }),
+      );
+    }
+
+    async function file(dir, name, content) {
+      const path = name.startsWith('evidence/')
+        ? join(evidenceRun.directory, dir.split(/[\\/]/).at(-1), name.slice(9))
+        : join(dir, name);
+      await mkdir(resolve(path, '..'), { recursive: true });
+      await writeFile(path, content);
+    }
+    async function json(dir, name, value) {
+      await file(dir, name, JSON.stringify(value, null, 2));
+    }
+    async function pack(dir) {
+      await run('npm', ['pack', '--pack-destination', work], dir);
+      const p = JSON.parse(await readFile(join(dir, 'package.json'), 'utf8'));
+      return join(
+        work,
+        `${p.name.replace(/^@/, '').replaceAll('/', '-')}-${p.version}.tgz`,
+      );
+    }
+    await mkdir(work, { recursive: true });
+    const genuine = await pack(root);
+    const js = await readFile(join(root, 'dist/index.js'));
+    assert(js.toString().startsWith('"use client";'));
+    assert(!/react.production|react.development|\.css["']/.test(js.toString()));
+    report.artifacts.genuine = {
+      tarballBytes: (await stat(genuine)).size,
+      esmBytes: js.length,
+      esmGzipBytes: gzipSync(js).length,
+    };
+    const driver = join(base, 'driver');
+    await evidenceRun.phase('driver preparation', () =>
+      installBrowserDriver(driver, { env, signal: evidenceRun.signal }),
+    );
+    const {
+      engines: { chromium },
+      AxeBuilder,
+    } = loadBrowserDriver(driver);
+    browser = await evidenceRun.phase('browser launch', () =>
+      chromium.launch({
+        executablePath: process.env.RSC_BROWSER_PATH,
+        headless: true,
+        args: ['--no-sandbox'],
+        timeout: 15000,
+      }),
+    );
+    report.browser = browser.version();
+    const sample = `import { LineChart, AreaChart, BarChart, PieChart, DonutChart } from '${packageName}';
 const data = [{quarter:'Q1',value:12},{quarter:'Q2',value:24},{quarter:'Q3',value:18},{quarter:'Q4',value:32}];
 export default function Sample() {return <main><h1>Packaged public LineChart</h1>
 <section id="explicit"><LineChart data={data} xKey="quarter" yKey="value" width={640} accessibility={{label:'Explicit',description:'Quarterly values',dataTable:'visible'}} /></section>
@@ -107,7 +139,7 @@ export default function Sample() {return <main><h1>Packaged public LineChart</h1
 <section id="donut-responsive" style={{width:'80%'}}><DonutChart data={data} nameKey="quarter" valueKey="value" innerRadiusRatio={0.4} centerContent={<strong>Responsive allocation</strong>} accessibility={{label:'Responsive Donut'}}/></section>
 <Interactive/></main>;}
 import Interactive, {SingleDonutInspection} from './Interactive';`;
-const interactive = `'use client';
+    const interactive = `'use client';
 import {useState} from 'react'; import {LineChart, AreaChart, BarChart, PieChart, DonutChart} from '${packageName}';
 function Inspection({area=false}:{area?:boolean}){const Chart=area?AreaChart:LineChart;const [result,setResult]=useState(''); const [count,setCount]=useState(0);return <section id={area?'area-interactive':'interactive'}><Chart width={640} data={[{x:'A',y:1},{x:'A',y:2}]} xKey="x" yKey="y" onDataActivate={p=>{setCount(n=>n+1);setResult(p.index+':'+p.inputMethod);}} accessibility={{label:area?'Interactive Area':'Interactive'}}/><output>{result}:{count}</output></section>;}
 const pieData=[{name:'Same',value:1},{name:'Same',value:1}];
@@ -118,924 +150,1003 @@ function DonutInspection(){const [result,setResult]=useState('');const [count,se
 function BarInspection({horizontal=false}:{horizontal?:boolean}){const [result,setResult]=useState('');const [count,setCount]=useState(0);return <section id={horizontal?'bar-horizontal-interactive':'bar-interactive'}><BarChart width={640} orientation={horizontal?'horizontal':'vertical'} data={[{x:'A',y:-2},{x:'A',y:0}]} xKey="x" yKey="y" onDataActivate={p=>{setCount(n=>n+1);setResult(p.index+':'+p.inputMethod);}} accessibility={{label:'Interactive Bar'}}/><output>{result}:{count}</output></section>;}
 export default function Interactive(){return <><Inspection/><Inspection area/><BarInspection/><BarInspection horizontal/><PieInspection/><DonutInspection/><Narrow/></>;}
 function Narrow(){const [state,setState]=useState('ready');const data=state==='empty'?[]:[{x:state==='replacement'?'Replacement':'NorthAmericaEnterpriseSubscriptions',y:-2},{x:'Repeated',y:0}];return <section id="integrated-narrow"><button onClick={()=>setState('empty')}>Empty integrated charts</button><button onClick={()=>setState('replacement')}>Replace integrated data</button>{[LineChart,AreaChart,BarChart].map((Chart,i)=><div key={i} data-narrow={i} style={{width:320}}><Chart data={data} xKey="x" yKey="y" height={state==='unusable'?0:280} accessibility={{label:'Narrow '+i,dataTable:'visible'}}/></div>)}<button onClick={()=>setState('unusable')}>Unusable integrated charts</button></section>;}`;
-const tsconfig = {
-  compilerOptions: {
-    target: 'ES2022',
-    lib: ['DOM', 'ES2022'],
-    module: 'ESNext',
-    moduleResolution: 'Bundler',
-    jsx: 'react-jsx',
-    strict: true,
-    noEmit: true,
-    skipLibCheck: false,
-    esModuleInterop: true,
-    types: ['node'],
-  },
-  include: ['**/*.ts', '**/*.tsx'],
-  exclude: ['node_modules'],
-};
-async function start(dir, kind, port, major, identity) {
-  const args =
-    kind === 'vite'
-      ? [
-          'vite',
-          'preview',
-          '--host',
-          '127.0.0.1',
-          '--port',
-          String(port),
-          '--strictPort',
-        ]
-      : ['next', 'start', '--hostname', '127.0.0.1', '--port', String(port)];
-  const url = `http://127.0.0.1:${port}`;
-  const serverReport = {
-    kind,
-    react: major,
-    url,
-    identity,
-    status: 'starting',
-  };
-  report.servers.push(serverReport);
-  async function verifyFixture({ html }) {
-    serverReport.status = 'ready';
-    await file(dir, 'evidence/response.html', html);
-    const errors = [];
-    const context = await browser.newContext({
-      viewport: { width: 1100, height: 1200 },
-      hasTouch: true,
-    });
-    const page = await context.newPage();
-    page.on('console', (message) => {
-      if (message.type() === 'error') errors.push(message.text());
-    });
-    page.on('response', (response) => {
-      if (response.status() >= 400)
-        errors.push(`${response.status()} ${response.url()}`);
-    });
-    page.on('pageerror', (error) => errors.push(error.message));
-    // Gate native observer delivery so pre-measurement hydration can be inspected.
-    await page.addInitScript(() => {
-      window.__observers = [];
-      const Native = window.ResizeObserver;
-      window.ResizeObserver = class {
-        constructor(callback) {
-          this.native = new Native((entries, observer) => {
-            this.entries = entries;
-            if (window.__measure) callback(entries, observer);
-          });
-          this.callback = callback;
-          window.__observers.push(this);
-        }
-        observe(element) {
-          this.native.observe(element);
-        }
-        disconnect() {
-          this.disconnected = true;
-          this.native.disconnect();
-        }
+    const tsconfig = {
+      compilerOptions: {
+        target: 'ES2022',
+        lib: ['DOM', 'ES2022'],
+        module: 'ESNext',
+        moduleResolution: 'Bundler',
+        jsx: 'react-jsx',
+        strict: true,
+        noEmit: true,
+        skipLibCheck: false,
+        esModuleInterop: true,
+        types: ['node'],
+      },
+      include: ['**/*.ts', '**/*.tsx'],
+      exclude: ['node_modules'],
+    };
+    async function start(dir, kind, port, major, identity) {
+      const args =
+        kind === 'vite'
+          ? [
+              'vite',
+              'preview',
+              '--host',
+              '127.0.0.1',
+              '--port',
+              String(port),
+              '--strictPort',
+            ]
+          : [
+              'next',
+              'start',
+              '--hostname',
+              '127.0.0.1',
+              '--port',
+              String(port),
+            ];
+      const url = `http://127.0.0.1:${port}`;
+      const serverReport = {
+        kind,
+        react: major,
+        url,
+        identity,
+        status: 'starting',
       };
-      window.__release = () => {
-        window.__measure = true;
-        window.__observers.forEach((o) => {
-          if (o.entries) o.callback(o.entries, o.native);
+      report.servers.push(serverReport);
+      async function verifyFixture({ html, signal, onCancel }) {
+        onCancel(() => browser.close());
+        signal.throwIfAborted();
+        serverReport.status = 'ready';
+        await file(dir, 'evidence/response.html', html);
+        const errors = [];
+        const context = await browser.newContext({
+          viewport: { width: 1100, height: 1200 },
+          hasTouch: true,
         });
-      };
-    });
-    let donutBefore;
-    let donutResponsiveBefore;
-    let pieBefore;
-    let pieResponsiveBefore;
-    let barBefore;
-    let barResponsiveBefore;
-    let before;
-    let responsiveBefore;
-    let areaBefore;
-    let areaResponsiveBefore;
-    if (kind === 'next') {
-      const staticPage = await browser.newPage({
-        javaScriptEnabled: false,
-      });
-      await staticPage.goto(url);
-      donutBefore = await staticPage.locator('#donut-explicit').innerHTML();
-      donutResponsiveBefore = await staticPage
-        .locator('#donut-responsive')
-        .innerHTML();
-      assert.equal(
-        await staticPage.locator('#donut-negative [data-donut-center]').count(),
-        0,
-      );
-      assert.equal(
-        await staticPage
-          .locator('#donut-single [data-donut-center]')
-          .textContent(),
-        '0',
-      );
-      pieBefore = await staticPage
-        .locator('#pie-explicit svg')
-        .evaluate((el) => el.outerHTML);
-      pieResponsiveBefore = await staticPage
-        .locator('#pie-responsive')
-        .innerHTML();
-      assert.equal(
-        await staticPage.locator('#pie-single [data-layer=marks] path').count(),
-        1,
-      );
-      assert.equal(await staticPage.locator('#pie-negative svg').count(), 0);
-      barBefore = await staticPage
-        .locator('#bar-horizontal svg')
-        .evaluate((el) => el.outerHTML);
-      barResponsiveBefore = await staticPage
-        .locator('#bar-responsive')
-        .innerHTML();
-      responsiveBefore = await staticPage.locator('#responsive').innerHTML();
-      areaBefore = await staticPage
-        .locator('#area-explicit svg')
-        .evaluate((el) => el.outerHTML);
-      areaResponsiveBefore = await staticPage
-        .locator('#area-responsive')
-        .innerHTML();
-      assert.equal(await staticPage.locator('#area-responsive svg').count(), 0);
-      assert.equal(await staticPage.locator('#area-time svg').count(), 0);
-      before = await staticPage
-        .locator('#explicit svg')
-        .evaluate((el) => el.outerHTML);
-      assert.equal(
-        await staticPage.locator('#explicit svg').getAttribute('viewBox'),
-        '0 0 640 280',
-      );
-      assert.equal(await staticPage.locator('#responsive svg').count(), 0);
-      assert.equal(await staticPage.locator('#local-time svg').count(), 0);
-      assert.equal(await staticPage.locator('[role=tooltip]').count(), 0);
-      assert.equal(
-        await staticPage
-          .locator('#responsive [role=img]')
-          .evaluate((el) => getComputedStyle(el).height),
-        '280px',
-      );
-      assert.equal(await staticPage.getByRole('table').count(), 31);
-      await file(
-        dir,
-        'evidence/before.html',
-        await staticPage.locator('main').innerHTML(),
-      );
-      await staticPage.close();
-    }
-    await page.goto(url);
-    await page.waitForFunction(() => window.__observers.length >= 2);
-    assert.equal(await page.locator('#responsive svg').count(), 0);
-    assert.equal(await page.getByRole('table').count(), 31);
-    if (donutBefore)
-      assert.equal(
-        await page.locator('#donut-explicit').innerHTML(),
-        donutBefore,
-      );
-    if (donutResponsiveBefore)
-      assert.equal(
-        await page.locator('#donut-responsive').innerHTML(),
-        donutResponsiveBefore,
-      );
-    if (pieBefore)
-      assert.equal(
-        await page.locator('#pie-explicit svg').evaluate((el) => el.outerHTML),
-        pieBefore,
-      );
-    if (pieResponsiveBefore)
-      assert.equal(
-        await page.locator('#pie-responsive').innerHTML(),
-        pieResponsiveBefore,
-      );
-    if (responsiveBefore)
-      assert.equal(
-        await page.locator('#responsive').innerHTML(),
-        responsiveBefore,
-      );
-    if (before)
-      assert.equal(
-        await page.locator('#explicit svg').evaluate((el) => el.outerHTML),
-        before,
-      );
-    if (areaBefore)
-      assert.equal(
-        await page.locator('#area-explicit svg').evaluate((el) => el.outerHTML),
-        areaBefore,
-      );
-    if (areaResponsiveBefore)
-      assert.equal(
-        await page.locator('#area-responsive').innerHTML(),
-        areaResponsiveBefore,
-      );
-    await file(
-      dir,
-      'evidence/hydrated-before-measurement.html',
-      await page.locator('main').innerHTML(),
-    );
-    if (barBefore)
-      assert.equal(
-        await page
-          .locator('#bar-horizontal svg')
-          .evaluate((el) => el.outerHTML),
-        barBefore,
-      );
-    if (barResponsiveBefore)
-      assert.equal(
-        await page.locator('#bar-responsive').innerHTML(),
-        barResponsiveBefore,
-      );
-    await page.evaluate(() => window.__release());
-    await page.locator('#responsive svg').waitFor();
-    assert.equal(
-      await page.locator('#independent svg').getAttribute('width'),
-      '320',
-    );
-    const width = Number(
-      await page.locator('#responsive svg').getAttribute('width'),
-    );
-    await page.locator('#bar-responsive svg').waitFor();
-    const barWidth = Number(
-      await page.locator('#bar-responsive svg').getAttribute('width'),
-    );
-    await page.setViewportSize({ width: 700, height: 1200 });
-    await page.waitForFunction(
-      (previous) =>
-        Number(
-          document.querySelector('#responsive svg')?.getAttribute('width'),
-        ) < previous,
-      width,
-    );
-    assert.equal(
-      await page.locator('#independent svg').getAttribute('width'),
-      '320',
-    );
-    await page.waitForFunction(
-      (previous) =>
-        Number(
-          document.querySelector('#bar-responsive svg')?.getAttribute('width'),
-        ) < previous,
-      barWidth,
-    );
-    const ids = await page
-      .locator('[id]')
-      .evaluateAll((elements) => elements.map((el) => el.id));
-    assert.equal(new Set(ids).size, ids.length);
-    assert(
-      await page
-        .locator('[aria-labelledby],[aria-describedby]')
-        .evaluateAll((elements) =>
-          elements.every((el) =>
-            ['aria-labelledby', 'aria-describedby'].every((attr) =>
-              (el.getAttribute(attr) ?? '')
-                .split(' ')
-                .filter(Boolean)
-                .every((id) => document.getElementById(id)),
-            ),
-          ),
-        ),
-    );
-    await page.locator('#explicit [role=button]').first().focus();
-    await page.keyboard.press('End');
-    assert.equal(
-      await page
-        .locator('#explicit [role=button]')
-        .last()
-        .getAttribute('tabindex'),
-      '0',
-    );
-    assert.equal(await page.getByRole('tooltip').count(), 1);
-    await page.keyboard.press('Escape');
-    assert.equal(await page.getByRole('tooltip').count(), 0);
-    for (const section of [
-      '#interactive',
-      '#area-interactive',
-      '#bar-interactive',
-      '#bar-horizontal-interactive',
-      '#pie-interactive',
-      '#donut-interactive',
-    ]) {
-      const ringPoint = async (side) => {
-        await page.locator(`${section} svg`).scrollIntoViewIfNeeded();
-        return page.locator(`${section} svg`).evaluate((el, side) => {
-          const m = el.getScreenCTM();
-          return {
-            x: m.a * (240 + side * 105.6) + m.e,
-            y: m.d * 140 + m.f,
+        const page = await context.newPage();
+        page.on('console', (message) => {
+          if (message.type() === 'error') errors.push(message.text());
+        });
+        page.on('response', (response) => {
+          if (response.status() >= 400)
+            errors.push(`${response.status()} ${response.url()}`);
+        });
+        page.on('pageerror', (error) => errors.push(error.message));
+        // Gate native observer delivery so pre-measurement hydration can be inspected.
+        await page.addInitScript(() => {
+          window.__observers = [];
+          const Native = window.ResizeObserver;
+          window.ResizeObserver = class {
+            constructor(callback) {
+              this.native = new Native((entries, observer) => {
+                this.entries = entries;
+                if (window.__measure) callback(entries, observer);
+              });
+              this.callback = callback;
+              window.__observers.push(this);
+            }
+            observe(element) {
+              this.native.observe(element);
+            }
+            disconnect() {
+              this.disconnected = true;
+              this.native.disconnect();
+            }
           };
-        }, side);
-      };
-      const clickFirst = async () => {
-        if (section === '#donut-interactive') {
-          const p = await ringPoint(1);
-          await page.mouse.click(p.x, p.y);
-        } else await page.locator(`${section} [role=button]`).first().click();
-      };
-      await page.locator(`${section} [role=button]`).first().focus();
-      {
-        if (section === '#donut-interactive') {
-          const p = await ringPoint(-1);
-          await page.mouse.move(p.x, p.y);
-        } else await page.locator(`${section} [role=button]`).last().hover();
+          window.__release = () => {
+            window.__measure = true;
+            window.__observers.forEach((o) => {
+              if (o.entries) o.callback(o.entries, o.native);
+            });
+          };
+        });
+        let donutBefore;
+        let donutResponsiveBefore;
+        let pieBefore;
+        let pieResponsiveBefore;
+        let barBefore;
+        let barResponsiveBefore;
+        let before;
+        let responsiveBefore;
+        let areaBefore;
+        let areaResponsiveBefore;
+        if (kind === 'next') {
+          const staticPage = await browser.newPage({
+            javaScriptEnabled: false,
+          });
+          await staticPage.goto(url);
+          donutBefore = await staticPage.locator('#donut-explicit').innerHTML();
+          donutResponsiveBefore = await staticPage
+            .locator('#donut-responsive')
+            .innerHTML();
+          assert.equal(
+            await staticPage
+              .locator('#donut-negative [data-donut-center]')
+              .count(),
+            0,
+          );
+          assert.equal(
+            await staticPage
+              .locator('#donut-single [data-donut-center]')
+              .textContent(),
+            '0',
+          );
+          pieBefore = await staticPage
+            .locator('#pie-explicit svg')
+            .evaluate((el) => el.outerHTML);
+          pieResponsiveBefore = await staticPage
+            .locator('#pie-responsive')
+            .innerHTML();
+          assert.equal(
+            await staticPage
+              .locator('#pie-single [data-layer=marks] path')
+              .count(),
+            1,
+          );
+          assert.equal(
+            await staticPage.locator('#pie-negative svg').count(),
+            0,
+          );
+          barBefore = await staticPage
+            .locator('#bar-horizontal svg')
+            .evaluate((el) => el.outerHTML);
+          barResponsiveBefore = await staticPage
+            .locator('#bar-responsive')
+            .innerHTML();
+          responsiveBefore = await staticPage
+            .locator('#responsive')
+            .innerHTML();
+          areaBefore = await staticPage
+            .locator('#area-explicit svg')
+            .evaluate((el) => el.outerHTML);
+          areaResponsiveBefore = await staticPage
+            .locator('#area-responsive')
+            .innerHTML();
+          assert.equal(
+            await staticPage.locator('#area-responsive svg').count(),
+            0,
+          );
+          assert.equal(await staticPage.locator('#area-time svg').count(), 0);
+          before = await staticPage
+            .locator('#explicit svg')
+            .evaluate((el) => el.outerHTML);
+          assert.equal(
+            await staticPage.locator('#explicit svg').getAttribute('viewBox'),
+            '0 0 640 280',
+          );
+          assert.equal(await staticPage.locator('#responsive svg').count(), 0);
+          assert.equal(await staticPage.locator('#local-time svg').count(), 0);
+          assert.equal(await staticPage.locator('[role=tooltip]').count(), 0);
+          assert.equal(
+            await staticPage
+              .locator('#responsive [role=img]')
+              .evaluate((el) => getComputedStyle(el).height),
+            '280px',
+          );
+          assert.equal(await staticPage.getByRole('table').count(), 31);
+          await file(
+            dir,
+            'evidence/before.html',
+            await staticPage.locator('main').innerHTML(),
+          );
+          await staticPage.close();
+        }
+        await page.goto(url);
+        await page.waitForFunction(() => window.__observers.length >= 2);
+        assert.equal(await page.locator('#responsive svg').count(), 0);
+        assert.equal(await page.getByRole('table').count(), 31);
+        if (donutBefore)
+          assert.equal(
+            await page.locator('#donut-explicit').innerHTML(),
+            donutBefore,
+          );
+        if (donutResponsiveBefore)
+          assert.equal(
+            await page.locator('#donut-responsive').innerHTML(),
+            donutResponsiveBefore,
+          );
+        if (pieBefore)
+          assert.equal(
+            await page
+              .locator('#pie-explicit svg')
+              .evaluate((el) => el.outerHTML),
+            pieBefore,
+          );
+        if (pieResponsiveBefore)
+          assert.equal(
+            await page.locator('#pie-responsive').innerHTML(),
+            pieResponsiveBefore,
+          );
+        if (responsiveBefore)
+          assert.equal(
+            await page.locator('#responsive').innerHTML(),
+            responsiveBefore,
+          );
+        if (before)
+          assert.equal(
+            await page.locator('#explicit svg').evaluate((el) => el.outerHTML),
+            before,
+          );
+        if (areaBefore)
+          assert.equal(
+            await page
+              .locator('#area-explicit svg')
+              .evaluate((el) => el.outerHTML),
+            areaBefore,
+          );
+        if (areaResponsiveBefore)
+          assert.equal(
+            await page.locator('#area-responsive').innerHTML(),
+            areaResponsiveBefore,
+          );
+        await file(
+          dir,
+          'evidence/hydrated-before-measurement.html',
+          await page.locator('main').innerHTML(),
+        );
+        if (barBefore)
+          assert.equal(
+            await page
+              .locator('#bar-horizontal svg')
+              .evaluate((el) => el.outerHTML),
+            barBefore,
+          );
+        if (barResponsiveBefore)
+          assert.equal(
+            await page.locator('#bar-responsive').innerHTML(),
+            barResponsiveBefore,
+          );
+        await page.evaluate(() => window.__release());
+        await page.locator('#responsive svg').waitFor();
+        assert.equal(
+          await page.locator('#independent svg').getAttribute('width'),
+          '320',
+        );
+        const width = Number(
+          await page.locator('#responsive svg').getAttribute('width'),
+        );
+        await page.locator('#bar-responsive svg').waitFor();
+        const barWidth = Number(
+          await page.locator('#bar-responsive svg').getAttribute('width'),
+        );
+        await page.setViewportSize({ width: 700, height: 1200 });
+        await page.waitForFunction(
+          (previous) =>
+            Number(
+              document.querySelector('#responsive svg')?.getAttribute('width'),
+            ) < previous,
+          width,
+        );
+        assert.equal(
+          await page.locator('#independent svg').getAttribute('width'),
+          '320',
+        );
+        await page.waitForFunction(
+          (previous) =>
+            Number(
+              document
+                .querySelector('#bar-responsive svg')
+                ?.getAttribute('width'),
+            ) < previous,
+          barWidth,
+        );
+        const ids = await page
+          .locator('[id]')
+          .evaluateAll((elements) => elements.map((el) => el.id));
+        assert.equal(new Set(ids).size, ids.length);
+        assert(
+          await page
+            .locator('[aria-labelledby],[aria-describedby]')
+            .evaluateAll((elements) =>
+              elements.every((el) =>
+                ['aria-labelledby', 'aria-describedby'].every((attr) =>
+                  (el.getAttribute(attr) ?? '')
+                    .split(' ')
+                    .filter(Boolean)
+                    .every((id) => document.getElementById(id)),
+                ),
+              ),
+            ),
+        );
+        await page.locator('#explicit [role=button]').first().focus();
+        await page.keyboard.press('End');
         assert.equal(
           await page
-            .locator(`${section} [role=button]`)
-            .first()
+            .locator('#explicit [role=button]')
+            .last()
             .getAttribute('tabindex'),
           '0',
         );
-        assert.equal(
+        assert.equal(await page.getByRole('tooltip').count(), 1);
+        await page.keyboard.press('Escape');
+        assert.equal(await page.getByRole('tooltip').count(), 0);
+        for (const section of [
+          '#interactive',
+          '#area-interactive',
+          '#bar-interactive',
+          '#bar-horizontal-interactive',
+          '#pie-interactive',
+          '#donut-interactive',
+        ]) {
+          const ringPoint = async (side) => {
+            await page.locator(`${section} svg`).scrollIntoViewIfNeeded();
+            return page.locator(`${section} svg`).evaluate((el, side) => {
+              const m = el.getScreenCTM();
+              return {
+                x: m.a * (240 + side * 105.6) + m.e,
+                y: m.d * 140 + m.f,
+              };
+            }, side);
+          };
+          const clickFirst = async () => {
+            if (section === '#donut-interactive') {
+              const p = await ringPoint(1);
+              await page.mouse.click(p.x, p.y);
+            } else
+              await page.locator(`${section} [role=button]`).first().click();
+          };
+          await page.locator(`${section} [role=button]`).first().focus();
+          {
+            if (section === '#donut-interactive') {
+              const p = await ringPoint(-1);
+              await page.mouse.move(p.x, p.y);
+            } else
+              await page.locator(`${section} [role=button]`).last().hover();
+            assert.equal(
+              await page
+                .locator(`${section} [role=button]`)
+                .first()
+                .getAttribute('tabindex'),
+              '0',
+            );
+            assert.equal(
+              await page
+                .locator(`${section} [role=button]`)
+                .last()
+                .getAttribute('tabindex'),
+              '-1',
+            );
+          }
+          await page.keyboard.press('ArrowRight');
+          await page.keyboard.press('Enter');
+          assert.equal(
+            await page.locator(`${section} output`).textContent(),
+            '1:keyboard:1',
+          );
+          await clickFirst();
+          assert.equal(
+            await page.locator(`${section} output`).textContent(),
+            '0:pointer:2',
+          );
           await page
             .locator(`${section} [role=button]`)
             .last()
-            .getAttribute('tabindex'),
-          '-1',
-        );
-      }
-      await page.keyboard.press('ArrowRight');
-      await page.keyboard.press('Enter');
-      assert.equal(
-        await page.locator(`${section} output`).textContent(),
-        '1:keyboard:1',
-      );
-      await clickFirst();
-      assert.equal(
-        await page.locator(`${section} output`).textContent(),
-        '0:pointer:2',
-      );
-      await page
-        .locator(`${section} [role=button]`)
-        .last()
-        .scrollIntoViewIfNeeded();
-      let hit = await page
-        .locator(`${section} [role=button]`)
-        .last()
-        .boundingBox();
-      if (section === '#donut-interactive') {
-        const p = await page.locator(`${section} svg`).evaluate((el) => {
-          const m = el.getScreenCTM();
-          return { x: m.a * (240 - 105.6) + m.e, y: m.d * 140 + m.f };
-        });
-        hit = { x: p.x, y: p.y, width: 0, height: 0 };
-      }
-      assert(hit);
-      await page.touchscreen.tap(hit.x + hit.width / 2, hit.y + hit.height / 2);
-      await page.waitForFunction(
-        ({ selector, expected }) =>
-          document.querySelector(selector)?.textContent === expected,
-        { selector: `${section} output`, expected: '1:touch:3' },
-      );
-      assert.equal(
-        await page.locator(`${section} output`).textContent(),
-        '1:touch:3',
-      );
-      assert.equal(await page.getByRole('tooltip').count(), 1);
-      await page.getByRole('button', { name: 'Dismiss inspection' }).click();
-      assert.equal(await page.getByRole('tooltip').count(), 0);
-      await page
-        .locator(`${section} [role=button]`)
-        .last()
-        .evaluate((el) =>
-          el.dispatchEvent(
-            new window.MouseEvent('click', { bubbles: true, detail: 0 }),
-          ),
-        );
-      await page.waitForFunction(
-        ({ selector, expected }) =>
-          document.querySelector(selector)?.textContent === expected,
-        { selector: `${section} output`, expected: '1:keyboard:4' },
-      );
-      await clickFirst();
-      await page.waitForFunction(
-        ({ selector, expected }) =>
-          document.querySelector(selector)?.textContent === expected,
-        { selector: `${section} output`, expected: '0:pointer:5' },
-      );
-      await page
-        .locator(`${section} [role=button]`)
-        .first()
-        .evaluate((el) => {
-          el.dispatchEvent(
-            new window.KeyboardEvent('keydown', {
-              key: 'Enter',
-              bubbles: true,
-              cancelable: true,
-            }),
+            .scrollIntoViewIfNeeded();
+          let hit = await page
+            .locator(`${section} [role=button]`)
+            .last()
+            .boundingBox();
+          if (section === '#donut-interactive') {
+            const p = await page.locator(`${section} svg`).evaluate((el) => {
+              const m = el.getScreenCTM();
+              return { x: m.a * (240 - 105.6) + m.e, y: m.d * 140 + m.f };
+            });
+            hit = { x: p.x, y: p.y, width: 0, height: 0 };
+          }
+          assert(hit);
+          await page.touchscreen.tap(
+            hit.x + hit.width / 2,
+            hit.y + hit.height / 2,
           );
-          el.dispatchEvent(
-            new window.KeyboardEvent('keyup', {
-              key: 'Enter',
-              bubbles: true,
-              cancelable: true,
-            }),
+          await page.waitForFunction(
+            ({ selector, expected }) =>
+              document.querySelector(selector)?.textContent === expected,
+            { selector: `${section} output`, expected: '1:touch:3' },
           );
-          el.dispatchEvent(
-            new window.MouseEvent('click', { bubbles: true, detail: 0 }),
+          assert.equal(
+            await page.locator(`${section} output`).textContent(),
+            '1:touch:3',
           );
-        });
-      await page.waitForFunction(
-        ({ selector, expected }) =>
-          document.querySelector(selector)?.textContent === expected,
-        { selector: `${section} output`, expected: '0:keyboard:6' },
-      );
+          assert.equal(await page.getByRole('tooltip').count(), 1);
+          await page
+            .getByRole('button', { name: 'Dismiss inspection' })
+            .click();
+          assert.equal(await page.getByRole('tooltip').count(), 0);
+          await page
+            .locator(`${section} [role=button]`)
+            .last()
+            .evaluate((el) =>
+              el.dispatchEvent(
+                new window.MouseEvent('click', { bubbles: true, detail: 0 }),
+              ),
+            );
+          await page.waitForFunction(
+            ({ selector, expected }) =>
+              document.querySelector(selector)?.textContent === expected,
+            { selector: `${section} output`, expected: '1:keyboard:4' },
+          );
+          await clickFirst();
+          await page.waitForFunction(
+            ({ selector, expected }) =>
+              document.querySelector(selector)?.textContent === expected,
+            { selector: `${section} output`, expected: '0:pointer:5' },
+          );
+          await page
+            .locator(`${section} [role=button]`)
+            .first()
+            .evaluate((el) => {
+              el.dispatchEvent(
+                new window.KeyboardEvent('keydown', {
+                  key: 'Enter',
+                  bubbles: true,
+                  cancelable: true,
+                }),
+              );
+              el.dispatchEvent(
+                new window.KeyboardEvent('keyup', {
+                  key: 'Enter',
+                  bubbles: true,
+                  cancelable: true,
+                }),
+              );
+              el.dispatchEvent(
+                new window.MouseEvent('click', { bubbles: true, detail: 0 }),
+              );
+            });
+          await page.waitForFunction(
+            ({ selector, expected }) =>
+              document.querySelector(selector)?.textContent === expected,
+            { selector: `${section} output`, expected: '0:keyboard:6' },
+          );
 
-      await page.keyboard.press('Escape');
-    }
-    await page.keyboard.press('Escape');
-    assert.equal(
-      await page
-        .locator('#responsive path')
-        .evaluate((el) => getComputedStyle(el).stroke),
-      'rgb(8, 107, 98)',
-    );
-    assert.equal(
-      await page
-        .locator('#responsive table')
-        .evaluate((el) => getComputedStyle(el).clipPath),
-      'inset(50%)',
-    );
-    await page.locator('#pie-responsive svg').waitFor();
-    const pieWidth = Number(
-      await page.locator('#pie-responsive svg').getAttribute('width'),
-    );
-    await page.setViewportSize({ width: 480, height: 1200 });
-    await page.waitForFunction(
-      (previous) =>
-        Number(
-          document.querySelector('#pie-responsive svg')?.getAttribute('width'),
-        ) < previous,
-      pieWidth,
-    );
-    assert.equal(
-      await page.locator('#pie-explicit [data-layer=marks] path').count(),
-      2,
-    );
-    assert.equal(await page.locator('#pie-explicit table tbody tr').count(), 4);
-    assert.equal(await page.locator('#pie-explicit li').count(), 2);
-    assert.equal(await page.locator('#pie-explicit text').count(), 2);
-    await page.locator('#pie-explicit [role=button]').first().focus();
-    assert(
-      (
-        await page.locator('#pie-explicit [role=tooltip]').textContent()
-      ).includes('25.0%'),
-    );
-    await page.screenshot({
-      path: join(dir, 'evidence/pie-focus.png'),
-      fullPage: true,
-    });
-    await page.keyboard.press('Escape');
-    await page.setViewportSize({ width: 700, height: 1200 });
-    await page.locator('#area-responsive svg').waitFor();
-    await page.locator('#area-time svg').waitFor();
-    for (const section of [
-      'area-explicit',
-      'area-negative',
-      'area-mixed',
-      'area-gaps',
-    ]) {
-      assert((await page.locator(`#${section} [data-area-fill]`).count()) > 0);
-      assert(
-        await page
-          .locator(`#${section} [data-area-fill]`)
-          .evaluateAll((nodes) =>
-            nodes.every(
-              (n) =>
-                n.getAttribute('stroke') === 'none' &&
-                n.getAttribute('fill-opacity') === '0.2' &&
-                !/NaN|Infinity/.test(n.getAttribute('d')),
-            ),
-          ),
-      );
-      assert(
-        await page
-          .locator(`#${section} [data-area-boundary]`)
-          .evaluateAll((nodes) =>
-            nodes.every(
-              (n) =>
-                n.getAttribute('fill') === 'none' &&
-                !n.getAttribute('d').includes('Z'),
-            ),
-          ),
-      );
-      assert(
-        await page
-          .locator(`#${section} [data-layer="marks"]`)
-          .getAttribute('clip-path'),
-      );
-    }
-    assert.equal(
-      await page
-        .locator('#area-gaps [data-series="a"] [data-area-fill]')
-        .count(),
-      1,
-    );
-    assert.equal(
-      await page.locator('#area-gaps [data-series="a"] circle').count(),
-      3,
-    );
-    for (const [section, sign] of [
-      ['area-explicit', 1],
-      ['area-negative', -1],
-    ]) {
-      assert(
-        await page
-          .locator(`#${section} [data-area-fill]`)
-          .evaluate((node, sign) => {
-            const coords = [
-              ...node.getAttribute('d').matchAll(/[ML]([^,]+),([^MLZ]+)/g),
-            ].map((m) => [Number(m[1]), Number(m[2])]);
-            const baseline = coords.at(-1)[1];
-            return coords
-              .slice(0, coords.length / 2)
-              .every((p) => (sign > 0 ? p[1] < baseline : p[1] > baseline));
-          }, sign),
-      );
-    }
-    await page.locator('#bar-responsive svg').waitFor();
-    for (const [section, horizontal] of [
-      ['bar-vertical', false],
-      ['bar-horizontal', true],
-    ]) {
-      assert.equal(await page.locator(`#${section} [data-bar]`).count(), 5);
-      assert.equal(await page.locator(`#${section} [role=button]`).count(), 5);
-      assert(
-        await page
-          .locator(`#${section} [data-bar]`)
-          .evaluateAll((nodes, horizontal) => {
-            const start = horizontal ? 'x' : 'y',
-              extent = horizontal ? 'width' : 'height';
-            const n = (el, attr) => Number(el.getAttribute(attr));
-            const zero = nodes.find(
-              (el) => el.getAttribute('data-source-index') === '2',
-            );
-            const baseline = n(zero, start);
-            return (
-              n(zero, extent) === 0 &&
-              nodes.every((el) => {
-                const row = Number(el.getAttribute('data-source-index'));
-                const key = el.getAttribute('data-series');
-                const value = key === 'a' ? [-2, 3, 0][row] : [2, -3][row];
-                const positive = horizontal ? value < 0 : value > 0;
-                return (
-                  value === 0 ||
-                  (positive
-                    ? n(el, start) < baseline &&
-                      Math.abs(n(el, start) + n(el, extent) - baseline) < 1e-8
-                    : Math.abs(n(el, start) - baseline) < 1e-8)
-                );
-              })
-            );
-          }, horizontal),
-      );
-      assert(
-        (
+          await page.keyboard.press('Escape');
+        }
+        await page.keyboard.press('Escape');
+        assert.equal(
           await page
-            .locator(`#${section} [data-axis="${horizontal ? 'x' : 'y'}"]`)
-            .textContent()
-        ).includes('0'),
-      );
-      assert(
-        (
+            .locator('#responsive path')
+            .evaluate((el) => getComputedStyle(el).stroke),
+          'rgb(8, 107, 98)',
+        );
+        assert.equal(
           await page
-            .locator(`#${section} [data-axis="${horizontal ? 'y' : 'x'}"]`)
-            .textContent()
-        ).includes('C'),
-      );
-      await page.locator(`#${section} [role=button]`).first().focus();
-      const tooltip = await page.getByRole('tooltip').textContent();
-      assert(tooltip.includes('A: -2'));
-      assert.equal(tooltip.includes('B: 2'), horizontal);
-      await page.keyboard.press('Escape');
-      await page
-        .locator(`#${section}`)
-        .screenshot({ path: join(dir, `evidence/${section}.png`) });
-    }
-    assert.equal(await page.locator('#bar-clipped [data-bar]').count(), 3);
-    assert.equal(await page.locator('#bar-clipped [role=button]').count(), 1);
-    for (const chart of await page.locator('[data-narrow]').all()) {
-      await chart.locator('svg').waitFor();
-      await chart.locator('[role=button]').first().focus();
-      assert(
-        await chart.evaluate((el) => {
-          const t = el.querySelector('[role=tooltip]');
-          const table = el.querySelector('table');
-          return (
-            t.scrollWidth <= t.clientWidth + 1 &&
-            table.getBoundingClientRect().width <= 321
-          );
-        }),
-        'Installed package wraps long tooltip and table values',
-      );
-      await page.keyboard.press('Escape');
-    }
-    for (const [button, state] of [
-      ['Empty integrated charts', 'empty'],
-      ['Unusable integrated charts', 'unusable'],
-      ['Replace integrated data', 'replacement'],
-    ]) {
-      await page.getByRole('button', { name: button, exact: true }).click();
-      assert.equal(await page.locator('#integrated-narrow table').count(), 3);
-      assert.equal(
-        await page.locator('#integrated-narrow svg').count(),
-        state === 'replacement' ? 3 : 0,
-      );
-      if (state === 'replacement')
+            .locator('#responsive table')
+            .evaluate((el) => getComputedStyle(el).clipPath),
+          'inset(50%)',
+        );
+        await page.locator('#pie-responsive svg').waitFor();
+        const pieWidth = Number(
+          await page.locator('#pie-responsive svg').getAttribute('width'),
+        );
+        await page.setViewportSize({ width: 480, height: 1200 });
+        await page.waitForFunction(
+          (previous) =>
+            Number(
+              document
+                .querySelector('#pie-responsive svg')
+                ?.getAttribute('width'),
+            ) < previous,
+          pieWidth,
+        );
+        assert.equal(
+          await page.locator('#pie-explicit [data-layer=marks] path').count(),
+          2,
+        );
+        assert.equal(
+          await page.locator('#pie-explicit table tbody tr').count(),
+          4,
+        );
+        assert.equal(await page.locator('#pie-explicit li').count(), 2);
+        assert.equal(await page.locator('#pie-explicit text').count(), 2);
+        await page.locator('#pie-explicit [role=button]').first().focus();
         assert(
-          (await page.locator('#integrated-narrow').textContent()).includes(
-            'Replacement',
-          ),
+          (
+            await page.locator('#pie-explicit [role=tooltip]').textContent()
+          ).includes('25.0%'),
         );
-    }
-    await page.locator('#donut-responsive svg').waitFor();
-    for (const section of [
-      '#donut-explicit',
-      '#donut-single',
-      '#donut-responsive',
-      '#donut-interactive',
-    ]) {
-      const bounds = await page.locator(section).evaluate((el) => {
-        const svg = el.querySelector('svg'),
-          center = el.querySelector('[data-donut-center]');
-        const a = svg.getBoundingClientRect(),
-          b = center.getBoundingClientRect();
-        return {
-          dx: Math.abs(a.x + a.width / 2 - b.x - b.width / 2),
-          dy: Math.abs(a.y + a.height / 2 - b.y - b.height / 2),
-        };
-      });
-      assert(bounds.dx < 1 && bounds.dy < 1, section + ' center alignment');
-    }
-    const interactiveDonut = page.locator('#donut-interactive');
-    const previous = await interactiveDonut.locator('output').textContent();
-    await interactiveDonut.getByRole('button', { name: 'Details 0' }).click();
-    assert.equal(
-      await interactiveDonut.locator('output').textContent(),
-      previous,
-    );
-    await interactiveDonut.getByRole('button', { name: 'Details 1' }).focus();
-    await page.keyboard.press('Shift+Tab');
-    assert.equal(
-      await page.evaluate(() => document.activeElement?.tagName),
-      'path',
-    );
-    await page.keyboard.press('Tab');
-    assert.equal(
-      await page.evaluate(() => document.activeElement?.textContent),
-      'Details 1',
-    );
-    const singleDonut = page.locator('#donut-single');
-    const singleOutput = singleDonut.getByRole('status', {
-      name: 'Single Donut activation',
-    });
-    const singleControl = singleDonut.locator('svg [role=button]');
-    assert.equal(
-      await singleControl.count(),
-      1,
-      'Single Donut has one segment',
-    );
-    assert.equal(await singleOutput.textContent(), 'None:0');
-    // Read the full ring's actual arc radii and current SVG screen transform.
-    // The off-center hole point avoids the inscribed center-content overlay.
-    async function singleDonutPoint(kind) {
-      await singleControl.scrollIntoViewIfNeeded();
-      return singleControl.evaluate((path, kind) => {
-        const svg = path.ownerSVGElement;
-        const radii = [
-          ...path.getAttribute('d').matchAll(/A([\d.eE+-]+),([\d.eE+-]+)/g),
-        ].map((match) => {
-          if (Number(match[1]) !== Number(match[2]))
-            throw new Error('Single Donut must have circular arcs');
-          return Number(match[1]);
+        await page.screenshot({
+          path: join(
+            evidenceRun.directory,
+            `${kind}-${major}`,
+            'pie-focus.png',
+          ),
+          fullPage: true,
         });
-        if (
-          radii.length !== 4 ||
-          radii.some((r) => !Number.isFinite(r) || r <= 0)
-        )
-          throw new Error(
-            'Single Donut full ring must expose four finite arcs',
+        await page.keyboard.press('Escape');
+        await page.setViewportSize({ width: 700, height: 1200 });
+        await page.locator('#area-responsive svg').waitFor();
+        await page.locator('#area-time svg').waitFor();
+        for (const section of [
+          'area-explicit',
+          'area-negative',
+          'area-mixed',
+          'area-gaps',
+        ]) {
+          assert(
+            (await page.locator(`#${section} [data-area-fill]`).count()) > 0,
           );
-        const inner = Math.min(...radii),
-          outer = Math.max(...radii);
-        if (!(inner < outer))
-          throw new Error('Single Donut needs an empty hole');
-        const box = path.getBBox();
-        const point = new DOMPoint(
-          box.x + box.width / 2,
-          box.y +
-            box.height / 2 -
-            (kind === 'hole' ? inner * 0.9 : (inner + outer) / 2),
+          assert(
+            await page
+              .locator(`#${section} [data-area-fill]`)
+              .evaluateAll((nodes) =>
+                nodes.every(
+                  (n) =>
+                    n.getAttribute('stroke') === 'none' &&
+                    n.getAttribute('fill-opacity') === '0.2' &&
+                    !/NaN|Infinity/.test(n.getAttribute('d')),
+                ),
+              ),
+          );
+          assert(
+            await page
+              .locator(`#${section} [data-area-boundary]`)
+              .evaluateAll((nodes) =>
+                nodes.every(
+                  (n) =>
+                    n.getAttribute('fill') === 'none' &&
+                    !n.getAttribute('d').includes('Z'),
+                ),
+              ),
+          );
+          assert(
+            await page
+              .locator(`#${section} [data-layer="marks"]`)
+              .getAttribute('clip-path'),
+          );
+        }
+        assert.equal(
+          await page
+            .locator('#area-gaps [data-series="a"] [data-area-fill]')
+            .count(),
+          1,
         );
-        if (path.isPointInFill(point) !== (kind === 'ring'))
-          throw new Error(
-            'Single Donut ' + kind + ' point contradicts rendered fill',
+        assert.equal(
+          await page.locator('#area-gaps [data-series="a"] circle').count(),
+          3,
+        );
+        for (const [section, sign] of [
+          ['area-explicit', 1],
+          ['area-negative', -1],
+        ]) {
+          assert(
+            await page
+              .locator(`#${section} [data-area-fill]`)
+              .evaluate((node, sign) => {
+                const coords = [
+                  ...node.getAttribute('d').matchAll(/[ML]([^,]+),([^MLZ]+)/g),
+                ].map((m) => [Number(m[1]), Number(m[2])]);
+                const baseline = coords.at(-1)[1];
+                return coords
+                  .slice(0, coords.length / 2)
+                  .every((p) => (sign > 0 ? p[1] < baseline : p[1] > baseline));
+              }, sign),
           );
-        const matrix = path.getScreenCTM();
-        if (!matrix) throw new Error('Single Donut has no screen transform');
-        const screen = point.matrixTransform(matrix);
-        const hit = document.elementFromPoint(screen.x, screen.y);
-        if (hit !== (kind === 'hole' ? svg : path))
-          throw new Error(
-            'Single Donut ' +
-              kind +
-              ' must hit ' +
-              (kind === 'hole' ? 'uncovered SVG' : 'its segment'),
+        }
+        await page.locator('#bar-responsive svg').waitFor();
+        for (const [section, horizontal] of [
+          ['bar-vertical', false],
+          ['bar-horizontal', true],
+        ]) {
+          assert.equal(await page.locator(`#${section} [data-bar]`).count(), 5);
+          assert.equal(
+            await page.locator(`#${section} [role=button]`).count(),
+            5,
           );
-        return { x: screen.x, y: screen.y };
-      }, kind);
-    }
-    let singleActivations = 0;
-    for (const viewport of [700, 480]) {
-      await page.setViewportSize({ width: viewport, height: 1200 });
-      const label = `Single Donut at ${viewport}px (${kind}, React ${major})`;
-      const beforeHole = await singleOutput.textContent();
-      const hole = await singleDonutPoint('hole');
-      await page.mouse.click(hole.x, hole.y);
-      assert.equal(
-        await singleOutput.textContent(),
-        beforeHole,
-        label + ': hole must not activate its segment',
-      );
-      assert.equal(
-        await interactiveDonut.locator('output').textContent(),
-        previous,
-        label + ': hole must not affect sibling Donut',
-      );
-      const ring = await singleDonutPoint('ring');
-      await page.mouse.click(ring.x, ring.y);
-      singleActivations++;
-      assert.equal(
-        await singleOutput.textContent(),
-        `0:Complete:1:pointer:${singleActivations}`,
-        label + ': ring must activate the intended source segment exactly once',
-      );
-      assert.equal(
-        await interactiveDonut.locator('output').textContent(),
-        previous,
-        label + ': ring must not affect sibling Donut',
-      );
-      const afterRing = await singleOutput.textContent();
-      const holeAfterRing = await singleDonutPoint('hole');
-      await page.mouse.click(holeAfterRing.x, holeAfterRing.y);
-      assert.equal(
-        await singleOutput.textContent(),
-        afterRing,
-        label + ': hole after ring activation must remain inert',
-      );
-      assert.equal(
-        await interactiveDonut.locator('output').textContent(),
-        previous,
-        label + ': later hole must not affect sibling Donut',
-      );
-    }
-    await page.setViewportSize({ width: 650, height: 1200 });
-    await page.waitForTimeout(100);
-    const resized = await page.locator('#donut-responsive').evaluate((el) => {
-      const svg = el.querySelector('svg').getBoundingClientRect(),
-        center = el
-          .querySelector('[data-donut-center]')
-          .getBoundingClientRect();
-      return (
-        Math.abs(svg.x + svg.width / 2 - center.x - center.width / 2) +
-        Math.abs(svg.y + svg.height / 2 - center.y - center.height / 2)
-      );
-    });
-    assert(resized < 1);
-    await page
-      .locator('#donut-explicit')
-      .screenshot({ path: join(dir, 'evidence/donut-center.png') });
-    const ax = await page.locator('main').ariaSnapshot();
-    assert(ax.includes('rowheader "Q4"') && ax.includes('Responsive — data'));
-    await file(dir, 'evidence/accessibility.txt', ax);
-    const axe = await new AxeBuilder({ page }).include('main').analyze();
-    assert.deepEqual(axe.violations, []);
-    await file(
-      dir,
-      'evidence/after.html',
-      await page.locator('main').innerHTML(),
-    );
-    await page.screenshot({
-      path: join(dir, 'evidence/after.png'),
-      fullPage: true,
-    });
-    assert.deepEqual(errors, []);
-    if (kind === 'next') {
-      await page.goto(`${url}/pages-check`);
-      await page.waitForFunction(() => window.__observers.length >= 2);
-      await page.evaluate(() => window.__release());
-      await page.locator('#responsive svg').waitFor();
-      assert.equal(await page.getByRole('table').count(), 31);
-      assert.deepEqual(errors, []);
-    } else {
-      await page.evaluate(() => window.__unmount());
-      assert(
-        await page.evaluate(() =>
-          window.__observers.every((o) => o.disconnected),
-        ),
-      );
-      assert.equal(await page.locator('figure').count(), 0);
-      const staticRoots = await browser.newPage({
-        javaScriptEnabled: false,
-      });
-      await staticRoots.goto(`${url}/roots.html`);
-      const rootsBefore = await staticRoots.locator('body').innerHTML();
-      await staticRoots.close();
-      await page.goto(`${url}/roots.html`);
-      await page.waitForTimeout(500);
-      assert.equal(await page.locator('body').innerHTML(), rootsBefore);
-      const rootIds = await page
-        .locator('[id]')
-        .evaluateAll((elements) => elements.map((el) => el.id));
-      assert.equal(new Set(rootIds).size, rootIds.length);
-      assert.equal(await page.locator('table').count(), 7);
-      await page.evaluate(() => window.__release());
-      await page.locator('#root4 svg').waitFor();
-      await page.locator('#root6 svg').waitFor();
-      assert.equal(await page.locator('svg').count(), 7);
-      assert.deepEqual(errors, []);
-      await file(dir, 'evidence/separate-roots.html', rootsBefore);
-    }
-    await context.close();
-    report.checks.push({
-      kind,
-      react: major,
-      status: 'pass',
-      ssr: kind === 'next',
-      browser: true,
-      axeViolations: 0,
-      donutHole:
-        'same-chart hole/ring positive control and sibling isolation at 700/480px',
-    });
-  }
-  try {
-    await withVerificationServer(
-      {
-        args: [
-          join(
-            dir,
-            'node_modules',
-            kind === 'vite' ? 'vite/bin/vite.js' : 'next/dist/bin/next',
+          assert(
+            await page
+              .locator(`#${section} [data-bar]`)
+              .evaluateAll((nodes, horizontal) => {
+                const start = horizontal ? 'x' : 'y',
+                  extent = horizontal ? 'width' : 'height';
+                const n = (el, attr) => Number(el.getAttribute(attr));
+                const zero = nodes.find(
+                  (el) => el.getAttribute('data-source-index') === '2',
+                );
+                const baseline = n(zero, start);
+                return (
+                  n(zero, extent) === 0 &&
+                  nodes.every((el) => {
+                    const row = Number(el.getAttribute('data-source-index'));
+                    const key = el.getAttribute('data-series');
+                    const value = key === 'a' ? [-2, 3, 0][row] : [2, -3][row];
+                    const positive = horizontal ? value < 0 : value > 0;
+                    return (
+                      value === 0 ||
+                      (positive
+                        ? n(el, start) < baseline &&
+                          Math.abs(n(el, start) + n(el, extent) - baseline) <
+                            1e-8
+                        : Math.abs(n(el, start) - baseline) < 1e-8)
+                    );
+                  })
+                );
+              }, horizontal),
+          );
+          assert(
+            (
+              await page
+                .locator(`#${section} [data-axis="${horizontal ? 'x' : 'y'}"]`)
+                .textContent()
+            ).includes('0'),
+          );
+          assert(
+            (
+              await page
+                .locator(`#${section} [data-axis="${horizontal ? 'y' : 'x'}"]`)
+                .textContent()
+            ).includes('C'),
+          );
+          await page.locator(`#${section} [role=button]`).first().focus();
+          const tooltip = await page.getByRole('tooltip').textContent();
+          assert(tooltip.includes('A: -2'));
+          assert.equal(tooltip.includes('B: 2'), horizontal);
+          await page.keyboard.press('Escape');
+          await page.locator(`#${section}`).screenshot({
+            path: join(
+              evidenceRun.directory,
+              `${kind}-${major}`,
+              `${section}.png`,
+            ),
+          });
+        }
+        assert.equal(await page.locator('#bar-clipped [data-bar]').count(), 3);
+        assert.equal(
+          await page.locator('#bar-clipped [role=button]').count(),
+          1,
+        );
+        for (const chart of await page.locator('[data-narrow]').all()) {
+          await chart.locator('svg').waitFor();
+          await chart.locator('[role=button]').first().focus();
+          assert(
+            await chart.evaluate((el) => {
+              const t = el.querySelector('[role=tooltip]');
+              const table = el.querySelector('table');
+              return (
+                t.scrollWidth <= t.clientWidth + 1 &&
+                table.getBoundingClientRect().width <= 321
+              );
+            }),
+            'Installed package wraps long tooltip and table values',
+          );
+          await page.keyboard.press('Escape');
+        }
+        for (const [button, state] of [
+          ['Empty integrated charts', 'empty'],
+          ['Unusable integrated charts', 'unusable'],
+          ['Replace integrated data', 'replacement'],
+        ]) {
+          await page.getByRole('button', { name: button, exact: true }).click();
+          assert.equal(
+            await page.locator('#integrated-narrow table').count(),
+            3,
+          );
+          assert.equal(
+            await page.locator('#integrated-narrow svg').count(),
+            state === 'replacement' ? 3 : 0,
+          );
+          if (state === 'replacement')
+            assert(
+              (await page.locator('#integrated-narrow').textContent()).includes(
+                'Replacement',
+              ),
+            );
+        }
+        await page.locator('#donut-responsive svg').waitFor();
+        for (const section of [
+          '#donut-explicit',
+          '#donut-single',
+          '#donut-responsive',
+          '#donut-interactive',
+        ]) {
+          const bounds = await page.locator(section).evaluate((el) => {
+            const svg = el.querySelector('svg'),
+              center = el.querySelector('[data-donut-center]');
+            const a = svg.getBoundingClientRect(),
+              b = center.getBoundingClientRect();
+            return {
+              dx: Math.abs(a.x + a.width / 2 - b.x - b.width / 2),
+              dy: Math.abs(a.y + a.height / 2 - b.y - b.height / 2),
+            };
+          });
+          assert(bounds.dx < 1 && bounds.dy < 1, section + ' center alignment');
+        }
+        const interactiveDonut = page.locator('#donut-interactive');
+        const previous = await interactiveDonut.locator('output').textContent();
+        await interactiveDonut
+          .getByRole('button', { name: 'Details 0' })
+          .click();
+        assert.equal(
+          await interactiveDonut.locator('output').textContent(),
+          previous,
+        );
+        await interactiveDonut
+          .getByRole('button', { name: 'Details 1' })
+          .focus();
+        await page.keyboard.press('Shift+Tab');
+        assert.equal(
+          await page.evaluate(() => document.activeElement?.tagName),
+          'path',
+        );
+        await page.keyboard.press('Tab');
+        assert.equal(
+          await page.evaluate(() => document.activeElement?.textContent),
+          'Details 1',
+        );
+        const singleDonut = page.locator('#donut-single');
+        const singleOutput = singleDonut.getByRole('status', {
+          name: 'Single Donut activation',
+        });
+        const singleControl = singleDonut.locator('svg [role=button]');
+        assert.equal(
+          await singleControl.count(),
+          1,
+          'Single Donut has one segment',
+        );
+        assert.equal(await singleOutput.textContent(), 'None:0');
+        // Read the full ring's actual arc radii and current SVG screen transform.
+        // The off-center hole point avoids the inscribed center-content overlay.
+        async function singleDonutPoint(kind) {
+          await singleControl.scrollIntoViewIfNeeded();
+          return singleControl.evaluate((path, kind) => {
+            const svg = path.ownerSVGElement;
+            const radii = [
+              ...path.getAttribute('d').matchAll(/A([\d.eE+-]+),([\d.eE+-]+)/g),
+            ].map((match) => {
+              if (Number(match[1]) !== Number(match[2]))
+                throw new Error('Single Donut must have circular arcs');
+              return Number(match[1]);
+            });
+            if (
+              radii.length !== 4 ||
+              radii.some((r) => !Number.isFinite(r) || r <= 0)
+            )
+              throw new Error(
+                'Single Donut full ring must expose four finite arcs',
+              );
+            const inner = Math.min(...radii),
+              outer = Math.max(...radii);
+            if (!(inner < outer))
+              throw new Error('Single Donut needs an empty hole');
+            const box = path.getBBox();
+            const point = new DOMPoint(
+              box.x + box.width / 2,
+              box.y +
+                box.height / 2 -
+                (kind === 'hole' ? inner * 0.9 : (inner + outer) / 2),
+            );
+            if (path.isPointInFill(point) !== (kind === 'ring'))
+              throw new Error(
+                'Single Donut ' + kind + ' point contradicts rendered fill',
+              );
+            const matrix = path.getScreenCTM();
+            if (!matrix)
+              throw new Error('Single Donut has no screen transform');
+            const screen = point.matrixTransform(matrix);
+            const hit = document.elementFromPoint(screen.x, screen.y);
+            if (hit !== (kind === 'hole' ? svg : path))
+              throw new Error(
+                'Single Donut ' +
+                  kind +
+                  ' must hit ' +
+                  (kind === 'hole' ? 'uncovered SVG' : 'its segment'),
+              );
+            return { x: screen.x, y: screen.y };
+          }, kind);
+        }
+        let singleActivations = 0;
+        for (const viewport of [700, 480]) {
+          await page.setViewportSize({ width: viewport, height: 1200 });
+          const label = `Single Donut at ${viewport}px (${kind}, React ${major})`;
+          const beforeHole = await singleOutput.textContent();
+          const hole = await singleDonutPoint('hole');
+          await page.mouse.click(hole.x, hole.y);
+          assert.equal(
+            await singleOutput.textContent(),
+            beforeHole,
+            label + ': hole must not activate its segment',
+          );
+          assert.equal(
+            await interactiveDonut.locator('output').textContent(),
+            previous,
+            label + ': hole must not affect sibling Donut',
+          );
+          const ring = await singleDonutPoint('ring');
+          await page.mouse.click(ring.x, ring.y);
+          singleActivations++;
+          assert.equal(
+            await singleOutput.textContent(),
+            `0:Complete:1:pointer:${singleActivations}`,
+            label +
+              ': ring must activate the intended source segment exactly once',
+          );
+          assert.equal(
+            await interactiveDonut.locator('output').textContent(),
+            previous,
+            label + ': ring must not affect sibling Donut',
+          );
+          const afterRing = await singleOutput.textContent();
+          const holeAfterRing = await singleDonutPoint('hole');
+          await page.mouse.click(holeAfterRing.x, holeAfterRing.y);
+          assert.equal(
+            await singleOutput.textContent(),
+            afterRing,
+            label + ': hole after ring activation must remain inert',
+          );
+          assert.equal(
+            await interactiveDonut.locator('output').textContent(),
+            previous,
+            label + ': later hole must not affect sibling Donut',
+          );
+        }
+        await page.setViewportSize({ width: 650, height: 1200 });
+        await page.waitForTimeout(100);
+        const resized = await page
+          .locator('#donut-responsive')
+          .evaluate((el) => {
+            const svg = el.querySelector('svg').getBoundingClientRect(),
+              center = el
+                .querySelector('[data-donut-center]')
+                .getBoundingClientRect();
+            return (
+              Math.abs(svg.x + svg.width / 2 - center.x - center.width / 2) +
+              Math.abs(svg.y + svg.height / 2 - center.y - center.height / 2)
+            );
+          });
+        assert(resized < 1);
+        await page.locator('#donut-explicit').screenshot({
+          path: join(
+            evidenceRun.directory,
+            `${kind}-${major}`,
+            'donut-center.png',
           ),
-          ...args.slice(1),
-        ],
-        cwd: dir,
-        env,
-        url,
-        identity,
-      },
-      verifyFixture,
-    );
-    serverReport.status = 'stopped';
-  } catch (error) {
-    serverReport.status = 'fail';
-    serverReport.error = String(error.stack ?? error);
-    throw error;
-  }
-}
-try {
-  for (const [major, react, types, domTypes, next] of [
-    [18, '18.2.0', '18.3.31', '18.3.7', '14.2.35'],
-    [19, '19.3.0', '19.3.0', '19.3.0', '16.4.0'],
-  ]) {
-    for (const kind of ['vite', 'next']) {
-      const dir = join(work, `${kind}-${major}`);
-      const identity = fixtureIdentity(`${kind}-${major}`);
-      // Same-version tarballs must never reuse a prior installation/lockfile.
-      await rm(dir, { recursive: true, force: true });
-      const compiler = kind === 'next' && major === 18 ? '5.4.5' : '6.0.3';
-      const nodeTypes = kind === 'next' && major === 18 ? '20.19.0' : '24.19.1';
-      const deps = {
-        react,
-        'react-dom': react,
-        '@types/react': types,
-        '@types/react-dom': domTypes,
-        '@types/node': nodeTypes,
-        typescript: compiler,
-        [packageName]: `file:${genuine}`,
-        ...(kind === 'vite' ? { vite: '8.3.4' } : { next }),
-      };
-      await json(dir, 'package.json', {
-        name: `consumer-${kind}-${major}`,
-        private: true,
-        type: 'module',
-        dependencies: deps,
-      });
-      await json(dir, 'tsconfig.json', {
-        ...tsconfig,
-        compilerOptions: {
-          ...tsconfig.compilerOptions,
-          skipLibCheck: kind === 'next',
-        },
-      });
-      await json(dir, 'tsconfig.package.json', {
-        compilerOptions: tsconfig.compilerOptions,
-        files: ['contracts.tsx', 'Sample.tsx', 'Interactive.tsx'],
-      });
-      await file(dir, 'Sample.tsx', sample);
-      await file(dir, 'Interactive.tsx', interactive);
-      await cp(
-        join(root, 'tests/types/contracts.tsx'),
-        join(dir, 'contracts.tsx'),
-      );
-      await file(
-        dir,
-        'package-check.mjs',
-        `import assert from 'node:assert/strict';
+        });
+        const ax = await page.locator('main').ariaSnapshot();
+        assert(
+          ax.includes('rowheader "Q4"') && ax.includes('Responsive — data'),
+        );
+        await file(dir, 'evidence/accessibility.txt', ax);
+        const axe = await new AxeBuilder({ page }).include('main').analyze();
+        assert.deepEqual(axe.violations, []);
+        await file(
+          dir,
+          'evidence/after.html',
+          await page.locator('main').innerHTML(),
+        );
+        await page.screenshot({
+          path: join(evidenceRun.directory, `${kind}-${major}`, 'after.png'),
+          fullPage: true,
+        });
+        assert.deepEqual(errors, []);
+        if (kind === 'next') {
+          await page.goto(`${url}/pages-check`);
+          await page.waitForFunction(() => window.__observers.length >= 2);
+          await page.evaluate(() => window.__release());
+          await page.locator('#responsive svg').waitFor();
+          assert.equal(await page.getByRole('table').count(), 31);
+          assert.deepEqual(errors, []);
+        } else {
+          await page.evaluate(() => window.__unmount());
+          assert(
+            await page.evaluate(() =>
+              window.__observers.every((o) => o.disconnected),
+            ),
+          );
+          assert.equal(await page.locator('figure').count(), 0);
+          const staticRoots = await browser.newPage({
+            javaScriptEnabled: false,
+          });
+          await staticRoots.goto(`${url}/roots.html`);
+          const rootsBefore = await staticRoots.locator('body').innerHTML();
+          await staticRoots.close();
+          await page.goto(`${url}/roots.html`);
+          await page.waitForTimeout(500);
+          assert.equal(await page.locator('body').innerHTML(), rootsBefore);
+          const rootIds = await page
+            .locator('[id]')
+            .evaluateAll((elements) => elements.map((el) => el.id));
+          assert.equal(new Set(rootIds).size, rootIds.length);
+          assert.equal(await page.locator('table').count(), 7);
+          await page.evaluate(() => window.__release());
+          await page.locator('#root4 svg').waitFor();
+          await page.locator('#root6 svg').waitFor();
+          assert.equal(await page.locator('svg').count(), 7);
+          assert.deepEqual(errors, []);
+          await file(dir, 'evidence/separate-roots.html', rootsBefore);
+        }
+        await context.close();
+        report.checks.push({
+          kind,
+          react: major,
+          status: 'pass',
+          ssr: kind === 'next',
+          browser: true,
+          axeViolations: 0,
+          donutHole:
+            'same-chart hole/ring positive control and sibling isolation at 700/480px',
+        });
+      }
+      try {
+        await withVerificationServer(
+          {
+            args: [
+              join(
+                dir,
+                'node_modules',
+                kind === 'vite' ? 'vite/bin/vite.js' : 'next/dist/bin/next',
+              ),
+              ...args.slice(1),
+            ],
+            cwd: dir,
+            env,
+            url,
+            identity,
+            signal: evidenceRun.signal,
+          },
+          verifyFixture,
+        );
+        serverReport.status = 'stopped';
+      } catch (error) {
+        serverReport.status = 'fail';
+        serverReport.error = String(error.stack ?? error);
+        throw error;
+      }
+    }
+    for (const [major, react, types, domTypes, next] of [
+      [18, '18.2.0', '18.3.31', '18.3.7', '14.2.35'],
+      [19, '19.3.0', '19.3.0', '19.3.0', '16.4.0'],
+    ]) {
+      for (const kind of ['vite', 'next']) {
+        const configuration = report.configurations.find(
+          (item) => item.kind === kind && item.react === major,
+        );
+        configuration.status = 'running';
+        await evidenceRun.persist();
+        const dir = join(work, `${kind}-${major}`);
+        const identity = fixtureIdentity(`${kind}-${major}`);
+        // Same-version tarballs must never reuse a prior installation/lockfile.
+        await rm(dir, { recursive: true, force: true });
+        const compiler = kind === 'next' && major === 18 ? '5.4.5' : '6.0.3';
+        const nodeTypes =
+          kind === 'next' && major === 18 ? '20.19.0' : '24.19.1';
+        const deps = {
+          react,
+          'react-dom': react,
+          '@types/react': types,
+          '@types/react-dom': domTypes,
+          '@types/node': nodeTypes,
+          typescript: compiler,
+          [packageName]: `file:${genuine}`,
+          ...(kind === 'vite' ? { vite: '8.3.4' } : { next }),
+        };
+        await json(dir, 'package.json', {
+          name: `consumer-${kind}-${major}`,
+          private: true,
+          type: 'module',
+          dependencies: deps,
+        });
+        await json(dir, 'tsconfig.json', {
+          ...tsconfig,
+          compilerOptions: {
+            ...tsconfig.compilerOptions,
+            skipLibCheck: kind === 'next',
+          },
+        });
+        await json(dir, 'tsconfig.package.json', {
+          compilerOptions: tsconfig.compilerOptions,
+          files: ['contracts.tsx', 'Sample.tsx', 'Interactive.tsx'],
+        });
+        await file(dir, 'Sample.tsx', sample);
+        await file(dir, 'Interactive.tsx', interactive);
+        await cp(
+          join(root, 'tests/types/contracts.tsx'),
+          join(dir, 'contracts.tsx'),
+        );
+        await file(
+          dir,
+          'package-check.mjs',
+          `import assert from 'node:assert/strict';
 import * as api from '${packageName}';
 import {readFileSync} from 'node:fs';
 assert.deepEqual(Object.keys(api).sort(), ['AreaChart','BarChart','DonutChart','LineChart','PieChart']); assert.equal(typeof api.LineChart,'function'); assert.equal(typeof api.AreaChart,'function'); assert.equal(typeof api.BarChart,'function'); assert.equal(typeof api.PieChart,'function'); assert.equal(typeof api.DonutChart,'function');
@@ -1044,184 +1155,209 @@ assert.equal(p.name,${JSON.stringify(packageName)}); assert.equal(p.version,${JS
 assert(p.peerDependencies.react && p.peerDependencies['react-dom']);
 for(const path of ['src/internal/RenderingProbe','dist/index.js','internal']) { await assert.rejects(import('${packageName}/'+path), {code:'ERR_PACKAGE_PATH_NOT_EXPORTED'}); }
 `,
-      );
-      if (kind === 'vite') {
-        await file(
-          dir,
-          'index.html',
-          `<!doctype html><html lang="en"><head>${fixtureMeta(identity)}<title>Consumer proof</title><link rel="icon" href="data:,"></head><body><div id="root"></div><script type="module" src="/main.tsx"></script></body></html>`,
         );
-        await file(
-          dir,
-          'main.tsx',
-          `import {createRoot} from 'react-dom/client'; import Sample from './Sample'; const root=createRoot(document.getElementById('root')!); root.render(<Sample/>); (window as unknown as {__unmount:()=>void}).__unmount=()=>root.unmount();`,
+        if (kind === 'vite') {
+          await file(
+            dir,
+            'index.html',
+            `<!doctype html><html lang="en"><head>${fixtureMeta(identity)}<title>Consumer proof</title><link rel="icon" href="data:,"></head><body><div id="root"></div><script type="module" src="/main.tsx"></script></body></html>`,
+          );
+          await file(
+            dir,
+            'main.tsx',
+            `import {createRoot} from 'react-dom/client'; import Sample from './Sample'; const root=createRoot(document.getElementById('root')!); root.render(<Sample/>); (window as unknown as {__unmount:()=>void}).__unmount=()=>root.unmount();`,
+          );
+          await file(
+            dir,
+            'vite.config.ts',
+            `import {defineConfig} from 'vite'; export default defineConfig({build:{sourcemap:true}});`,
+          );
+        } else {
+          await file(
+            dir,
+            'app/page.tsx',
+            `export const dynamic = 'force-dynamic'; export {default} from '../Sample';`,
+          );
+          await file(
+            dir,
+            'app/layout.tsx',
+            `export default function Layout({children}:{children:import('react').ReactNode}) {return <html lang="en"><head><meta name="rsc-verification" content="${identity}"/><title>Consumer proof</title><link rel="icon" href="data:,"/></head><body>{children}</body></html>}`,
+          );
+          await file(
+            dir,
+            'pages/pages-check.tsx',
+            `import Head from 'next/head'; import Sample from '../Sample'; export default function Page() {return <><Head><meta name="rsc-verification" content="${identity}"/><title>Pages consumer proof</title><link rel="icon" href="data:,"/></Head><Sample/></>} export async function getServerSideProps() { return {props:{}}; }`,
+          );
+          await file(
+            dir,
+            'next.config.mjs',
+            `export default {outputFileTracingRoot:process.cwd(),experimental:{cpus:2}};`,
+          );
+        }
+        await run('npm', ['install', '--no-audit', '--no-fund'], dir);
+        assert.deepEqual(
+          await readFile(join(dir, installedEntry)),
+          js,
+          'Installed genuine ESM must match the packed build',
         );
-        await file(
-          dir,
-          'vite.config.ts',
-          `import {defineConfig} from 'vite'; export default defineConfig({build:{sourcemap:true}});`,
-        );
-      } else {
-        await file(
-          dir,
-          'app/page.tsx',
-          `export const dynamic = 'force-dynamic'; export {default} from '../Sample';`,
-        );
-        await file(
-          dir,
-          'app/layout.tsx',
-          `export default function Layout({children}:{children:import('react').ReactNode}) {return <html lang="en"><head><meta name="rsc-verification" content="${identity}"/><title>Consumer proof</title><link rel="icon" href="data:,"/></head><body>{children}</body></html>}`,
-        );
-        await file(
-          dir,
-          'pages/pages-check.tsx',
-          `import Head from 'next/head'; import Sample from '../Sample'; export default function Page() {return <><Head><meta name="rsc-verification" content="${identity}"/><title>Pages consumer proof</title><link rel="icon" href="data:,"/></Head><Sample/></>} export async function getServerSideProps() { return {props:{}}; }`,
-        );
-        await file(
-          dir,
-          'next.config.mjs',
-          `export default {outputFileTracingRoot:process.cwd(),experimental:{cpus:2}};`,
-        );
-      }
-      await run('npm', ['install', '--no-audit', '--no-fund'], dir);
-      assert.deepEqual(
-        await readFile(join(dir, installedEntry)),
-        js,
-        'Installed genuine ESM must match the packed build',
-      );
-      await run('node', ['package-check.mjs'], dir);
-      await run('npm', ['ls', 'react', 'react-dom'], dir);
-      if (kind === 'vite') {
-        await file(
-          dir,
-          'roots-server.mjs',
-          `import {createElement,StrictMode} from 'react';
+        await run('node', ['package-check.mjs'], dir);
+        await run('npm', ['ls', 'react', 'react-dom'], dir);
+        if (kind === 'vite') {
+          await file(
+            dir,
+            'roots-server.mjs',
+            `import {createElement,StrictMode} from 'react';
 import {renderToString} from 'react-dom/server';
 import {LineChart,AreaChart,BarChart,PieChart,DonutChart} from '${packageName}';
 import {writeFileSync} from 'node:fs';
 const parts=['alpha-','beta-','gamma-','pie-explicit-','pie-responsive-','donut-explicit-','donut-responsive-'].map((prefix,i)=>'<div id="root'+i+'">'+renderToString(createElement(StrictMode,null,createElement([LineChart,AreaChart,BarChart,PieChart,PieChart,DonutChart,DonutChart][i],{...([4,6].includes(i)?{}:{width:640}),...(i>=5?{centerContent:createElement("span",null,"Allocation")}: {}),data:[{x:new Date('2026-01-01T00:00:00Z'),y:1}],...(i<3?{xKey:'x',yKey:'y'}:{nameKey:'x',valueKey:'y'})})),{identifierPrefix:prefix})+'</div>');
 writeFileSync('roots.html','<!doctype html><html lang="en"><head><title>Separate roots</title><link rel="icon" href="data:,"></head><body>'+parts.join('')+'<script type="module" src="/roots.tsx"></script></body></html>');`,
-        );
-        await run('node', ['roots-server.mjs'], dir);
-        await file(
-          dir,
-          'roots.tsx',
-          `import {StrictMode} from 'react'; import {hydrateRoot} from 'react-dom/client';
+          );
+          await run('node', ['roots-server.mjs'], dir);
+          await file(
+            dir,
+            'roots.tsx',
+            `import {StrictMode} from 'react'; import {hydrateRoot} from 'react-dom/client';
 import {LineChart,AreaChart,BarChart,PieChart,DonutChart} from '${packageName}';
 ['alpha-','beta-','gamma-','pie-explicit-','pie-responsive-','donut-explicit-','donut-responsive-'].forEach((identifierPrefix,i)=>{const Chart=[LineChart,AreaChart,BarChart][i];hydrateRoot(document.getElementById('root'+i)!,<StrictMode>{i<3 && Chart ? <Chart width={640} data={[{x:new Date('2026-01-01T00:00:00Z'),y:1}]} xKey="x" yKey="y"/> : i>=5 ? <DonutChart {...(i===6?{}:{width:640})} centerContent={<span>Allocation</span>} data={[{x:new Date('2026-01-01T00:00:00Z'),y:1}]} nameKey="x" valueKey="y"/> : <PieChart {...(i===4?{}:{width:640})} data={[{x:new Date('2026-01-01T00:00:00Z'),y:1}]} nameKey="x" valueKey="y"/>}</StrictMode>,{identifierPrefix,onRecoverableError: error=>console.error(error)});});`,
-        );
-        await file(
-          dir,
-          'vite.config.ts',
-          `import {defineConfig} from 'vite'; export default defineConfig({build:{sourcemap:true,rolldownOptions:{input:['index.html','roots.html']}}});`,
-        );
-      }
+          );
+          await file(
+            dir,
+            'vite.config.ts',
+            `import {defineConfig} from 'vite'; export default defineConfig({build:{sourcemap:true,rolldownOptions:{input:['index.html','roots.html']}}});`,
+          );
+        }
 
-      await run(
-        'node',
-        [
-          'node_modules/typescript/bin/tsc',
-          '--project',
-          'tsconfig.package.json',
-        ],
-        dir,
-      );
-      if (kind === 'vite')
-        await run('node', ['node_modules/typescript/bin/tsc', '--noEmit'], dir);
-      await run(
-        'node',
-        kind === 'vite'
-          ? ['node_modules/vite/bin/vite.js', 'build']
-          : [
-              'node_modules/next/dist/bin/next',
-              'build',
-              ...(major === 19 ? ['--webpack'] : []),
-            ],
-        dir,
-      );
-      if (kind === 'next') {
-        const clientManifest = await readFile(
-          join(dir, '.next/server/app/page_client-reference-manifest.js'),
-          'utf8',
-        );
-        assert(clientManifest.includes(installedEntry));
-        // Next manifests register the package namespace (*), not export names.
-        // The compiled Server Component must reference the named client export.
-        const appServer = await readFile(
-          join(dir, '.next/server/app/page.js'),
-          'utf8',
-        );
-        assert(
-          appServer.includes('dist/index.js#PieChart') ||
-            /dist\/index\.js["'],["']PieChart/.test(appServer),
-        );
-        assert(
-          appServer.includes('dist/index.js#DonutChart') ||
-            /dist\/index\.js["'],["']DonutChart/.test(appServer),
-        );
-        await file(
+        await run(
+          'node',
+          [
+            'node_modules/typescript/bin/tsc',
+            '--project',
+            'tsconfig.package.json',
+          ],
           dir,
-          'evidence/client-reference-manifest.js',
-          clientManifest,
         );
-        let bytes = 0;
-        let gzip = 0;
-        async function measure(directory) {
-          for (const entry of await readdir(directory, {
-            withFileTypes: true,
-          })) {
-            const path = join(directory, entry.name);
-            if (entry.isDirectory()) await measure(path);
-            else if (entry.name.endsWith('.js')) {
-              const data = await readFile(path);
-              bytes += data.length;
-              gzip += gzipSync(data).length;
-              assert(!data.toString().includes('react.development.js'));
+        if (kind === 'vite')
+          await run(
+            'node',
+            ['node_modules/typescript/bin/tsc', '--noEmit'],
+            dir,
+          );
+        await run(
+          'node',
+          kind === 'vite'
+            ? ['node_modules/vite/bin/vite.js', 'build']
+            : [
+                'node_modules/next/dist/bin/next',
+                'build',
+                ...(major === 19 ? ['--webpack'] : []),
+              ],
+          dir,
+        );
+        if (kind === 'next') {
+          const clientManifest = await readFile(
+            join(dir, '.next/server/app/page_client-reference-manifest.js'),
+            'utf8',
+          );
+          assert(clientManifest.includes(installedEntry));
+          // Next manifests register the package namespace (*), not export names.
+          // The compiled Server Component must reference the named client export.
+          const appServer = await readFile(
+            join(dir, '.next/server/app/page.js'),
+            'utf8',
+          );
+          assert(
+            appServer.includes('dist/index.js#PieChart') ||
+              /dist\/index\.js["'],["']PieChart/.test(appServer),
+          );
+          assert(
+            appServer.includes('dist/index.js#DonutChart') ||
+              /dist\/index\.js["'],["']DonutChart/.test(appServer),
+          );
+          await file(
+            dir,
+            'evidence/client-reference-manifest.js',
+            clientManifest,
+          );
+          let bytes = 0;
+          let gzip = 0;
+          async function measure(directory) {
+            for (const entry of await readdir(directory, {
+              withFileTypes: true,
+            })) {
+              const path = join(directory, entry.name);
+              if (entry.isDirectory()) await measure(path);
+              else if (entry.name.endsWith('.js')) {
+                const data = await readFile(path);
+                bytes += data.length;
+                gzip += gzipSync(data).length;
+                assert(!data.toString().includes('react.development.js'));
+              }
             }
           }
+          await measure(join(dir, '.next/static'));
+          report.artifacts[`next${major}`] = {
+            staticJsBytes: bytes,
+            staticJsGzipBytes: gzip,
+          };
         }
-        await measure(join(dir, '.next/static'));
-        report.artifacts[`next${major}`] = {
-          staticJsBytes: bytes,
-          staticJsGzipBytes: gzip,
-        };
-      }
-      report.versions.push({
-        kind,
-        react,
-        types,
-        domTypes,
-        framework: kind === 'vite' ? '8.3.4' : next,
-        typescript: compiler,
-        nodeTypes,
-      });
-      if (kind === 'vite') {
-        const assets = await readdir(join(dir, 'dist/assets'));
-        let total = 0;
-        let gzip = 0;
-        const sources = [];
-        for (const name of assets.filter((name) => name.endsWith('.js'))) {
-          const js = await readFile(join(dir, 'dist/assets', name));
-          total += js.length;
-          gzip += gzipSync(js).length;
-          const map = JSON.parse(
-            await readFile(join(dir, 'dist/assets', `${name}.map`), 'utf8'),
+        report.versions.push({
+          kind,
+          react,
+          types,
+          domTypes,
+          framework: kind === 'vite' ? '8.3.4' : next,
+          typescript: compiler,
+          nodeTypes,
+        });
+        if (kind === 'vite') {
+          const assets = await readdir(join(dir, 'dist/assets'));
+          let total = 0;
+          let gzip = 0;
+          const sources = [];
+          for (const name of assets.filter((name) => name.endsWith('.js'))) {
+            const js = await readFile(join(dir, 'dist/assets', name));
+            total += js.length;
+            gzip += gzipSync(js).length;
+            const map = JSON.parse(
+              await readFile(join(dir, 'dist/assets', `${name}.map`), 'utf8'),
+            );
+            sources.push(...map.sources);
+          }
+          report.artifacts[`vite${major}`] = {
+            jsBytes: total,
+            gzipBytes: gzip,
+          };
+          await json(dir, 'evidence/bundle-sources.json', sources);
+          assert(!sources.some((name) => /react\.development/.test(name)));
+          assert(
+            sources.some((name) =>
+              name.includes(`node_modules/${packageName}/`),
+            ),
           );
-          sources.push(...map.sources);
         }
-        report.artifacts[`vite${major}`] = { jsBytes: total, gzipBytes: gzip };
-        await json(dir, 'evidence/bundle-sources.json', sources);
-        assert(!sources.some((name) => /react\.development/.test(name)));
-        assert(
-          sources.some((name) => name.includes(`node_modules/${packageName}/`)),
+        await evidenceRun.phase('browser assertions', () =>
+          start(dir, kind, major === 18 ? 4318 : 4319, major, identity),
         );
+        configuration.status = 'passed';
+        await evidenceRun.persist();
       }
-      await start(dir, kind, major === 18 ? 4318 : 4319, major, identity);
-      await json(work, 'results.json', report);
     }
-  }
-} finally {
-  await browser.close();
-  await json(work, 'results.json', report);
-}
+    assert.equal(report.checks.length, 4, 'All four consumers must execute');
+    assert.ok(report.configurations.every((item) => item.status === 'passed'));
+  },
+  async () => {
+    const cleanup = await Promise.allSettled([
+      browser?.close(),
+      scratch
+        ? rm(scratch, { recursive: true, force: true })
+        : Promise.resolve(),
+    ]);
+    const errors = cleanup
+      .filter((item) => item.status === 'rejected')
+      .map((item) => item.reason);
+    if (errors.length)
+      throw new AggregateError(errors, 'Consumer cleanup failed');
+  },
+);
 console.log(JSON.stringify(report, null, 2));

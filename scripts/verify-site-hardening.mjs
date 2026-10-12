@@ -4,7 +4,6 @@ import { loadBrowserDriver } from './browser-driver.mjs';
 import assert from 'node:assert/strict';
 import { resolve } from 'node:path';
 import { assertApprovedExternalLink } from './site-verification-contracts.mjs';
-const { AxeBuilder } = loadBrowserDriver();
 const families = ['line', 'area', 'bar', 'pie', 'donut'];
 const routes = ['/', '/examples/', '/documentation/', '/about/'];
 
@@ -21,6 +20,7 @@ async function ready(page, count) {
   );
 }
 async function scan(page, report, route, width) {
+  const { AxeBuilder } = loadBrowserDriver();
   const result = await new AxeBuilder({ page }).analyze();
   report.axe.push({ width, route, violations: result.violations });
   assert.deepEqual(result.violations, [], route);

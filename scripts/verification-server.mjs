@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict';
-import { spawn, execFile } from 'node:child_process';
+import { spawn } from 'node:child_process';
+import { within, stopOwnedProcess } from './owned-process.mjs';
 import { randomUUID } from 'node:crypto';
 import { createServer } from 'node:net';
-import { promisify } from 'node:util';
 
-const execute = promisify(execFile);
 export function fixtureIdentity(name) {
   assert.match(name, /^[a-z0-9-]+$/);
   return `${name}:${randomUUID()}`;
@@ -40,15 +39,6 @@ async function freePort(url) {
     );
   });
 }
-function within(promise, ms, message) {
-  let timer;
-  return Promise.race([
-    promise,
-    new Promise((_, reject) => {
-      timer = setTimeout(() => reject(new Error(message)), ms);
-    }),
-  ]).finally(() => clearTimeout(timer));
-}
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -65,10 +55,14 @@ export async function withVerificationServer(
     timeoutMs = 30000,
     pollMs = 100,
     shutdownMs = 3000,
+    verificationMs = 300000,
+    cancellationMs = 20000,
+    signal,
   },
   verify,
 ) {
   fixtureMeta(identity); // Validate the marker before starting a child.
+  signal?.throwIfAborted();
   await freePort(url); // Reject an incumbent even if it serves a newly rebuilt directory.
   const child = spawn(command, args, {
     cwd,
@@ -78,10 +72,12 @@ export async function withVerificationServer(
     stdio: ['ignore', 'inherit', 'pipe'],
   });
   const lifetime = new AbortController();
+  const cancellation = [];
+  let work;
+  const secondaryErrors = [];
   let stderr = '';
   let failure;
   let stopping = false;
-  let closed = false;
   child.stderr?.on('data', (chunk) => {
     stderr = (stderr + chunk).slice(-8192);
     process.stderr.write(chunk);
@@ -113,7 +109,6 @@ export async function withVerificationServer(
   );
   const close = new Promise((resolve) =>
     child.once('close', () => {
-      closed = true;
       resolve();
     }),
   );
@@ -125,40 +120,14 @@ export async function withVerificationServer(
     );
   };
   const guarded = (promise) => Promise.race([promise, failed]);
+  const abort = () =>
+    fail(new Error('Fixture verification cancelled', { cause: signal.reason }));
+  signal?.addEventListener('abort', abort, { once: true });
+  if (signal?.aborted) abort();
   async function stop() {
     stopping = true;
     lifetime.abort();
-    if (child.pid) {
-      if (process.platform === 'win32') {
-        if (!closed)
-          await execute(
-            'taskkill.exe',
-            ['/PID', String(child.pid), '/T', '/F'],
-            { timeout: shutdownMs },
-          );
-      } else {
-        const signal = (name) => {
-          try {
-            process.kill(-child.pid, name);
-          } catch (error) {
-            if (error.code !== 'ESRCH') throw error;
-          }
-        };
-        signal('SIGTERM');
-        try {
-          await within(close, shutdownMs, 'Fixture SIGTERM shutdown timed out');
-        } catch {
-          signal('SIGKILL');
-        }
-        // Terminate any descendants left after the direct child has closed.
-        signal('SIGKILL');
-      }
-    }
-    await within(
-      close,
-      shutdownMs,
-      'Fixture process did not close after termination',
-    );
+    await stopOwnedProcess(child, close, { shutdownMs });
   }
   let original;
   let hasError = false;
@@ -217,21 +186,77 @@ export async function withVerificationServer(
       throw new Error(
         `Fixture startup timed out after ${timeoutMs}ms at ${url} (${last})`,
       );
-    result = await verify({ url, html, identity, child, assertRunning });
+    work = Promise.resolve().then(() =>
+      verify({
+        url,
+        html,
+        identity,
+        child,
+        assertRunning,
+        signal: lifetime.signal,
+        onCancel: (cleanup) => cancellation.push(cleanup),
+      }),
+    );
+    // On cancellation, supported callbacks close owned browser resources before
+    // we stop awaiting them. Arbitrary JavaScript cannot be forcibly terminated.
+    result = await within(
+      guarded(work),
+      verificationMs,
+      'Fixture verification callback timed out',
+    );
     assertRunning();
   } catch (error) {
     original = error;
     hasError = true;
+    lifetime.abort(error);
+    if (work) {
+      const settled = await Promise.allSettled(
+        cancellation.map((cleanup) =>
+          within(
+            Promise.resolve().then(cleanup),
+            cancellationMs,
+            'Verification cancellation cleanup timed out',
+          ),
+        ),
+      );
+      secondaryErrors.push(
+        ...settled
+          .filter((item) => item.status === 'rejected')
+          .map((item) => item.reason),
+      );
+      try {
+        await within(
+          work.catch(() => {}),
+          cancellationMs,
+          'Verification callback did not settle after cancellation',
+        );
+      } catch (error) {
+        secondaryErrors.push(error);
+      }
+    }
   }
   try {
     await stop();
   } catch (error) {
-    if (hasError) console.error('Fixture cleanup also failed:', error);
+    if (hasError) secondaryErrors.push(error);
     else {
       original = error;
       hasError = true;
     }
   }
-  if (hasError) throw original;
+  signal?.removeEventListener('abort', abort);
+  if (hasError) {
+    if (secondaryErrors.length)
+      if (
+        original &&
+        (typeof original === 'object' || typeof original === 'function')
+      )
+        original.cleanupErrors = [
+          ...(original.cleanupErrors ?? []),
+          ...secondaryErrors,
+        ];
+      else console.error('Fixture cleanup also failed:', secondaryErrors);
+    throw original;
+  }
   return result;
 }

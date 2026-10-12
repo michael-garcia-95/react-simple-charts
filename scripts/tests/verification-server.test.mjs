@@ -276,3 +276,78 @@ test('a child-side EADDRINUSE failure cannot be mistaken for readiness', async (
   );
   await assertPortFree(f.port);
 });
+
+test(
+  'server death cancels supported verification before returning and frees its port',
+  { timeout: 5000 },
+  async () => {
+    const f = await fixture();
+    let cancelled = false;
+    await assert.rejects(
+      withVerificationServer(
+        { ...f.options, cancellationMs: 100 },
+        async ({ child, signal, onCancel }) => {
+          onCancel(async () => {
+            cancelled = true;
+          });
+          setTimeout(() => child.kill('SIGTERM'), 20);
+          await new Promise((_, reject) =>
+            signal.addEventListener('abort', () => reject(signal.reason), {
+              once: true,
+            }),
+          );
+        },
+      ),
+      /exited before verification completed/,
+    );
+    assert.equal(cancelled, true);
+    await assertPortFree(f.port);
+  },
+);
+test(
+  'hung callback is bounded, cancellation hook runs, and unsupported nonsettlement is explicit',
+  { timeout: 5000 },
+  async () => {
+    const f = await fixture();
+    let stopped = false;
+    await assert.rejects(
+      withVerificationServer(
+        { ...f.options, verificationMs: 30, cancellationMs: 50 },
+        ({ onCancel }) => {
+          onCancel(() => {
+            stopped = true;
+          });
+          return new Promise(() => {});
+        },
+      ),
+      (error) =>
+        /callback timed out/.test(error.message) &&
+        /did not settle/.test(error.cleanupErrors[0].message),
+    );
+    assert.equal(stopped, true);
+    await assertPortFree(f.port);
+  },
+);
+test(
+  'cancellation cleanup failure cannot replace the original verification error',
+  { timeout: 5000 },
+  async () => {
+    const f = await fixture();
+    const original = new Error('original browser assertion');
+    await assert.rejects(
+      withVerificationServer(
+        { ...f.options, cancellationMs: 50 },
+        ({ onCancel }) => {
+          onCancel(() => {
+            throw new Error('controlled cleanup failure');
+          });
+          throw original;
+        },
+      ),
+      (error) =>
+        error === original &&
+        /cleanup failure/.test(error.cleanupErrors[0].message),
+    );
+    await assertPortFree(f.port);
+  },
+);

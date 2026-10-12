@@ -185,7 +185,7 @@ try {
       '--pack-destination',
       archiveDirectory,
     ],
-    { capture: true },
+    { capture: true, timeoutMs: 120000 },
   );
   const [packed] = JSON.parse(stdout);
   assert.equal(packed.name, pkg.name);
