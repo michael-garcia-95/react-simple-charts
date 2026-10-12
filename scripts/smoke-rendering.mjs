@@ -13,6 +13,93 @@ const browser = await chromium.launch({
   headless: true,
   args: ['--no-sandbox'],
 });
+function fixtureScopes(page) {
+  return {
+    explicit: page.locator('section[aria-labelledby="explicit-heading"]'),
+    responsive: page.locator('section[aria-labelledby="responsive-heading"]'),
+    previews: page.locator('section[aria-labelledby="line-heading"]'),
+  };
+}
+async function verifyFixtureTables(page) {
+  const scopes = fixtureScopes(page);
+  for (const [scope, label] of [
+    [scopes.explicit, 'Explicit quarterly sample'],
+    [scopes.responsive, 'Responsive quarterly sample'],
+  ]) {
+    assert.equal(await scope.count(), 1, label + ' fixture');
+    const table = scope.getByRole('table', {
+      name: label + ' — data',
+      exact: true,
+    });
+    assert.equal(await table.count(), 1, label + ' source table');
+    assert.deepEqual(await table.getByRole('columnheader').allTextContents(), [
+      'Quarter',
+      'Value',
+    ]);
+    assert.deepEqual(await table.getByRole('rowheader').allTextContents(), [
+      'Q1',
+      'Q2',
+      'Q3',
+      'Q4',
+    ]);
+    assert.equal(await table.locator('tbody tr').count(), 4);
+    assert.equal(await table.getAttribute('aria-hidden'), null);
+  }
+  assert.equal(
+    await scopes.previews.count(),
+    1,
+    'Internal Line preview fixture',
+  );
+  for (const [label, rows] of [
+    ['Monthly revenue', 3],
+    ['Actual and forecast', 4],
+    ['Linear measurements', 3],
+    ['UTC observations', 3],
+    ['Local-time observations', 3],
+    ['Responsive engine preview', 3],
+    ['Empty observations', 0],
+    ['Unavailable observations', 1],
+  ]) {
+    const table = scopes.previews.getByRole('table', {
+      name: label + ' — data',
+      exact: true,
+    });
+    assert.equal(await table.count(), 1, label + ' source table');
+    assert.equal(
+      await table.locator('tbody tr').count(),
+      rows,
+      label + ' source rows',
+    );
+    assert.equal(
+      await table.getAttribute('aria-hidden'),
+      null,
+      label + ' exposed semantics',
+    );
+  }
+}
+async function waitForWidth(page, graphic, previous, direction, label) {
+  const svg = await graphic.elementHandle();
+  try {
+    await page.waitForFunction(
+      ({ svg, previous, direction }) => {
+        const width = Number(svg.getAttribute('width'));
+        return (
+          svg.isConnected &&
+          width > 0 &&
+          (direction === 'shrink' ? width < previous : width > previous)
+        );
+      },
+      { svg, previous, direction },
+      { timeout: 10000 },
+    );
+  } catch (error) {
+    throw new Error(label + ' must ' + direction + ' after viewport resize', {
+      cause: error,
+    });
+  } finally {
+    await svg.dispose();
+  }
+}
 const errors = [];
 const checks = [];
 try {
@@ -25,44 +112,49 @@ try {
   });
   const url = process.env.RSC_SMOKE_URL ?? 'http://127.0.0.1:5173';
   await page.goto(url);
-  const explicit = page.getByRole('img', {
+  const scopes = fixtureScopes(page);
+  const explicit = scopes.explicit.getByRole('img', {
     name: 'Explicit quarterly sample',
     exact: true,
   });
-  const responsive = page.getByRole('img', {
+  const responsive = scopes.responsive.getByRole('img', {
     name: 'Responsive quarterly sample',
     exact: true,
   });
   await explicit.waitFor({ state: 'visible' });
   await responsive.waitFor({ state: 'visible' });
   assert.equal(await explicit.getAttribute('viewBox'), '0 0 640 280');
-  assert.equal(await page.getByRole('table').count(), 13);
+  await verifyFixtureTables(page);
   checks.push(
-    'Initial explicit and measured responsive SVG; thirteen semantic data tables',
+    'Initial explicit and measured responsive SVG; both probe and all eight internal preview source tables',
   );
 
   const initialWidth = Number(await responsive.getAttribute('width'));
   await page.setViewportSize({ width: 650, height: 1200 });
-  await page.waitForFunction(
-    (previous) =>
-      Number(document.querySelectorAll('svg')[1]?.getAttribute('width')) <
-      previous,
+  await waitForWidth(
+    page,
+    responsive,
     initialWidth,
+    'shrink',
+    'Responsive quarterly sample',
   );
   const smallerWidth = Number(await responsive.getAttribute('width'));
   assert(smallerWidth > 0 && smallerWidth < initialWidth);
   await page.setViewportSize({ width: 1100, height: 1200 });
-  await page.waitForFunction(
-    (previous) =>
-      Number(document.querySelectorAll('svg')[1]?.getAttribute('width')) >
-      previous,
+  await waitForWidth(
+    page,
+    responsive,
     smallerWidth,
+    'grow',
+    'Responsive quarterly sample',
   );
   checks.push(
     'Native ResizeObserver follows shrinking and growing viewport widths',
   );
 
-  await page.keyboard.press('Tab');
+  // Unrelated playground controls precede these fixtures. Start deliberately
+  // at the explicit probe, then exercise native Tab to the responsive probe.
+  await explicit.focus();
   assert(
     await explicit.evaluate((element) => element === document.activeElement),
   );
@@ -96,7 +188,9 @@ try {
     .locator('[id]')
     .evaluateAll((elements) => elements.map((element) => element.id));
   assert.equal(new Set(ids).size, ids.length);
-  const snapshot = await page.locator('main').ariaSnapshot();
+  const snapshot =
+    (await scopes.explicit.ariaSnapshot()) +
+    (await scopes.responsive.ariaSnapshot());
   assert(snapshot.includes('Explicit quarterly sample'));
   assert(snapshot.includes('Responsive quarterly sample — data'));
   assert(snapshot.includes('rowheader "Q4"'));
@@ -121,7 +215,7 @@ try {
       .evaluate((element) => getComputedStyle(element).stroke),
     'rgb(37, 99, 235)',
   );
-  const hidden = page.getByRole('table', {
+  const hidden = scopes.responsive.getByRole('table', {
     name: 'Responsive quarterly sample — data',
   });
   assert.equal(
@@ -177,13 +271,23 @@ try {
       name: /Responsive quarterly sample — awaiting container measurement/,
     })
     .waitFor();
-  assert.equal(await fallbackPage.locator('svg').count(), 8);
-  assert.equal(await fallbackPage.getByRole('table').count(), 13);
+  const fallbackScopes = fixtureScopes(fallbackPage);
+  assert.equal(
+    await fallbackScopes.explicit.locator('svg').count(),
+    1,
+    'Explicit probe still renders without ResizeObserver',
+  );
+  assert.equal(
+    await fallbackScopes.responsive.locator('svg').count(),
+    0,
+    'Responsive probe must retain its pending fallback',
+  );
+  await verifyFixtureTables(fallbackPage);
   checks.push(
-    'Missing ResizeObserver keeps the accessible placeholder and all tables',
+    'Missing ResizeObserver keeps the intended probe placeholder, explicit probe SVG and all intended source tables',
   );
 
-  const engine = page.getByRole('img', {
+  const engine = scopes.previews.getByRole('img', {
     name: 'Monthly revenue',
     exact: true,
   });
@@ -194,7 +298,7 @@ try {
       'Jan',
     ),
   );
-  const clipped = page.getByRole('img', {
+  const clipped = scopes.previews.getByRole('img', {
     name: 'Linear measurements',
     exact: true,
   });
@@ -207,36 +311,48 @@ try {
     await clipped.locator('clipPath rect').getAttribute('width'),
   );
   assert(plotWidth > 0 && plotWidth < 640);
-  const responsiveEngine = page.getByRole('img', {
+  const responsiveEngine = scopes.previews.getByRole('img', {
     name: 'Responsive engine preview',
     exact: true,
   });
   const engineWidth = Number(await responsiveEngine.getAttribute('width'));
   await page.setViewportSize({ width: 650, height: 1200 });
-  await page.waitForFunction(
-    (previous) =>
-      Number(
-        document
-          .querySelector('svg[aria-labelledby] title')
-          ?.parentElement?.getAttribute('width'),
-      ) > 0 &&
-      [...document.querySelectorAll('svg')].some(
-        (svg) =>
-          svg.querySelector('title')?.textContent ===
-            'Responsive engine preview' &&
-          Number(svg.getAttribute('width')) < previous,
-      ),
+  await waitForWidth(
+    page,
+    responsiveEngine,
     engineWidth,
+    'shrink',
+    'Responsive engine preview',
   );
   assert(Number(await responsiveEngine.getAttribute('width')) < engineWidth);
-  const engineSnapshot = await page.locator('main').ariaSnapshot();
+  const smallerEngineWidth = Number(
+    await responsiveEngine.getAttribute('width'),
+  );
+  await page.setViewportSize({ width: 1100, height: 1200 });
+  await waitForWidth(
+    page,
+    responsiveEngine,
+    smallerEngineWidth,
+    'grow',
+    'Responsive engine preview',
+  );
+  const engineSnapshot = await scopes.previews.ariaSnapshot();
   assert(engineSnapshot.includes('Monthly revenue — data'));
   assert(engineSnapshot.includes('Responsive engine preview — data'));
-  await fallbackPage
+  await fallbackScopes.previews
     .getByRole('img', { name: /Responsive engine preview — awaiting/ })
     .waitFor();
+  assert.equal(
+    await fallbackScopes.previews
+      .getByRole('img', { name: /Responsive engine preview — awaiting/ })
+      .evaluate(
+        (element) => element.closest('figure').querySelectorAll('svg').length,
+      ),
+    0,
+    'Internal responsive preview must retain its pending fallback without SVG',
+  );
   checks.push(
-    'Engine paths and markers, visible selected category labels, plot clip references/rectangle, responsive width change and source tables in the accessibility snapshot',
+    'Engine paths and markers, visible selected category labels, plot clip references/rectangle, responsive shrink/grow and source tables in the accessibility snapshot',
   );
 
   assert.deepEqual(errors, []);
