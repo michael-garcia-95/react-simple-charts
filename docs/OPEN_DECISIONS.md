@@ -35,6 +35,11 @@ five chart components are implemented. The website is live on GitHub Pages.
   cover manual versus staged bootstrap, public placeholder consent, exact OIDC
   permissions, toolchain minima, provenance, 2FA/recovery and artifact approval.
   No security configuration or subsequent task is started by this policy draft.
+  Review the [M06-T06A publishing security plan](M06_PUBLISHING_SECURITY_PLAN.md):
+  interactive first-release bootstrap is recommended, followed by stage-only OIDC
+  and owner npm 2FA approval. Bootstrap, provenance exceptions, account controls
+  and T06B preparation remain unapproved; accepting documentation grants no
+  configuration, staging or publication permission.
 
 First publication remains blocked by manual accessibility evidence and the separate
 release/security/authorization gates. The [release readiness assessment](M06_RELEASE_READINESS.md)
