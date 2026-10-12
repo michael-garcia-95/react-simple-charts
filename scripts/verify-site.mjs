@@ -6,6 +6,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { verifySiteHardening } from './verify-site-hardening.mjs';
+import { verifyDocumentationTabOrder } from './site-verification-contracts.mjs';
 const root = resolve(import.meta.dirname, '..');
 const require = createRequire(
   resolve(root, 'work/consumers/driver/package.json'),
@@ -219,23 +220,9 @@ try {
         `Anchor not visible: ${id}`,
       );
     }
-    // DOM focus order is native: TOC, introductory gallery link, copy button, code.
+    // Native order includes the approved live-site link before the copy button.
     await toc.getByRole('link').last().focus();
-    await page.keyboard.press('Tab');
-    assert.equal(
-      await page.locator(':focus').getAttribute('href'),
-      pathFor('/examples/'),
-    );
-    await page.keyboard.press('Tab');
-    assert.equal(
-      await page.locator(':focus').getAttribute('aria-label'),
-      'Copy code: Local repository workflow',
-    );
-    await page.keyboard.press('Tab');
-    assert.equal(
-      await page.locator(':focus').getAttribute('aria-label'),
-      'Local repository workflow',
-    );
+    await verifyDocumentationTabOrder(page, pathFor('/examples/'));
     const sources = await page.locator('main pre code').allTextContents();
     for (const [index, button] of (
       await page.locator('main .copy-code').all()
@@ -651,17 +638,43 @@ try {
   report.navigation =
     'All pages, Home family deep links, correct prefix, no root leakage, unknown static paths return 404';
   await page.setViewportSize({ width: 320, height: 900 });
-  await page.goto(origin + base);
-  await page.keyboard.press('Tab');
-  assert.equal(await page.locator(':focus').textContent(), 'Skip to content');
-  assert.equal(
-    await page
-      .locator(':focus')
-      .evaluate((el) => getComputedStyle(el).outlineStyle),
-    'solid',
-  );
-  await page.keyboard.press('Enter');
-  assert.equal(await page.locator(':focus').getAttribute('id'), 'main');
+  // Start-of-document Tab must use a fresh page: prior navigation and focus
+  // restoration on the long-lived QA page can leave its sequential focus cursor.
+  const keyboardPage = await context.newPage();
+  keyboardPage.on('pageerror', (error) => errors.push(error.message));
+  keyboardPage.on('console', (message) => {
+    if (message.type() === 'error') errors.push(message.text());
+  });
+  keyboardPage.on('response', (response) => {
+    if (response.status() >= 400)
+      errors.push(`${response.status()} ${response.url()}`);
+  });
+  try {
+    await keyboardPage.setViewportSize({ width: 320, height: 900 });
+    await keyboardPage.goto(origin + base);
+    const skip = keyboardPage.getByRole('link', {
+      name: 'Skip to content',
+      exact: true,
+    });
+    await skip.waitFor({ state: 'attached' });
+    await keyboardPage.keyboard.press('Tab');
+    assert.equal(await skip.count(), 1, 'One skip link');
+    assert.ok(
+      await skip.evaluate((el) => el === document.activeElement),
+      'First native Tab reaches skip link',
+    );
+    assert.equal(
+      await skip.evaluate((el) => getComputedStyle(el).outlineStyle),
+      'solid',
+    );
+    await keyboardPage.keyboard.press('Enter');
+    assert.equal(
+      await keyboardPage.locator(':focus').getAttribute('id'),
+      'main',
+    );
+  } finally {
+    await keyboardPage.close();
+  }
   // All mobile links are native, visible and keyboard reachable without a menu.
   await page.goto(origin + base);
   await page.locator('.skip-link').focus(); // Reset the navigation start after browser focus restoration.

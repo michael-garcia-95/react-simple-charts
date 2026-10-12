@@ -3,6 +3,7 @@
 import assert from 'node:assert/strict';
 import { resolve } from 'node:path';
 import { createRequire } from 'node:module';
+import { assertApprovedExternalLink } from './site-verification-contracts.mjs';
 const require = createRequire(
   resolve(import.meta.dirname, '../work/consumers/driver/package.json'),
 );
@@ -139,15 +140,26 @@ export async function verifySiteHardening({
       .locator('[id]')
       .evaluateAll((nodes) => nodes.map((n) => n.id));
     assert.equal(new Set(ids).size, ids.length);
-    const external = await page
-      .locator('a[href^="https:"]')
+    // Inspect every anchor, so HTTP, protocol-relative and non-web external
+    // destinations cannot escape an HTTPS-only selector.
+    const links = await page
+      .locator('a[href]')
       .evaluateAll((nodes) => nodes.map((n) => n.href));
-    for (const href of external)
-      assert.ok(
-        href.startsWith(
-          'https://github.com/michael-garcia-95/react-simple-charts',
-        ),
+    for (const href of links) {
+      const destination = new URL(href);
+      assert.equal(
+        destination.username,
+        '',
+        'Links must not include credentials',
       );
+      assert.equal(
+        destination.password,
+        '',
+        'Links must not include credentials',
+      );
+      if (destination.origin !== new URL(origin).origin)
+        assertApprovedExternalLink(href);
+    }
   }
 
   await page.goto(url('/examples/'));
