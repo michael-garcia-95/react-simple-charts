@@ -6,11 +6,17 @@ import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { join, resolve } from 'node:path';
 import { npmCommand } from './npm-command.mjs';
+import {
+  fixtureIdentity,
+  fixtureMeta,
+  withVerificationServer,
+} from './verification-server.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 const work = join(root, 'work/browser-smoke');
 const app = join(work, 'app');
 const driver = join(work, 'driver');
+const identity = fixtureIdentity('browser-smoke');
 const pkg = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
 const env = { ...process.env, npm_config_cache: join(work, 'npm-cache') };
 const npm = await npmCommand({ env });
@@ -87,7 +93,7 @@ await file(
 await file(
   app,
   'index.html',
-  '<!doctype html><html lang="en"><head><title>Installed chart compatibility</title><link rel="icon" href="data:,"></head><body><div id="root"></div><script type="module" src="/main.jsx"></script></body></html>',
+  `<!doctype html><html lang="en"><head>${fixtureMeta(identity)}<title>Installed chart compatibility</title><link rel="icon" href="data:,"></head><body><div id="root"></div><script type="module" src="/main.jsx"></script></body></html>`,
 );
 await file(
   app,
@@ -149,36 +155,13 @@ const report = {
   playwright: '1.64.0',
   browsers: [],
 };
-const server = spawn(
-  process.execPath,
-  [
-    'node_modules/vite/bin/vite.js',
-    'preview',
-    '--host',
-    '127.0.0.1',
-    '--port',
-    '4323',
-    '--strictPort',
-  ],
-  { cwd: app, env, stdio: 'inherit' },
-);
 const url = 'http://127.0.0.1:4323';
+report.server = { url, identity, status: 'starting' };
 let failed = false;
-try {
-  let ready = false;
-  for (let i = 0; i < 120; i++) {
-    try {
-      if ((await fetch(url)).ok) {
-        ready = true;
-        break;
-      }
-    } catch {
-      /* starting */
-    }
-    await new Promise((res) => setTimeout(res, 250));
-  }
-  assert.ok(ready, 'Production fixture startup');
+async function verifyBrowsers({ assertRunning }) {
+  report.server.status = 'ready';
   for (const name of requested) {
+    assertRunning();
     let browser;
     let page;
     const errors = [];
@@ -212,7 +195,10 @@ try {
         for (const sizing of ['explicit', 'responsive']) {
           const label = `${family} ${sizing}`;
           const section = page.locator(`#${family}-${sizing}`);
-          const svg = section.getByRole('group', { name: label, exact: true });
+          const svg = section.getByRole('group', {
+            name: label,
+            exact: true,
+          });
           await svg.waitFor();
           assert.equal(await svg.getAttribute('height'), '280');
           if (sizing === 'explicit')
@@ -453,8 +439,34 @@ try {
     }
     await file(work, 'results.json', JSON.stringify(report, null, 2) + '\n');
   }
+}
+try {
+  await withVerificationServer(
+    {
+      args: [
+        'node_modules/vite/bin/vite.js',
+        'preview',
+        '--host',
+        '127.0.0.1',
+        '--port',
+        '4323',
+        '--strictPort',
+      ],
+      cwd: app,
+      env,
+      url,
+      identity,
+    },
+    verifyBrowsers,
+  );
+  report.server.status = 'stopped';
+} catch (error) {
+  report.server.status = 'fail';
+  report.server.error = String(error.stack ?? error);
+  console.error(report.server.error);
+  failed = true;
 } finally {
-  server.kill();
+  await file(work, 'results.json', JSON.stringify(report, null, 2) + '\n');
 }
 console.log(JSON.stringify(report, null, 2));
 if (failed) process.exitCode = 1;

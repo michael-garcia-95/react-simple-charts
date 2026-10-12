@@ -30,6 +30,7 @@ jobs:
       - run: npm run format:check
       - run: npm test
       - run: node --test scripts/tests/npm-command.test.mjs
+      - run: node --test scripts/tests/verification-server.test.mjs
       - run: npm run verify:package
       - run: npm run verify:site:snippets
       - run: npm run build:site
