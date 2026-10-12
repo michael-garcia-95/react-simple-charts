@@ -582,7 +582,11 @@ export async function verifyConsumerBrowser({
         ).includes('C'),
       );
       await page.locator(`#${section} [role=button]`).first().focus();
-      const tooltip = await page.getByRole('tooltip').textContent();
+      // Another independently inspected chart may retain a pointer tooltip.
+      const tooltip = await page
+        .locator(`#${section}`)
+        .getByRole('tooltip')
+        .textContent();
       assert(tooltip.includes('A: -2'));
       assert.equal(tooltip.includes('B: 2'), horizontal);
       await page.keyboard.press('Escape');
