@@ -1,15 +1,14 @@
+import { loadBrowserDriver } from './browser-driver.mjs';
 // Optional one-time smoke test. Driver is installed into ignored work/, not peers.
 /* global document, window, getComputedStyle -- callbacks execute inside Chromium */
 import assert from 'node:assert/strict';
-import { createRequire } from 'node:module';
 import { mkdir } from 'node:fs/promises';
 
-const require = createRequire(
-  new URL('../work/browser-smoke/package.json', import.meta.url),
-);
-const { chromium } = require('playwright-core');
+const {
+  engines: { chromium },
+} = loadBrowserDriver();
 const browser = await chromium.launch({
-  executablePath: process.env.RSC_BROWSER_PATH ?? '/usr/bin/chromium',
+  executablePath: process.env.RSC_BROWSER_PATH,
   headless: true,
   args: ['--no-sandbox'],
 });

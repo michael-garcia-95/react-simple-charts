@@ -40,6 +40,6 @@ export async function npmCommand({
       return { command: executable, prefix: [candidate] };
   }
   throw new Error(
-    'Cannot locate npm-cli.js on Windows. Install Node with npm and add its directory to PATH, or run this script through npm run verify:browsers -- --prepare-only.',
+    'Cannot locate npm-cli.js on Windows. Install Node with npm and add its directory to PATH, or invoke verification through npm run so npm_execpath identifies the CLI.',
   );
 }

@@ -1,3 +1,4 @@
+import { runVerificationCommand } from './verification-command.mjs';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
@@ -172,16 +173,20 @@ try {
 // Inspect a real archive, including its manifest and exact packed build bytes.
 const archiveDirectory = await mkdtemp(join(tmpdir(), 'rsc-archive-'));
 try {
-  const { stdout } = await execute('npm', [
-    'pack',
-    '--json',
-    // The parent verify:package command already built the distribution.
-    '--ignore-scripts',
-    '--cache',
-    join(archiveDirectory, 'npm-cache'),
-    '--pack-destination',
-    archiveDirectory,
-  ]);
+  const { stdout } = await runVerificationCommand(
+    'npm',
+    [
+      'pack',
+      '--json',
+      // The parent verify:package command already built the distribution.
+      '--ignore-scripts',
+      '--cache',
+      join(archiveDirectory, 'npm-cache'),
+      '--pack-destination',
+      archiveDirectory,
+    ],
+    { capture: true },
+  );
   const [packed] = JSON.parse(stdout);
   assert.equal(packed.name, pkg.name);
   assert.equal(packed.version, pkg.version);

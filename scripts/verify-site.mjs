@@ -1,18 +1,17 @@
+import { loadBrowserDriver } from './browser-driver.mjs';
 /* global document, getComputedStyle, window, Element, matchMedia */
 // Production browser QA. Install the existing isolated driver in work/consumers/driver.
 // Start node scripts/serve-site.mjs with the same --base before running.
 import assert from 'node:assert/strict';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { verifySiteHardening } from './verify-site-hardening.mjs';
 import { verifyDocumentationTabOrder } from './site-verification-contracts.mjs';
 const root = resolve(import.meta.dirname, '..');
-const require = createRequire(
-  resolve(root, 'work/consumers/driver/package.json'),
-);
-const { chromium } = require('playwright-core');
-const { default: AxeBuilder } = require('@axe-core/playwright');
+const {
+  engines: { chromium },
+  AxeBuilder,
+} = loadBrowserDriver();
 const base =
   process.argv.find((arg) => arg.startsWith('--base='))?.slice(7) ?? '/';
 assert.match(base, /^\/(?:[a-z0-9-]+\/)*$/);
@@ -25,7 +24,7 @@ const evidence = resolve(
 await mkdir(evidence, { recursive: true });
 const origin = process.env.RSC_SITE_URL ?? 'http://127.0.0.1:4320';
 const browser = await chromium.launch({
-  executablePath: process.env.RSC_BROWSER_PATH ?? '/usr/bin/chromium',
+  executablePath: process.env.RSC_BROWSER_PATH,
   args: ['--no-sandbox'],
 });
 const context = await browser.newContext({

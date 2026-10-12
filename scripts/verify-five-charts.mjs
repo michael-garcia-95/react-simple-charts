@@ -1,20 +1,21 @@
+import { consumerDriver, loadBrowserDriver } from './browser-driver.mjs';
+import { createRequire } from 'node:module';
 /* global document, window, requestAnimationFrame */
 // Run after verify-consumers installs the ignored browser driver; start npm run dev.
 import assert from 'node:assert/strict';
 import { mkdir, writeFile, readFile } from 'node:fs/promises';
-import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import os from 'node:os';
 const root = resolve(import.meta.dirname, '..');
-const require = createRequire(
-  resolve(root, 'work/consumers/driver/package.json'),
-);
-const { chromium } = require('playwright-core');
-const { default: AxeBuilder } = require('@axe-core/playwright');
+const require = createRequire(resolve(consumerDriver, 'package.json'));
+const {
+  engines: { chromium },
+  AxeBuilder,
+} = loadBrowserDriver();
 const evidence = resolve(root, 'work/visual/five-charts');
 await mkdir(evidence, { recursive: true });
 const browser = await chromium.launch({
-  executablePath: process.env.RSC_BROWSER_PATH ?? '/usr/bin/chromium',
+  executablePath: process.env.RSC_BROWSER_PATH,
   args: ['--no-sandbox'],
 });
 const context = await browser.newContext({
