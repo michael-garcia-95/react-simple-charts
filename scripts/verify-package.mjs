@@ -8,6 +8,7 @@ import { join, resolve } from 'node:path';
 import { build } from 'tsdown';
 import ts from 'typescript';
 
+import { validateManifest } from './artifact/manifest-policy.mjs';
 import { artifactOptions } from './artifact/selection.mjs';
 
 if (artifactOptions())
@@ -17,9 +18,7 @@ if (artifactOptions())
 
 const execute = promisify(execFile);
 const pkg = JSON.parse(await readFile('package.json', 'utf8'));
-assert.equal(pkg.name, '@michael-garcia-95/react-simple-charts');
-assert.equal(pkg.version, '0.0.0');
-assert.equal(pkg.private, true);
+validateManifest(pkg);
 assert.equal(pkg.type, 'module');
 assert.equal(pkg.engines, undefined);
 assert.deepEqual(pkg.peerDependencies, {

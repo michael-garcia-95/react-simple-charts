@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdir, readFile, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
+import { validateManifest } from '../artifact/manifest-policy.mjs';
 import { selectArtifact } from '../artifact/selection.mjs';
 import { verifyInstalledInventory } from '../artifact/archive.mjs';
 import { prepareIndependentRoots } from './fixtures.mjs';
@@ -16,6 +17,9 @@ export async function prepareDevelopmentArchive({ root, work, run }) {
       `${p.name.replace(/^@/, '').replaceAll('/', '-')}-${p.version}.tgz`,
     );
   }
+  validateManifest(
+    JSON.parse(await readFile(join(root, 'package.json'), 'utf8')),
+  );
   await mkdir(work, { recursive: true });
   const genuine = await pack(root);
   const js = await readFile(join(root, 'dist/index.js'));

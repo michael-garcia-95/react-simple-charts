@@ -1,3 +1,7 @@
+import {
+  manifestPolicy,
+  policyArguments,
+} from './artifact/manifest-policy.mjs';
 // Verification only: this coordinator has no registry-write or release operation.
 import assert from 'node:assert/strict';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
@@ -16,17 +20,19 @@ assert(
   'Required: --artifact PATH --sha256 DIGEST --source-sha FULL_COMMIT',
 );
 assert(!options['parent-run'], 'Coordinator cannot be a child gate');
+const policy = manifestPolicy(options);
 const base = options['evidence-base']
   ? resolve(options['evidence-base'])
   : join(root, 'work/exact-artifact');
 const run = await createEvidenceRun(base, 'exact-artifact-verification', {
   mode: 'exact-artifact',
+  policy,
   selectionRequest: options,
   requiredEngines,
   gates: [],
   limitations: [
     'Checkout/content linkage is not independently attested build provenance.',
-    'Current private 0.0.0 development policy only; public release mode is not approved.',
+    'Manifest policy verification is not candidate creation, distribution or publication authorization.',
     'Source unit/type/website checks remain separate source gates.',
     'No native Windows, physical Safari/devices or manual NVDA validation.',
     'Read-only copies and digest boundary checks detect cooperative mutations; they do not isolate against a privileged host attacker.',
@@ -66,6 +72,7 @@ await run.execute(
               artifact.identity.sha256,
               '--source-sha',
               options['source-sha'],
+              ...policyArguments(policy),
               '--parent-run',
               run.report.runId,
               '--evidence-base',

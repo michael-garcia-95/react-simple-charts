@@ -1,3 +1,4 @@
+import { manifestPolicy } from './artifact/manifest-policy.mjs';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { createEvidenceRun } from './verification-evidence.mjs';
@@ -14,6 +15,7 @@ const base = options['evidence-base']
   : join(root, 'work/exact-package');
 const run = await createEvidenceRun(base, 'exact-package', {
   mode: 'exact-artifact',
+  policy: manifestPolicy(options),
   selectionRequest: options,
   parentRunId: options['parent-run'],
 });

@@ -167,7 +167,7 @@ for (const configuration of consumerConfigurations) {
         );
         assert.match(
           files.get('package-check.mjs'),
-          /assert.equal\(p.private,true\)/,
+          /validateManifest\(p,.*development/,
         );
         if (kind === 'next') {
           assert.match(files.get('app/page.tsx'), /force-dynamic/);

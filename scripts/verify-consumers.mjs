@@ -1,3 +1,7 @@
+import {
+  manifestPolicy,
+  validateManifest,
+} from './artifact/manifest-policy.mjs';
 import { artifactOptions, forbidExactRepack } from './artifact/selection.mjs';
 import { verifyInstalledInventory } from './artifact/archive.mjs';
 // Optional development gate: real archives, disposable apps, and retained evidence.
@@ -25,6 +29,7 @@ import {
 
 const root = resolve(import.meta.dirname, '..');
 const exact = artifactOptions();
+const policy = manifestPolicy(exact ?? {});
 const base = exact?.['evidence-base']
   ? resolve(exact['evidence-base'])
   : join(root, 'work/consumers');
@@ -34,6 +39,7 @@ const evidenceRun = await createEvidenceRun(
   initialConsumerReport(consumerConfigurations),
 );
 const report = evidenceRun.report;
+report.policy = policy;
 report.mode = exact ? 'exact-artifact' : 'development';
 report.parentRunId = exact?.['parent-run'];
 if (exact) report.selectionRequest = exact;
@@ -46,6 +52,7 @@ await evidenceRun.execute(
     scratch = await mkdtemp(join(base, 'temporary-'));
     const work = scratch;
     const pkg = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
+    validateManifest(pkg, policy);
     const packageName = pkg.name;
     const installedEntry = `node_modules/${packageName}/dist/index.js`;
     const env = {
@@ -99,6 +106,7 @@ await evidenceRun.execute(
         root,
         dir,
         pkg,
+        policy,
         genuine,
         identity,
         configuration: row,

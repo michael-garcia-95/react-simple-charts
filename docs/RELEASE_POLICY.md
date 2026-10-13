@@ -1,7 +1,7 @@
-# Proposed release and maintenance policy
+# Release and maintenance policy
 
-**Status: proposal for Development Lead and owner review; not approved.**
-Recommended first npm version: **0.1.0**, unpublished. The repository remains
+**Status: approved for planning in M06-T06B2; publication is not authorized.**
+Initial public release target: **0.1.0**, unpublished. The repository remains
 `@michael-garcia-95/react-simple-charts`, version `0.0.0`, `private: true`.
 This document does not authorize publication, staging, tags, GitHub releases,
 credentials, trusted publishers, publishing workflows or deployment. M06-T06
@@ -10,8 +10,9 @@ security preparation and M06-T07 publication require separate authorization.
 ## Decisions and versioning
 
 Settled architecture and identity are recorded in [open decisions](OPEN_DECISIONS.md)
-and [architecture](ARCHITECTURE.md). All conventions below are proposed; accepting
-this documentation PR alone must not be interpreted as release approval.
+and [architecture](ARCHITECTURE.md). Versioning, maintenance and conservative supported-environment conventions below
+are approved for planning. This does not approve manifest changes, candidate
+creation/distribution or the final publication operation.
 
 Use [Semantic Versioning](https://semver.org/). After 1.0.0, compatible fixes
 increment patch, compatible additions increment minor and incompatible public
@@ -58,8 +59,7 @@ runbook; a Git tag or GitHub release alone is not proof of npm publication.
 One independent maintainer triages reports, reviews contributions, updates
 dependencies when justified, reproduces defects, runs release checks and keeps
 docs/notes accurate. Prioritize critical regressions/security and barriers in
-documented behavior, then ordinary bugs and feasible enhancements. Propose
-maintenance of the latest published 0.x minor; older lines receive no automatic
+documented behavior, then ordinary bugs and feasible enhancements. Maintain the latest supported release line; older lines receive no automatic
 backport commitment. Record any exceptional backport and support-scope change.
 There is no paid support, response-time SLA or promised feature schedule.
 
@@ -67,13 +67,15 @@ There is no paid support, response-time SLA or promised feature schedule.
 is the primary ordinary support channel. Request the package version, exact React/
 TypeScript/browser or SSR environment, minimal reproduction and expected/actual
 behavior. Mark duplicates and explain scope limits. Do not ask reporters to post
-credentials or sensitive exploit details publicly. The owner must select a private
-vulnerability-reporting route in M06-T06 before advertising one as available.
+credentials or sensitive exploit details publicly. The owner confirms GitHub Private Vulnerability Reporting enabled. This is an
+owner confirmation, not independently verified configuration; use the repository
+[private advisory route](https://github.com/michael-garcia-95/react-simple-charts/security/advisories/new)
+for sensitive reports rather than public Issues.
 
 ## Supported contracts versus tested environments
 
-Propose support for documented five-family contracts within the bounded evidence
-below; the final environment commitment still needs owner approval. Tested means
+Support for documented five-family contracts within the bounded evidence below
+is approved for planning; broader support requires evidence and approval. Tested means
 an executed configuration passed particular checks, not every configuration in a
 peer range. [Distribution compatibility](M06_DISTRIBUTION_COMPATIBILITY.md) is the
 evidence record; retain versions and limitations in future release notes.
@@ -97,21 +99,27 @@ evidence record; retain versions and limitations in future release notes.
 - Explicit dimensions support deterministic SVG SSR; responsive/local-time modes
   initially use placeholders/tables. Independent hydration roots need consistent
   distinct identifier prefixes. The client entry is not a public server-helper API.
-- Manual Windows NVDA + Firefox across all five families and human accessibility
-  review remain pending. Axe incomplete SVG contrast/empty-table findings require
+- Manual Windows NVDA + Firefox across all five families is deferred to final
+  pre-publication validation and remains a release gate; human accessibility
+  review remains pending. Axe incomplete SVG contrast/empty-table findings require
   review. Automated results do not prove announcements or WCAG certification.
 
 ## First-publication readiness and approval
 
 This is a future checklist, not completed release authorization:
 
-- [ ] Lead and owner explicitly approve initial version, versioning, maintenance
-      and bounded support policy; record decisions in OPEN_DECISIONS.
-- [ ] Human accessibility results and material barriers are reviewed using the
-      existing [manual plan](M06_SCREEN_READER_TEST_PLAN.md); any deferral needs
-      explicit owner acceptance and accurate claims. No manual testing starts here.
-- [ ] M06-T06 resolves bootstrap, npm account access/2FA/recovery, trusted-publisher
-      permissions, provenance, approval mechanism and corrective-release authority.
+- [x] Lead and owner approve initial 0.1.0, versioning, maintenance and bounded
+      support policy **for planning only**; decisions are in OPEN_DECISIONS.
+- [ ] Deferred NVDA + Firefox and final human accessibility results/material barriers
+      are reviewed using the existing [manual plan](M06_SCREEN_READER_TEST_PLAN.md).
+      This remains a release gate; no completion or waiver is recorded here.
+- [x] Manual first-publication strategy and lack of automatic GitHub OIDC
+      provenance approved for planning; owner confirms account/scope/2FA/recovery,
+      no access tokens ever created and private reporting enabled. These are
+      owner statements, not independently verified settings.
+- [ ] Owner rechecks access/security before the separately authorized operation.
+      Any subsequent trusted-publisher/staging configuration and corrective-release
+      authority need separate approval; no trust is needed for manual bootstrap.
 - [ ] Separately authorized release preparation updates version/lock and private
       guard coherently, with release-aware verification retaining genuine checks.
 - [ ] Clean exact source SHA passes applicable CI, formatting, type/lint/tests,
@@ -143,15 +151,16 @@ Recheck these moving prerequisites during authorized preparation.
 
 | Question to resolve         | Current guidance and proposed direction                                                                                                                                                                                                                                                                                                                                                                                                            |
 | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Public scope and ownership  | Confirm actual npm account/scope control and publish permissions. Scoped publication must explicitly use public access; current publishConfig already says public, but private remains true. GitHub ownership alone does not establish npm access.                                                                                                                                                                                                 |
-| First-publication bootstrap | Trust settings belong to a package; do not assume an absent package can bootstrap through OIDC. Decide between owner-authorized interactive 2FA first publication and separately approved staging/bootstrap. Manual publication does not automatically have GitHub OIDC provenance.                                                                                                                                                                |
+| Public scope and ownership  | Owner confirms michael-garcia-95 scope control; recheck actual publish permissions before the authorized operation. This is not independently verified account configuration. Scoped publication must explicitly use public access; current publishConfig already says public, but private remains true. GitHub ownership alone does not establish npm access.                                                                                     |
+| First-publication bootstrap | Manual owner-controlled interactive 2FA publication is approved for planning, with no publishing token and no automatic GitHub OIDC provenance. No actual publication is authorized. Trusted publishing/staging is a later, separately approved option.                                                                                                                                                                                            |
 | Staging and manual review   | Staging a new package creates a publicly available `0.0.0-stage` placeholder. Candidate contents await approval; staging is still a registry write. Current guidance requires npm >=11.15.0 and Node >=22.14.0, publish access and account 2FA; stage submission itself does not prompt for 2FA, but approval does. Resolve placeholder consent and exact candidate review before any action.                                                      |
 | OIDC trust and permissions  | Prefer short-lived GitHub Actions OIDC on GitHub-hosted runners, exact owner/repository/workflow and chosen environment. npm >=11.5.1 and Node >=22.14.0 are required. Job permissions need contents:read and id-token:write; PR CI must stay separate. Decide stage-only versus direct-publish permission and independent dist-tag rights. New trust must validate its first successful publish within two days; do not configure it prematurely. |
 | Toolchain                   | Installed Node 24.19.0/npm 11.9.0 meets OIDC minima but not staging's npm minimum. Select and pin a release toolchain meeting both npm guidance and stricter project contributor-tool prerequisites; these are not consumer Node guarantees.                                                                                                                                                                                                       |
 | Provenance                  | Public GitHub source/public npm package through GitHub OIDC receives automatic provenance. Check canonical repository.url and actual attestation/source SHA afterward. Provenance establishes origin/build linkage, not security, accessibility or correctness. Resolve first-release provenance if bootstrap is manual.                                                                                                                           |
 | Approval and recovery       | Prefer stage-only CI plus owner 2FA review if bootstrap is viable and approved. A protected manual direct-publish job is simpler but needs reliable pre-publication artifact approval. Verify GitHub plan/environment controls for one maintainer, prevent unreviewed PR publishing, pin/review actions and serialize releases. Choose recovery/2FA, token restrictions and private vulnerability intake; do not rely on permanent write tokens.   |
 
-These are research findings and unresolved proposals. No account configuration,
+The manual first-publication strategy is approved for planning. Remaining automation
+and operational details below are research findings/proposals, not authorizations. No account configuration,
 credentials, trusted publisher, registry action or live publishing workflow is
 created by M06-T05. This section does not begin M06-T06 implementation.
 
@@ -159,7 +168,8 @@ created by M06-T05. This section does not begin M06-T06 implementation.
 
 After a separately authorized publication, independently query the registry for
 name/version, public access, dist-tags and integrity; download and inspect the
-published archive against the approved bytes/inventory. Verify provenance linkage,
+published archive against the approved bytes/inventory. Verify any available
+provenance and record that manual bootstrap has no automatic GitHub OIDC provenance,
 then install the registry artifact in pinned consumers and repeat types, build,
 SSR/hydration and focused browser checks. Record exact outcomes and actual release
 date in notes; monitor Issues for installation and behavior regressions.
@@ -178,3 +188,21 @@ deprecation, incident scope, verification and prevention follow-up.
 This latest-line, event-driven approach keeps maintenance feasible for one owner.
 It trades long-term backport guarantees and a release calendar for clear scope,
 compatible patches, visible migration notices and review of the actual artifact.
+
+## Release-aware preparation — M06-T06B2
+
+The actual manifest/lock remain unchanged at private `0.0.0`. Shared manifest
+verification now distinguishes default `development` from explicitly selected
+`release-candidate` with expected name and approved target `0.1.0`. Candidate
+policy requires private false/absent and public scoped access, exact matching clean
+source and unchanged archive/API/type/consumer/browser integrity checks. Pure
+synthetic policy tests do not create a real candidate or prove its build origin.
+The [execution guide](VERIFICATION_EXECUTION.md#release-aware-preparation--m06-t06b2)
+provides non-publishing rehearsal and separately authorized future steps.
+
+`node scripts/release-readiness.mjs` reports preparation separately from blocked
+publication. It inspects metadata and check availability, not actual gate results,
+registry state or live accounts. Publication stays blocked pending authorized
+manifest/lock migration, genuine final artifact verification/review, deferred NVDA,
+final human accessibility assessment and owner permission for the exact operation.
+Post-publication byte/tag/access verification remains future required work.

@@ -221,14 +221,14 @@ propagation; they do not simulate the full browser suite.
 `prepareDevelopmentArchive` returns the locally built archive, its current build
 bytes and existing size metadata before consumer installation begins. This is a
 distinct future artifact boundary. The separate exact-artifact input described below bypasses development packing.
-Current development guards and npm archive construction remain unchanged; no
-public-release manifest mode is implemented.
+Current default development guards and npm archive construction remain strict;
+the explicit future candidate policy is described in M06-T06B2 below.
 
 ## Exact local development artifact gate — M06-T06B1
 
 This gate verifies **one supplied archive**, without publication, staging or release
-approval. The development package stays private at `0.0.0`. Public-version policy
-is a future separately approved extension; none is implemented here.
+approval. The development package stays private at `0.0.0`. M06-T06B2 below adds explicit
+future candidate-policy validation; candidate creation/publication is not approved.
 
 Prepare one ignored candidate from the intended clean source checkout:
 
@@ -279,8 +279,8 @@ Responsibilities:
   unexpected names before writing any extracted file. The supported npm archive
   format deliberately fails closed on future format changes. Limits are 2 MiB
   compressed, 8 MiB inflated and 4 MiB per file.
-- `artifact/selection.mjs`: explicit digest and checkout claim, unchanged private
-  development manifest, six-file checkout comparison, tracked embedded source-map
+- `artifact/selection.mjs`: explicit digest and checkout claim, explicitly selected
+  manifest policy (development by default), six-file checkout comparison, tracked embedded source-map
   comparison, known credential signatures, externalization and client boundary.
   A run copies validated bytes into its exclusively created scratch file, checks
   its digest and marks it read-only. Original and copy digests plus source identity
@@ -337,3 +337,103 @@ installation; any future archive distribution needs separate authorization. It d
 not consume a workstation-selected archive; compare reported digests before making
 any identity claim. Existing PR CI, development browser verification and Pages deployment remain
 independent. The CI Node suite includes the focused archive/evidence regressions.
+
+## Release-aware preparation — M06-T06B2
+
+Planning approvals now cover initial 0.1.0, Semantic Versioning/maintenance,
+conservative support and manual owner-controlled first publication with npm 2FA.
+No publishing token is needed and automatic GitHub OIDC first-release provenance
+is not promised. Account/security statements are owner confirmations, not live
+configuration checks. The actual manifest/lock stay unchanged at **0.0.0/private**.
+No real candidate creation/distribution or registry operation is authorized.
+
+`scripts/artifact/manifest-policy.mjs` centralizes identity/state and metadata
+checks. Default `development` requires approved name, 0.0.0 and private true.
+Explicit `release-candidate` requires expected name and the approved planning
+version 0.1.0, private false or absence, and scoped public access. Other target
+versions need separate approval and a reviewed policy update. Policy selection
+never follows manifest values automatically. Root-only ESM/declaration entries,
+React peers, D3 dependencies and canonical metadata stay mandatory in both modes.
+
+Candidate flags require exact artifact/digest/source arguments; no development
+packing fallback is possible. Selection still checks actual clean relevant source,
+complete manifest equality, all six file bytes/maps, bounded safe tar structures
+and digest-preserving copies. Both policies execute the same package/API/strict
+contracts, installed inventory, four pinned consumers, SSR/hydration and all
+three engine smoke checks. The consumer probe imports the shared verification
+policy by an explicit file URL; chart imports remain from the genuinely installed
+package. Policy identity/expected version are in reports and archive identity;
+the coordinator forwards them and rejects missing, mixed-policy or mixed-version
+children alongside existing digest, freshness, outcome and cleanup guards.
+Source/content linkage remains distinct from independently attested provenance.
+Old reports missing policy identity cannot satisfy this new gate.
+
+Safe current rehearsal (no registry submission):
+
+```sh
+mkdir -p work
+node scripts/release-readiness.mjs
+node scripts/release-readiness.mjs --json > work/readiness.json
+npm pack --dry-run --ignore-scripts
+npm run verify:package
+node --test scripts/tests/*.test.mjs
+```
+
+Create `work/` before redirecting JSON in a fresh checkout. The readiness command
+itself writes no file, requests no credentials and makes no network call. It
+inspects current manifest/metadata/check availability, records checkout SHA and
+lists required source checks; it does not claim to execute them or inspect an
+archive, account or registry. Passing preparation exits zero so development CI
+stays green. It reports `publication.status: blocked`, `eligible: false`; missing
+NVDA, final human accessibility, authorized manifest/candidate preparation, exact
+artifact review and final owner operation authorization remain pending. A
+hypothetical public manifest alone cannot turn that assessment release-ready.
+
+Use the earlier **development** exact-archive commands to rehearse real installed
+verification without changing the package. All old evidence remains retained;
+no raw archive is uploaded to public workflow artifacts. Candidate-positive
+regressions are isolated, explicitly synthetic manifest/fixture objects in tests,
+not real source-verified release artifacts or manufactured Git provenance.
+
+Future procedure requires a separately authorized preparation PR:
+
+1. Owner/Lead explicitly authorize coherent version/private/lock migration and
+   creation of an actual local 0.1.0 candidate. This task grants neither.
+2. Update actual manifest/lock, review release notes/onboarding/metadata, and commit
+   the approved changes with clean relevant source. Keep final publication blocked.
+   Deliberately review CI/test policy expectations for that new baseline; current
+   default development guards must not be silently disabled.
+3. Run source unit/type/lint/format/infrastructure and website checks. Build once
+   and locally pack into owned scratch with scripts disabled after the build;
+   record the actual digest. Do not upload/install from an invented synthetic
+   manifest or use source SHA as proof of independently attested build provenance.
+4. On that authorized clean source only, use explicit candidate verification:
+
+   ```sh
+   node scripts/verify-exact-artifact.mjs \
+     --policy release-candidate \
+     --expected-name @michael-garcia-95/react-simple-charts \
+     --expected-version 0.1.0 \
+     --artifact path-to-approved-local-0.1.0.tgz \
+     --sha256 <64-character-archive-sha256> \
+     --source-sha <40-character-clean-checkout-sha>
+   ```
+
+   The same policy flags work with exact-package, consumer and browser-smoke
+   entry points. They reject today's development package. Legacy
+   `npm run verify:package` deliberately remains development-only; use the exact
+   package gate for the approved candidate rather than repacking through it.
+
+5. Complete deferred NVDA + Firefox and final human accessibility assessment.
+   Owner reviews exact source/artifact, digests, public access, version, changelog,
+   dist-tag, account readiness and limitations. Obtain authorization for the exact
+   manual 2FA operation in separate work. There is no executable publication
+   command, publisher workflow or registry-write capability here.
+6. Perform post-publication registry-byte/tag/access and consumer verification only
+   after a separately authorized publication actually occurs. Assign the changelog
+   date afterward. Tags/releases and subsequent staging/OIDC need their own scope.
+
+Ordinary CI adds only the lightweight read-only readiness command and policy tests;
+its matrix/permissions are unchanged. Existing development browser and exact
+workflows stay in development policy, retain archive exclusions, and cannot publish.
+CI success is preparation evidence, never release authorization.

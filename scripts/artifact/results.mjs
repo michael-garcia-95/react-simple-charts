@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { assertPolicyAgreement } from './manifest-policy.mjs';
 import { consumerConfigurations } from '../consumers/fixtures.mjs';
 import { assertConsumerCompleteness } from '../consumers/evidence.mjs';
 
@@ -19,6 +20,7 @@ export function validateGateReport(
 ) {
   assert(report && typeof report === 'object', 'Malformed gate report');
   assert.equal(report.name, name, 'Wrong gate name');
+  assertPolicyAgreement(report, identity);
   assert.equal(
     report.mode,
     'exact-artifact',

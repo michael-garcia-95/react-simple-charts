@@ -4,6 +4,7 @@ import { promisify } from 'node:util';
 import { readFile, writeFile, chmod } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { archiveBytes, inspectArchive, sha256, inventory } from './archive.mjs';
+import { manifestPolicy, validateSourceManifest } from './manifest-policy.mjs';
 const git = promisify(execFile);
 export function artifactOptions(args = process.argv.slice(2)) {
   const allowed = new Set([
@@ -12,6 +13,9 @@ export function artifactOptions(args = process.argv.slice(2)) {
     '--source-sha',
     '--evidence-base',
     '--parent-run',
+    '--policy',
+    '--expected-name',
+    '--expected-version',
   ]);
   const result = {};
   for (let index = 0; index < args.length; index++) {
@@ -38,6 +42,7 @@ export function artifactOptions(args = process.argv.slice(2)) {
       /^[a-f0-9]{40}$/.test(result['source-sha']),
       'Source SHA must be a full commit SHA',
     );
+    manifestPolicy(result);
     result.artifact = resolve(result.artifact);
   }
   return Object.keys(result).length ? result : undefined;
@@ -102,44 +107,10 @@ export async function selectArtifact({ root, work, options }) {
   const expected = JSON.parse(
     await readFile(join(root, 'package.json'), 'utf8'),
   );
-  assert.equal(
-    manifest.name,
-    '@michael-garcia-95/react-simple-charts',
-    'Approved package name',
-  );
-  assert.equal(manifest.version, '0.0.0', 'Development-only version');
-  assert.equal(manifest.private, true, 'Development-only private guard');
-  assert.equal(manifest.type, 'module');
-  assert.equal(manifest.types, './dist/index.d.ts');
-  assert.equal(manifest.engines, undefined);
-  assert.equal(manifest.sideEffects, false);
-  assert.equal(manifest.license, 'MIT');
-  assert.equal(
-    manifest.repository?.url,
-    'git+https://github.com/michael-garcia-95/react-simple-charts.git',
-  );
-  assert.equal(manifest.publishConfig?.access, 'public');
-  assert.deepEqual(manifest.exports, {
-    '.': { types: './dist/index.d.ts', import: './dist/index.js' },
-  });
-  assert.deepEqual(manifest.peerDependencies, {
-    react: '^18.2.0 || ^19.0.0',
-    'react-dom': '^18.2.0 || ^19.0.0',
-  });
-  assert.deepEqual(manifest.dependencies, {
-    'd3-scale': '^4.0.2',
-    'd3-shape': '^3.2.0',
-  });
-  assert.equal(manifest.bundledDependencies, undefined);
-  assert.equal(manifest.bundleDependencies, undefined);
+  const policy = manifestPolicy(options);
+  validateSourceManifest(manifest, expected, policy);
   assert.match(files.get('LICENSE').toString(), /MIT License/);
   assert(files.get('README.md').length > 0, 'README is required');
-
-  assert.deepEqual(
-    manifest,
-    expected,
-    'Archive manifest must match the unchanged development manifest',
-  );
   for (const name of inventory) {
     assert.deepEqual(
       files.get(name),
@@ -191,11 +162,14 @@ export async function selectArtifact({ root, work, options }) {
   await writeFile(genuine, bytes, { flag: 'wx', mode: 0o444 });
   await chmod(genuine, 0o444);
   const identity = {
+    policy,
     sha256: options.sha256,
     size: bytes.length,
     name: manifest.name,
     version: manifest.version,
-    private: manifest.private,
+    ...(Object.hasOwn(manifest, 'private')
+      ? { private: manifest.private }
+      : {}),
     selectedPath: options.artifact,
     source,
     inventory: inventory.map((path) => ({
