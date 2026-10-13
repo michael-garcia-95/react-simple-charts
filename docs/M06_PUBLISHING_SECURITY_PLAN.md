@@ -6,6 +6,34 @@ controls, not assertions about configured accounts. Documentation acceptance doe
 not authorize configuration, staging, placeholders, publication, tags, releases,
 deployment, merging or M06-T07. No credentials are requested or recorded.
 
+## M06-T06B2 planning approval and current boundary
+
+Lead/owner now approve **manual, owner-controlled first publication with npm 2FA**
+for planning. No publishing token is needed; the first manual publication does not
+receive automatic GitHub OIDC build provenance. Future trusted publishing and
+controlled staging remain options requiring later approval. This selects original
+option A for planning, without authorizing its execution or replacing its risks.
+
+Initial target 0.1.0, Semantic Versioning, latest-line maintenance/GitHub Issues
+support without response guarantees, and conservative React/TypeScript/framework/
+focused-engine support are approved for planning in [release policy](RELEASE_POLICY.md).
+The owner confirms npm michael-garcia-95 control, 2FA enabled, recovery codes secured,
+no npm access tokens ever created and GitHub Private Vulnerability Reporting enabled.
+These confirmations are supplied by the owner, **not independently verified account
+settings**. No credentials or recovery material are requested or recorded.
+
+The actual package stays private at 0.0.0. Version/private/lock changes, creation or
+distribution of a genuine candidate, registry operations, tags/releases, automation,
+trust/settings changes and the exact publication operation remain unapproved.
+Manual NVDA + Firefox is deferred to final pre-publication validation and still
+required; final human accessibility and exact artifact/operation review remain
+outstanding. [Release-aware verification](VERIFICATION_EXECUTION.md#release-aware-preparation--m06-t06b2)
+implements policies/readiness only. It adds no publisher or account operation.
+
+The original baseline, alternatives, official-doc review and validation below are
+historical/proposed architecture. Subsequent OIDC/staging permissions, toolchain,
+trust window, retention and incident/recovery details are still proposals.
+
 ## Baseline and recommendation
 
 Fetched `origin/main` and started this branch with a clean worktree at exactly
@@ -16,7 +44,8 @@ Fetched `origin/main` and started this branch with a clean worktree at exactly
 and [architecture](ARCHITECTURE.md). Historical readiness findings are superseded
 only by the explicitly settled later decisions. The package remains
 `@michael-garcia-95/react-simple-charts`, `0.0.0`, `private: true`, with public
-publishConfig. Manual accessibility and release-policy approval remain gates.
+publishConfig. Manual accessibility and final operational approval remain gates; policy planning
+approval is recorded above.
 
 Recommend **A: one owner-interactive, 2FA-authorized first real release**, then
 **GitHub Actions stage-only OIDC and owner npm 2FA approval** for subsequent releases.
@@ -46,8 +75,8 @@ remain nonpublic until approval. This is a registry write, not a private reserva
 
 1. Owner privately verifies scope control, account 2FA/recovery and authorized
    package administrator. Record only confirmation and date, never credentials.
-2. Resolve release policy, accessibility evidence/accepted deferrals, initial
-   version (0.1.0 remains proposed), public access and exact dist-tag. A later
+2. Complete deferred NVDA/human accessibility review, resolve final release evidence, initial
+   version (0.1.0 is approved for planning only), public access and exact dist-tag. A later
    authorized preparation PR updates version/lock/private guards coherently.
 3. Verify the approved immutable source and real tarball through the artifact gate
    below. Lead recommends readiness; owner records permission for this exact first
@@ -139,8 +168,10 @@ No environment, branch protection or repository setting is changed here.
 This is a proposed release procedure, not a claim that baseline evidence authorizes
 new bytes. T06B must adapt the current verifier's `0.0.0`/private assertions to an
 explicit approved release manifest without removing inventory/API/security checks.
-Consumer/browser scripts currently pack their own archives; add a reviewed way to
-consume the **same candidate tarball**, rather than certifying a different rebuild.
+M06-T06B1 implemented the explicit same-archive path; M06-T06B2 adds candidate
+manifest policy without creating a candidate. Development runners still pack by
+default. Future authorized candidate checks must explicitly select the same archive
+and candidate policy, never certify a different rebuild or mixed-policy result.
 
 1. Record source SHA, reviewed PR, clean status, lockfile hash, workflow/action
    SHAs, run ID/attempt and exact Node/npm/OS/tool versions. Fetch/check the approved
@@ -191,7 +222,7 @@ approved workflow run/attempt, verify digest at each boundary, and protect appro
 records from subsequent edits. Any source/tool/action/artifact change invalidates
 approval. A digest proves identity, not that the artifact is safe.
 
-## Owner approval and failure runbook
+## Owner approval and failure runbook for future staged releases
 
 After staging authorization, the owner uses `npm stage list`, `npm stage view
 <stage-id>` and `npm stage download <stage-id>` in their own session. Match the
@@ -247,8 +278,8 @@ No standing emergency publication authority is granted by this proposal.
       remove unused publishers and tokens. OIDC does not need a stored write token.
 - [ ] Select private vulnerability intake. Recommend
       [GitHub private vulnerability reporting](https://docs.github.com/en/code-security/how-tos/report-and-fix-vulnerabilities/configure-vulnerability-reporting/configure-for-a-repository)
-      for this public repository, subject to owner enabling/confirming it in later
-      authorized work. Do not advertise it as active or solicit exploits in Issues.
+      for this public repository; owner now confirms it enabled, without independent
+      settings verification. Do not solicit sensitive exploit details in Issues.
 - [ ] Monitor npm publication/settings notifications, unexpected staged versions,
       maintainers, trust entries, dist-tags, Actions activity and vulnerability
       reports. Review before each release and on notification; record an incident
@@ -257,25 +288,28 @@ No standing emergency publication authority is granted by this proposal.
 
 ## Outstanding decisions and separate M06-T06B
 
-All items remain **unapproved**:
+Planning decisions above are approved; remaining operational items are **unapproved**:
 
-1. Choose A and accept first-release provenance exception, or B and explicitly
-   consent to placeholder visibility and bootstrap/restaging complexity. Decide
-   whether first-release CI provenance is mandatory. Resolve staging trust-validation
+1. A is selected for planning with no automatic first-release GitHub OIDC
+   provenance. No placeholder or B operation is authorized. Future OIDC/staging
+   remains separate work: resolve staging trust-validation
    semantics and attestation persistence with current authoritative guidance.
-2. Confirm actual scope/admin identity, 2FA/recovery readiness, token restrictions,
-   private intake, monitoring responsibility and owner-unavailability policy.
+2. Scope/2FA/recovery/no-token/private-intake confirmations are recorded above.
+   Recheck actual access before an authorized operation; monitoring, incident,
+   owner-unavailability and any future trust/token restrictions need review.
 3. Approve exact workflow/environment identity, stage-only/no-tag permissions,
    GitHub feature availability and self-review/bypass tradeoff. No two-person claim.
 4. Approve and validate pinned Node/npm/actions, archive identity retention, evidence
    retention duration (recommend at least one year for release records), canonical
-   CI artifact, exact-tarball consumer integration and mandatory check policy.
-5. Approve initial version/dist-tag, maintenance/support policy, human accessibility
-   evidence or explicit scoped deferrals, first-release timing and corrective-release
-   authority. Every registry action still needs specific owner authorization.
+   artifact transfer/distribution and final operational check policy. Exact-tarball
+   consumer integration is already implemented; it grants no operation approval.
+5. Version/maintenance/support planning is settled. Exact dist-tag, deferred NVDA
+   results, final human accessibility review, first-release timing and corrective-release
+   authority remain outstanding. Every registry action still needs specific owner
+   authorization.
 
-After Lead review, separately authorized **T06B preparation** should implement
-release-aware verifiers and exact-artifact consumer inputs; validate the pinned
+M06-T06B1/B2 implement exact-artifact inputs and release-aware verification. Later
+separately authorized operational preparation must validate the pinned
 staging-capable toolchain; design/test fail-closed SHA/digest/ref gates without
 registry writes; resolve official documentation ambiguities; prepare a separately
 reviewable workflow implementation and account setup checklist. Creation/activation

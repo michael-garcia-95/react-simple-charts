@@ -1,4 +1,8 @@
 import {
+  manifestPolicy,
+  validateManifest,
+} from './artifact/manifest-policy.mjs';
+import {
   artifactOptions,
   selectArtifact,
   forbidExactRepack,
@@ -20,6 +24,7 @@ import {
 
 const root = resolve(import.meta.dirname, '..');
 const exact = artifactOptions();
+const policy = manifestPolicy(exact ?? {});
 const base = exact?.['evidence-base']
   ? resolve(exact['evidence-base'])
   : join(root, 'work/browser-smoke');
@@ -47,6 +52,7 @@ const evidenceRun = await createEvidenceRun(
   },
 );
 const report = evidenceRun.report;
+report.policy = policy;
 report.mode = exact ? 'exact-artifact' : 'development';
 report.parentRunId = exact?.['parent-run'];
 if (exact) report.selectionRequest = exact;
@@ -82,6 +88,7 @@ await evidenceRun.execute(
     const app = join(scratch, 'app');
     const identity = fixtureIdentity('browser-smoke');
     const pkg = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
+    validateManifest(pkg, policy);
     async function run(cmd, args, cwd = root) {
       forbidExactRepack(exact, cmd, args);
       return evidenceRun.phase(
@@ -194,7 +201,7 @@ createRoot(document.getElementById('root')).render(h(App));`,
       ),
     );
     assert.equal(installed.engines, undefined);
-    assert.equal(installed.private, true);
+    validateManifest(installed, policy);
     await run('npm', ['ls', 'react', 'react-dom'], app);
     await run('node', ['node_modules/vite/bin/vite.js', 'build'], app);
     if (prepareOnly) {

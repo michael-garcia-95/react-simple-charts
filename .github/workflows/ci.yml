@@ -31,7 +31,8 @@ jobs:
       - run: npm test
       - run: node --test scripts/tests/npm-command.test.mjs
       - run: node --test scripts/tests/verification-server.test.mjs
-      - run: node --test scripts/tests/verification-command.test.mjs scripts/tests/browser-driver.test.mjs scripts/tests/verification-evidence.test.mjs scripts/tests/consumer-verification.test.mjs scripts/tests/exact-artifact.test.mjs
+      - run: node --test scripts/tests/verification-command.test.mjs scripts/tests/browser-driver.test.mjs scripts/tests/verification-evidence.test.mjs scripts/tests/consumer-verification.test.mjs scripts/tests/exact-artifact.test.mjs scripts/tests/manifest-policy.test.mjs
+      - run: node scripts/release-readiness.mjs
       - run: npm run verify:package
       - run: npm run verify:site:snippets
       - run: npm run build:site

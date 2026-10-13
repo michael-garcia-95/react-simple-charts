@@ -1,4 +1,9 @@
 // Pinned compatibility matrix and generated application/type/SSR fixtures.
+import {
+  manifestPolicy,
+  assertPolicyIdentity,
+} from '../artifact/manifest-policy.mjs';
+import { pathToFileURL } from 'node:url';
 import { cp } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fixtureMeta } from '../verification-server.mjs';
@@ -29,6 +34,7 @@ export async function createConsumerFixture({
   root,
   dir,
   pkg,
+  policy = manifestPolicy(),
   genuine,
   identity,
   configuration,
@@ -37,6 +43,7 @@ export async function createConsumerFixture({
 }) {
   const { kind, major, react, types, domTypes, next, compiler, nodeTypes } =
     configuration;
+  assertPolicyIdentity(policy);
   const packageName = pkg.name;
   const sample = `import { LineChart, AreaChart, BarChart, PieChart, DonutChart } from '${packageName}';
 const data = [{quarter:'Q1',value:12},{quarter:'Q2',value:24},{quarter:'Q3',value:18},{quarter:'Q4',value:32}];
@@ -127,10 +134,11 @@ function Narrow(){const [state,setState]=useState('ready');const data=state==='e
     'package-check.mjs',
     `import assert from 'node:assert/strict';
 import * as api from '${packageName}';
+import {validateManifest} from ${JSON.stringify(pathToFileURL(join(root, 'scripts/artifact/manifest-policy.mjs')).href)};
 import {readFileSync} from 'node:fs';
 assert.deepEqual(Object.keys(api).sort(), ['AreaChart','BarChart','DonutChart','LineChart','PieChart']); assert.equal(typeof api.LineChart,'function'); assert.equal(typeof api.AreaChart,'function'); assert.equal(typeof api.BarChart,'function'); assert.equal(typeof api.PieChart,'function'); assert.equal(typeof api.DonutChart,'function');
 const p=JSON.parse(readFileSync('node_modules/${packageName}/package.json'));
-assert.equal(p.name,${JSON.stringify(packageName)}); assert.equal(p.version,${JSON.stringify(pkg.version)}); assert.equal(p.private,true); assert.deepEqual(Object.keys(p.exports),['.']);
+validateManifest(p,${JSON.stringify(policy)}); assert.deepEqual(Object.keys(p.exports),['.']);
 assert(p.peerDependencies.react && p.peerDependencies['react-dom']);
 for(const path of ['src/internal/RenderingProbe','dist/index.js','internal']) { await assert.rejects(import('${packageName}/'+path), {code:'ERR_PACKAGE_PATH_NOT_EXPORTED'}); }
 `,

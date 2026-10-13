@@ -90,6 +90,7 @@ export async function verifyExactPackage({ artifact, work, root }) {
   return {
     status: 'passed',
     sha256: artifact.identity.sha256,
+    policy: artifact.identity.policy,
     inventory: 'passed',
     manifest: 'passed',
     runtimeExports: Object.keys(api).sort(),

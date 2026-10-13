@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { manifestPolicy, packageName } from '../artifact/manifest-policy.mjs';
 import { test } from 'node:test';
 import { gzipSync, gunzipSync } from 'node:zlib';
 import {
@@ -260,8 +261,10 @@ for (const bad of ['sha256', 'source', 'name', 'version'])
 const identity = {
   sha256: 'a'.repeat(64),
   size: 123,
-  name: 'package',
+  name: packageName,
+  private: true,
   version: '0.0.0',
+  policy: manifestPolicy(),
   inventory: [],
   source: {
     checkoutSha: 'b'.repeat(40),
@@ -280,6 +283,7 @@ function goodReport() {
   return {
     name: 'browser-smoke',
     mode: 'exact-artifact',
+    policy: manifestPolicy(),
     parentRunId: 'parent',
     runId: 'child',
     startedAt: '2026-01-01T00:00:01Z',

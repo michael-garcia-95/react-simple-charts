@@ -1,5 +1,15 @@
 # M06-T01 — npm release readiness assessment
 
+> Historical M06-T01 audit: the baseline, observations and results below are
+> preserved. Current identity and packaging decisions supersede earlier blockers.
+> M06-T06B2 approves 0.1.0/versioning/maintenance/support and manual first publication
+> for planning, with owner security confirmations. The actual package remains
+> private 0.0.0; manifest changes, a genuine candidate and publication remain
+> unauthorized. Deferred NVDA + Firefox, final human accessibility/artifact review
+> and exact owner publication authorization remain gates. See
+> [current decisions](OPEN_DECISIONS.md) and
+> [release-aware preparation](VERIFICATION_EXECUTION.md#release-aware-preparation--m06-t06b2).
+
 ## Executive assessment
 
 **Release NO-GO; proceed with release planning only.** Five public chart families,

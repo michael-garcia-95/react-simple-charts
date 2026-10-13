@@ -7,7 +7,7 @@ five chart components are implemented. The website is live on GitHub Pages.
 ## Release and compatibility gates
 
 - **Manual accessibility:** Windows NVDA + Firefox testing across all five
-  families is pending. Follow the [manual plan](M06_SCREEN_READER_TEST_PLAN.md),
+  families is pending, deferred to final pre-publication validation. Follow the [manual plan](M06_SCREEN_READER_TEST_PLAN.md),
   record human results and review material barriers before first publication.
   Automated axe and accessibility-tree results do not establish announcement
   behavior or WCAG certification. Axe's incomplete SVG contrast and empty-table
@@ -16,35 +16,44 @@ five chart components are implemented. The website is live on GitHub Pages.
   Playwright WebKit 27.2 tests passed in GitHub Actions. That engine smoke gate is
   complete for those builds. Physical Safari/iOS, mobile/assistive devices, native
   forced colors/zoom, strict CSP and other versions/configurations remain unverified.
-  Any broader claim or deferral needs an explicit scope and evidence.
+  Any broader claim needs an explicit scope and evidence.
 - **Consumer support commitments:** Tested React, TypeScript, frameworks and Node
   environments are in [distribution compatibility](M06_DISTRIBUTION_COMPATIBILITY.md).
   No older consumer Node minimum has been verified. Broader framework/SSR policy,
   including Turbopack, remains open; removal of engines is not evidence of support.
-- **Release policy (proposed, not approved):** Review [release policy](RELEASE_POLICY.md)
-  and the [draft changelog](../CHANGELOG.md). Initial 0.1.0 remains recommended
-  and unpublished; compatible patches, explicitly announced breaking 0.x minors,
-  latest-minor maintenance and GitHub Issues support are proposals awaiting Lead
-  and owner approval. Documentation acceptance alone is not release authorization.
-  Published-package onboarding must describe the actual release when available.
-- **Publication security and authorization:** First-publication bootstrap,
-  restricted release permissions, provenance/trusted-publisher setup and final
-  publication approval remain separate work. Namespace identity is settled; that
-  does not authorize publication, placeholders, tags or releases.
-  The [M06-T06 questions](RELEASE_POLICY.md#publication-security-questions-for-m06-t06)
-  cover manual versus staged bootstrap, public placeholder consent, exact OIDC
-  permissions, toolchain minima, provenance, 2FA/recovery and artifact approval.
-  No security configuration or subsequent task is started by this policy draft.
-  Review the [M06-T06A publishing security plan](M06_PUBLISHING_SECURITY_PLAN.md):
-  interactive first-release bootstrap is recommended, followed by stage-only OIDC
-  and owner npm 2FA approval. Bootstrap, provenance exceptions, account controls
-  and T06B preparation remain unapproved; accepting documentation grants no
-  configuration, staging or publication permission.
+- **Release policy approved for planning:** Initial target **0.1.0**, Semantic
+  Versioning, compatible patches, additive/breaking 0.x minors with migration
+  documentation, stronger stability from 1.0.0, latest-line maintenance and GitHub
+  Issues support without guaranteed response times are approved by Lead/owner.
+  See [release policy](RELEASE_POLICY.md) and the [unpublished changelog](../CHANGELOG.md).
+  This approval does not authorize changing the manifest or creating a candidate.
+- **Supported contracts approved for planning:** React 18.2+ within React 18 and
+  React 19 under existing peers; TypeScript minimum 5.4. Tested compilers are
+  5.4.5/6.0.3, Vite 8.3.4 and Next 14.2.35/16.4.0 with tested App/Pages routing.
+  Supported contracts are not proof of every individually supported configuration.
+  No consumer Node minimum or universal Safari/mobile compatibility is claimed.
+- **First-publication strategy approved for planning:** Manual owner-controlled
+  npm publication with 2FA; no publishing token is needed. The first manual
+  publication will not automatically have GitHub OIDC build provenance. Future
+  trusted publishing/staging requires separate approval and configuration.
+- **Owner security confirmations:** Owner confirms npm username/scope control
+  `michael-garcia-95`, npm 2FA enabled, recovery codes secured, no npm access tokens
+  ever created, and GitHub Private Vulnerability Reporting enabled. These are
+  owner statements supplied for M06-T06B2, not independently verified account
+  settings. No credentials or recovery material are collected.
+- **Operational approval outstanding:** Actual version/private/lock migration,
+  genuine release-candidate creation or distribution, exact final artifact review,
+  publication, tags/releases and any staging/trust/settings operation remain
+  unauthorized. Manual NVDA + Firefox is deferred until final pre-publication
+  validation and remains a gate, alongside final human accessibility assessment
+  and owner authorization for the exact operation. The
+  [verification execution guide](VERIFICATION_EXECUTION.md#release-aware-preparation--m06-t06b2)
+  documents explicit policies and a read-only readiness assessment.
 
 First publication remains blocked by manual accessibility evidence and the separate
 release/security/authorization gates. The [release readiness assessment](M06_RELEASE_READINESS.md)
 records the original risks; later identity and Node/map/browser decisions below
-supersede its unresolved entries. This document does not start further release work.
+supersede its unresolved entries. Planning approval does not start M06-T07 or manual NVDA testing.
 
 ## Future design choices
 
