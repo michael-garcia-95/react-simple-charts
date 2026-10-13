@@ -1,9 +1,5 @@
 # React Simple Charts v0.1.0
 
-**Markdown draft for Development Lead review.** No GitHub Release or tag has been
-created. When separately authorized, the `v0.1.0` tag must target
-`21eef6fc6b52e9e3f9fd70f5e08c5eac648c583d`, not a later documentation commit.
-
 ## First public release — October 13, 2026
 
 React Simple Charts provides five SVG components for React and TypeScript:
@@ -48,17 +44,22 @@ stacking, decimation and public pure-helper subpaths are not included. Large
 SVG datasets and tiny pointer targets remain practical limitations.
 
 Automated axe/accessibility-tree checks passed the focused suite; SVG text contrast
-and an empty-table check were incomplete. The owner-performed Windows NVDA 2026.2
+and an empty-table check were incomplete.
 
-- Firefox 157.0.1 assessment passed on October 12, 2026 (Trinidad and Tobago local
-  time) for all five charts and both layouts; Focus Mode was needed for navigation.
-  The [original assessment](https://github.com/michael-garcia-95/react-simple-charts/blob/21eef6fc6b52e9e3f9fd70f5e08c5eac648c583d/docs/M06_MANUAL_ACCESSIBILITY_RESULTS.md)
-  remains tied to its tested candidate, not reassigned to the published archive.
-  No new manual test, WCAG certification, formal audit or universal accessibility
-  claim is made. Native forced colors/zoom and physical mobile devices remain
-  unverified. See the
-  [compatibility report](https://github.com/michael-garcia-95/react-simple-charts/blob/21eef6fc6b52e9e3f9fd70f5e08c5eac648c583d/docs/M06_DISTRIBUTION_COMPATIBILITY.md)
-  for exact configurations and evidence.
+The owner reported **PASS / ALL PASSED** for the Windows assessment using
+**NVDA 2026.2 with Firefox 157.0.1** on **October 12, 2026** (Trinidad and Tobago
+local time). Coverage included all five chart components in both explicit and
+responsive layouts. NVDA Focus Mode was required for chart keyboard navigation.
+
+The [original assessment](https://github.com/michael-garcia-95/react-simple-charts/blob/21eef6fc6b52e9e3f9fd70f5e08c5eac648c583d/docs/M06_MANUAL_ACCESSIBILITY_RESULTS.md)
+remains evidence for the original manually tested candidate archive, which is
+distinct from the published npm 0.1.0 archive. The result is not reassigned to the
+published archive, and no new manual assessment is claimed. This owner-reported
+assessment is not an independently witnessed test, WCAG certification, a formal
+audit or universal browser/screen-reader compatibility. Native forced colors/zoom
+and physical mobile devices remain unverified. See the
+[compatibility report](https://github.com/michael-garcia-95/react-simple-charts/blob/21eef6fc6b52e9e3f9fd70f5e08c5eac648c583d/docs/M06_DISTRIBUTION_COMPATIBILITY.md)
+for exact configurations and evidence.
 
 ## Published identity and provenance
 
@@ -72,8 +73,3 @@ version, dist-tag and downloaded archive digest. The three post-merge GitHub
 Actions workflows were independently confirmed successful at the source above.
 First publication followed the manual owner-controlled npm/2FA path and has no
 automatic GitHub OIDC build provenance; these records are not an attestation.
-
-The npm 0.1.0 page retains its packaged README. GitHub documentation corrections
-cannot update it; a separate documentation-focused 0.1.1 patch is recommended
-and requires its own review and publication authorization. See the
-[post-publication record](https://github.com/michael-garcia-95/react-simple-charts/blob/main/docs/M06_POST_PUBLICATION.md).
