@@ -2,7 +2,8 @@ name: Browser verification
 
 on:
   push:
-    branches: [main, feat/m06-t06b3-release-candidate]
+    branches:
+      [main, feat/m06-t06b3-release-candidate, feat/m06-t10a-docs-patch-0.1.1]
   pull_request:
     branches: [main]
   workflow_dispatch:

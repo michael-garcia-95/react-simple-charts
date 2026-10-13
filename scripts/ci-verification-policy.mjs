@@ -11,11 +11,12 @@ import {
 
 const repository = 'michael-garcia-95/react-simple-charts';
 const branch = 'feat/m06-t06b3-release-candidate';
-const candidate = () =>
+const patchBranch = 'feat/m06-t10a-docs-patch-0.1.1';
+const candidate = (version = '0.1.0') =>
   manifestPolicy({
     policy: 'release-candidate',
     'expected-name': packageName,
-    'expected-version': '0.1.0',
+    'expected-version': version,
   });
 
 function validateContext(env) {
@@ -47,7 +48,11 @@ function validateContext(env) {
     );
   } else {
     assert(
-      [`refs/heads/${branch}`, 'refs/heads/main'].includes(env.GITHUB_REF),
+      [
+        `refs/heads/${branch}`,
+        `refs/heads/${patchBranch}`,
+        'refs/heads/main',
+      ].includes(env.GITHUB_REF),
       'Unsupported CI branch/ref',
     );
   }
@@ -55,15 +60,32 @@ function validateContext(env) {
 
 export function ciVerificationPolicy(env, baseManifest) {
   validateContext(env);
-  if (env.GITHUB_EVENT_NAME !== 'pull_request') return candidate();
+  if (env.GITHUB_EVENT_NAME !== 'pull_request')
+    return candidate(
+      env.GITHUB_REF === `refs/heads/${branch}` ? '0.1.0' : '0.1.1',
+    );
 
   // The trusted event's exact main base distinguishes pre/post transition.
   // Validate its full fixed identity; never infer policy from the PR head manifest.
   const basePolicy =
-    baseManifest?.version === '0.0.0' ? manifestPolicy() : candidate();
+    baseManifest?.version === '0.0.0'
+      ? manifestPolicy()
+      : candidate(baseManifest?.version);
   validateManifest(baseManifest, basePolicy);
-  if (env.RSC_HEAD_REPOSITORY === repository && env.GITHUB_HEAD_REF === branch)
-    return candidate();
+  if (env.RSC_HEAD_REPOSITORY === repository) {
+    if (env.GITHUB_HEAD_REF === patchBranch) {
+      assert(
+        ['0.1.0', '0.1.1'].includes(basePolicy.expectedVersion),
+        'Documentation patch requires a reviewed public main base',
+      );
+      return candidate('0.1.1');
+    }
+    if (
+      env.GITHUB_HEAD_REF === branch &&
+      basePolicy.expectedVersion === '0.0.0'
+    )
+      return candidate();
+  }
   return basePolicy;
 }
 

@@ -1,7 +1,8 @@
 // Verification policy only. Selecting a policy never authorizes distribution or publication.
 import assert from 'node:assert/strict';
 export const packageName = '@michael-garcia-95/react-simple-charts';
-export const plannedVersion = '0.1.0';
+export const plannedVersion = '0.1.1';
+const releaseVersions = Object.freeze(['0.1.0', plannedVersion]);
 export function manifestPolicy(options = {}) {
   const name = options.policy ?? 'development';
   assert(
@@ -21,9 +22,10 @@ export function manifestPolicy(options = {}) {
   const expectedPackageName = options['expected-name'] ?? packageName;
   const expectedVersion = options['expected-version'] ?? '0.0.0';
   assert.equal(expectedPackageName, packageName, 'Approved package name');
-  assert.equal(
-    expectedVersion,
-    name === 'development' ? '0.0.0' : plannedVersion,
+  assert(
+    name === 'development'
+      ? expectedVersion === '0.0.0'
+      : releaseVersions.includes(expectedVersion),
     'Expected version must match the policy approved for planning',
   );
   return Object.freeze({ name, expectedPackageName, expectedVersion });
