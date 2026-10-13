@@ -1,5 +1,42 @@
 # M06-T01 — npm release readiness assessment
 
+## M06-T07A — current readiness update
+
+The owner completed the Windows NVDA + Firefox human accessibility assessment on
+**October 12, 2026 (Trinidad and Tobago local time)**: **PASS / ALL PASSED**, with
+no unresolved accessibility defects reported. See the
+[manual accessibility evidence](M06_MANUAL_ACCESSIBILITY_RESULTS.md) for the exact
+tested source, archive, environment, coverage and resolved navigation observations.
+The manual test gate is complete for that candidate, provided its six packaged
+file contents remain unchanged. Historical pending-test statements below describe
+earlier milestones; they do not supersede this update.
+
+Automated GitHub Actions verification previously passed at tested source
+`83b51f0b025a0135b9e074778fc1f27764340971`: [CI](https://github.com/michael-garcia-95/react-simple-charts/actions/runs/38331086672),
+[browser verification](https://github.com/michael-garcia-95/react-simple-charts/actions/runs/38331086639)
+and [exact-artifact verification](https://github.com/michael-garcia-95/react-simple-charts/actions/runs/38331086668).
+These automated checks are separate from the owner-reported human assessment.
+Final documentation-head CI must be checked separately in PR #38.
+
+**Publication: NO-GO.** The 0.1.0 package remains unpublished, PR #38 remains
+unmerged, and the final publication operation remains unauthorized. Outstanding:
+
+- Development Lead review of these final evidence changes.
+- Final source and package review, including retained packaged-content identity.
+- Review of the release transition and main-branch CI policy.
+- Owner confirmation of npm account readiness before the operation.
+- Explicit approval for merging the publishable candidate.
+- Explicit authorization for the exact manual npm publication operation.
+- Post-publication registry and consumer verification after authorized publication.
+
+No publishing permission, registry write, staging, tag, release, deployment or merge
+is authorized by this update. The read-only readiness script does not ingest human
+evidence; its conservative pending markers do not invalidate this documented PASS
+and cannot grant publication approval. See [release readiness](M06_RELEASE_READINESS.md),
+[release policy](RELEASE_POLICY.md), [open decisions](OPEN_DECISIONS.md),
+[publishing safeguards](M06_PUBLISHING_SECURITY_PLAN.md) and
+[verification execution](VERIFICATION_EXECUTION.md).
+
 > **M06-T06B3 candidate branch:** Local 0.1.0 / `private: false` preparation,
 > lock synchronization and verification are authorized only on
 > `feat/m06-t06b3-release-candidate`. Main remains unchanged; npm publication,

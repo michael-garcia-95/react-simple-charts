@@ -1,6 +1,15 @@
 # M06-T03 — Windows screen-reader test plan
 
-**Status: awaiting human execution.** No NVDA test has been performed by Codex.
+**Status: completed owner-performed assessment — PASS**, October 12, 2026,
+Trinidad and Tobago local time, for source
+`83b51f0b025a0135b9e074778fc1f27764340971`. All five families and both sizing
+layouts passed according to the owner. See [manual results](M06_MANUAL_ACCESSIBILITY_RESULTS.md)
+for the exact archive, preparation report, environment, observations and limitations.
+No NVDA test was independently performed or witnessed by Codex.
+
+The setup instructions, expectations and blank checklist below are preserved for
+future regression execution. Their historical correction context and Pending cells
+are a reusable template, not the status of the completed October assessment.
 Automated DOM, keyboard, accessibility-tree and axe evidence is recorded separately
 in [distribution compatibility](M06_DISTRIBUTION_COMPATIBILITY.md). Passing those
 checks is neither screen-reader approval nor WCAG certification.

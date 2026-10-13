@@ -1,17 +1,34 @@
 # Open decisions
 
+## M06-T07A — current readiness update
+
+Owner-performed Windows NVDA + Firefox assessment: **PASS / ALL PASSED** on
+October 12, 2026 (Trinidad and Tobago local time), for tested source
+`83b51f0b025a0135b9e074778fc1f27764340971`. See the
+[manual evidence](M06_MANUAL_ACCESSIBILITY_RESULTS.md) for exact archive identity,
+coverage and limitations. Manual accessibility is complete for that candidate if
+its six packaged file contents remain unchanged; historical pending-test statements
+below retain earlier milestone context. Previously passed automated GitHub Actions
+checks are separate evidence, linked in the [current readiness update](M06_RELEASE_READINESS.md#m06-t07a--current-readiness-update).
+
+**Publication remains NO-GO**: 0.1.0 unpublished, PR #38 unmerged, exact publication
+operation unauthorized. All remaining review, account, merge/publication approval
+and post-publication gates are listed in the current readiness update above.
+The read-only readiness script does not ingest human evidence; its conservative
+pending markers confer no publication approval. Final documentation-head CI must
+be checked separately in PR #38.
+
 This page separates unresolved choices from implemented policies. The package is
 `@michael-garcia-95/react-simple-charts`, `0.1.0` / `private: false` on the separate candidate branch and unpublished; main remains unchanged. All
 five chart components are implemented. The website is live on GitHub Pages.
 
 ## Release and compatibility gates
 
-- **Manual accessibility:** Windows NVDA + Firefox testing across all five
-  families is pending, deferred to final pre-publication validation. Follow the [manual plan](M06_SCREEN_READER_TEST_PLAN.md),
-  record human results and review material barriers before first publication.
-  Automated axe and accessibility-tree results do not establish announcement
-  behavior or WCAG certification. Axe's incomplete SVG contrast and empty-table
-  checks also require human review.
+- **Manual accessibility:** Owner-reported NVDA + Firefox assessment **PASS** for
+  all five families in explicit and responsive layouts; no unresolved defects
+  reported. See [results](M06_MANUAL_ACCESSIBILITY_RESULTS.md) and the preserved
+  [regression plan](M06_SCREEN_READER_TEST_PLAN.md). Scope is the recorded candidate
+  and environment; no WCAG certification or universal compatibility is claimed.
 - **Device and browser policy:** Focused Chromium 156.0.8078.4, Firefox 157.0 and
   Playwright WebKit 27.2 tests passed in GitHub Actions. That engine smoke gate is
   complete for those builds. Physical Safari/iOS, mobile/assistive devices, native
@@ -43,16 +60,17 @@ five chart components are implemented. The website is live on GitHub Pages.
   settings. No credentials or recovery material are collected.
 - **Operational approval outstanding:** M06-T06B3 authorizes version/private/lock migration and local candidate creation on the feature branch. Candidate distribution, exact final artifact review,
   publication, tags/releases and any staging/trust/settings operation remain
-  unauthorized. Manual NVDA + Firefox is deferred until final pre-publication
-  validation and remains a gate, alongside final human accessibility assessment
-  and owner authorization for the exact operation. The
+  unauthorized. The manual assessment is complete for the recorded candidate; Lead evidence
+  review, final package review and owner authorization for the exact operation
+  remain outstanding. The
   [verification execution guide](VERIFICATION_EXECUTION.md#release-aware-preparation--m06-t06b2)
   documents explicit policies and a read-only readiness assessment.
 
-First publication remains blocked by manual accessibility evidence and the separate
+First publication remains blocked by final evidence review and the separate
 release/security/authorization gates. The [release readiness assessment](M06_RELEASE_READINESS.md)
 records the original risks; later identity and Node/map/browser decisions below
-supersede its unresolved entries. Planning approval does not start M06-T07 or manual NVDA testing.
+supersede its unresolved entries. Earlier planning approval did not itself authorize manual testing; M06-T07A now
+records the completed owner assessment.
 
 ## Future design choices
 

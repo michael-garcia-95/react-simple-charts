@@ -1,5 +1,23 @@
 # Release and maintenance policy
 
+## M06-T07A — current readiness update
+
+Owner-performed Windows NVDA + Firefox assessment: **PASS / ALL PASSED** on
+October 12, 2026 (Trinidad and Tobago local time), for tested source
+`83b51f0b025a0135b9e074778fc1f27764340971`. See the
+[manual evidence](M06_MANUAL_ACCESSIBILITY_RESULTS.md) for exact archive identity,
+coverage and limitations. Manual accessibility is complete for that candidate if
+its six packaged file contents remain unchanged; historical pending-test statements
+below retain earlier milestone context. Previously passed automated GitHub Actions
+checks are separate evidence, linked in the [current readiness update](M06_RELEASE_READINESS.md#m06-t07a--current-readiness-update).
+
+**Publication remains NO-GO**: 0.1.0 unpublished, PR #38 unmerged, exact publication
+operation unauthorized. All remaining review, account, merge/publication approval
+and post-publication gates are listed in the current readiness update above.
+The read-only readiness script does not ingest human evidence; its conservative
+pending markers confer no publication approval. Final documentation-head CI must
+be checked separately in PR #38.
+
 > **M06-T06B3 candidate branch:** Local 0.1.0 / `private: false` preparation,
 > lock synchronization and verification are authorized only on
 > `feat/m06-t06b3-release-candidate`. Main remains unchanged; npm publication,
