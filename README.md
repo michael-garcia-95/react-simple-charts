@@ -11,8 +11,20 @@ pointer, and provide source-data tables alongside the graphics.
 
 All five components are implemented and exported from
 `@michael-garcia-95/react-simple-charts`. The library is **not published to npm**;
-the repository package remains private at version `0.0.0`. You can explore the
-live website or build a local tarball to try it in a React application.
+the local release candidate is version `0.1.0` with `private: false`. Evaluate its
+reviewed commit on the candidate branch or, after a separately approved merge,
+on main. A technically publishable manifest is not authorization to publish.
+You can explore the live website or build a local tarball to try it in a React application.
+
+Candidate verification and outstanding release gates are documented in
+[the execution guide](docs/VERIFICATION_EXECUTION.md#first-local-release-candidate--m06-t06b3).
+The owner-performed Windows NVDA + Firefox assessment **passed on October 12, 2026**
+(Trinidad and Tobago local time) for the candidate recorded in
+[manual accessibility evidence](docs/M06_MANUAL_ACCESSIBILITY_RESULTS.md).
+This is neither WCAG certification nor universal accessibility compatibility.
+Publication remains **NO-GO** pending Lead evidence and final source/package review,
+account readiness, and explicit owner authorization for the exact manual 2FA
+operation. That planned first publication has no automatic GitHub OIDC provenance.
 
 ## Features
 
@@ -59,11 +71,16 @@ server rendering.
 
 ## Try a local package
 
-Clone the repository and create an archive:
+For local evaluation, clone the repository and check out the exact candidate commit
+reviewed by the Development Lead before creating an archive. Before the planned
+merge, the candidate is on `feat/m06-t06b3-release-candidate`; after an approved
+merge it can be selected from main. Replace `REVIEWED_CANDIDATE_COMMIT` below
+with the approved full commit SHA in either case:
 
 ```sh
 git clone https://github.com/michael-garcia-95/react-simple-charts.git
 cd react-simple-charts
+git checkout --detach REVIEWED_CANDIDATE_COMMIT
 npm ci
 npm pack
 ```
@@ -72,7 +89,7 @@ Then, from your existing React application, install the generated file using its
 actual path (quote paths containing spaces):
 
 ```sh
-npm install "/path/to/react-simple-charts/michael-garcia-95-react-simple-charts-0.0.0.tgz"
+npm install "/path/to/react-simple-charts/michael-garcia-95-react-simple-charts-0.1.0.tgz"
 ```
 
 Supply compatible React and React DOM peers and import from the scoped package

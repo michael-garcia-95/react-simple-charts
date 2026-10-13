@@ -1,0 +1,6 @@
+# Canonical npm metadata and TypeScript inputs embedded in library source maps.
+/LICENSE text eol=lf
+/README.md text eol=lf
+/package.json text eol=lf
+/src/**/*.ts text eol=lf
+/src/**/*.tsx text eol=lf

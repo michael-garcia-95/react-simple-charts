@@ -1,12 +1,49 @@
 # M06-T06A: publishing security architecture and runbook
 
+## M06-T07B — transition preparation (pre-merge snapshot)
+
+Current main remains private 0.0.0; the candidate remains unpublished 0.1.0.
+A future separately approved merge would move main to 0.1.0/private false.
+[Transition policy and cross-platform diagnosis](M06_MAIN_BRANCH_RELEASE_TRANSITION.md)
+record pre/post-merge CI selection, identical runtime/types, confirmed line-ending
+payload differences, and proposed canonical packaging/README corrections requiring
+Lead review. This update supersedes earlier branch-only CI-selection descriptions;
+historical milestone outcomes and the original owner manual PASS are retained.
+Publication remains **NO-GO**; no merge or exact publication operation is approved.
+
+## M06-T07A — current readiness update
+
+Owner-performed Windows NVDA + Firefox assessment: **PASS / ALL PASSED** on
+October 12, 2026 (Trinidad and Tobago local time), for tested source
+`83b51f0b025a0135b9e074778fc1f27764340971`. See the
+[manual evidence](M06_MANUAL_ACCESSIBILITY_RESULTS.md) for exact archive identity,
+coverage and limitations. Manual accessibility is complete for that candidate if
+its six packaged file contents remain unchanged; historical pending-test statements
+below retain earlier milestone context. Previously passed automated GitHub Actions
+checks are separate evidence, linked in the [current readiness update](M06_RELEASE_READINESS.md#m06-t07a--current-readiness-update).
+
+**Publication remains NO-GO**: 0.1.0 unpublished, PR #38 unmerged, exact publication
+operation unauthorized. All remaining review, account, merge/publication approval
+and post-publication gates are listed in the current readiness update above.
+The read-only readiness script does not ingest human evidence; its conservative
+pending markers confer no publication approval. Final documentation-head CI must
+be checked separately in PR #38.
+
+> **M06-T06B3 candidate branch:** Local 0.1.0 / `private: false` preparation,
+> lock synchronization and verification are authorized only on
+> `feat/m06-t06b3-release-candidate`. Main remains unchanged; npm publication,
+> staging, registry writes, tags/releases, deployment and merge are not authorized.
+> Publication remains **NO-GO**. Historical records below retain their original
+> outcomes and T06B2 boundaries. See the
+> [candidate execution guide](VERIFICATION_EXECUTION.md#first-local-release-candidate--m06-t06b3).
+
 **Proposal for Development Lead and owner review; no operational approval.**
 Official documentation reviewed **2026-10-12**. Recommendations below are future
 controls, not assertions about configured accounts. Documentation acceptance does
 not authorize configuration, staging, placeholders, publication, tags, releases,
 deployment, merging or M06-T07. No credentials are requested or recorded.
 
-## M06-T06B2 planning approval and current boundary
+## M06-T06B2 historical planning approval and boundary
 
 Lead/owner now approve **manual, owner-controlled first publication with npm 2FA**
 for planning. No publishing token is needed; the first manual publication does not

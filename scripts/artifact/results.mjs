@@ -20,6 +20,10 @@ export function validateGateReport(
 ) {
   assert(report && typeof report === 'object', 'Malformed gate report');
   assert.equal(report.name, name, 'Wrong gate name');
+  assert(
+    !report.preparedFixture && !report.manualVerification,
+    'Manual fixture preparation is not completed browser verification',
+  );
   assertPolicyAgreement(report, identity);
   assert.equal(
     report.mode,

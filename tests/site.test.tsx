@@ -153,8 +153,14 @@ describe('public website foundation', () => {
     const manifest = JSON.parse(readFileSync(resolve('package.json'), 'utf8'));
     expect(manifest.files).toEqual(['dist', 'LICENSE']);
     expect(Object.keys(manifest.exports)).toEqual(['.']);
-    expect(manifest.private).toBe(true);
-    expect(manifest.version).toBe('0.0.0');
+    expect(manifest.private).toBe(
+      process.env.RSC_VERIFICATION_POLICY !== 'release-candidate',
+    );
+    expect(manifest.version).toBe(
+      process.env.RSC_VERIFICATION_POLICY === 'release-candidate'
+        ? '0.1.0'
+        : '0.0.0',
+    );
     expect(manifest.scripts['build:site']).toMatch(/^npm run build &&/);
   });
   it('keeps deterministic data, contained responsive grids, visible focus and reduced motion', () => {

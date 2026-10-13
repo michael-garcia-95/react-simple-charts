@@ -20,6 +20,7 @@ import {
   inventory,
   sha256,
   verifyInstalledInventory,
+  verifyCanonicalContent,
 } from '../artifact/archive.mjs';
 import {
   artifactOptions,
@@ -35,6 +36,14 @@ import {
 import { consumerConfigurations } from '../consumers/fixtures.mjs';
 
 const root = resolve(import.meta.dirname, '../..');
+const selectedOptions =
+  process.env.RSC_VERIFICATION_POLICY === 'release-candidate'
+    ? {
+        policy: 'release-candidate',
+        'expected-name': packageName,
+        'expected-version': '0.1.0',
+      }
+    : {};
 function tar(entries) {
   const parts = [];
   for (const {
@@ -191,6 +200,7 @@ test('real checkout archive: identity, copied bytes, no repack and mutation reje
     const input = join(dir, 'candidate with spaces.tgz');
     await writeFile(input, bytes);
     const options = {
+      ...selectedOptions,
       artifact: input,
       sha256: sha256(bytes),
       'source-sha': execFileSync('git', ['rev-parse', 'HEAD'], {
@@ -239,6 +249,7 @@ for (const bad of ['sha256', 'source', 'name', 'version'])
       const input = join(dir, 'candidate.tgz');
       await writeFile(input, bytes);
       const options = {
+        ...selectedOptions,
         artifact: input,
         sha256: bad === 'sha256' ? '0'.repeat(64) : sha256(bytes),
         'source-sha':
@@ -310,6 +321,28 @@ function goodReport() {
 }
 test('exact consolidated browser evidence requires all three successful engines', () =>
   validateGateReport(goodReport(), context));
+test('manual fixture evidence cannot pass a full gate even with forged browser outcomes', () => {
+  for (const marker of [
+    { preparedFixture: 'retained-app' },
+    { manualVerification: { status: 'not executed' } },
+  ])
+    assert.throws(
+      () => validateGateReport({ ...goodReport(), ...marker }, context),
+      /Manual fixture preparation/,
+    );
+  assert.throws(
+    () =>
+      validateGateReport(
+        {
+          ...goodReport(),
+          name: 'browser-fixture-preparation',
+          mode: 'manual-fixture-preparation',
+        },
+        context,
+      ),
+    /Wrong gate name/,
+  );
+});
 for (const [name, change] of [
   [
     'wrong digest',
@@ -507,4 +540,107 @@ test('header checksum and missing terminator fail before extraction', () => {
     gunzipSync(bytes).length - 1024,
   );
   assert.throws(() => inspectArchive(gzipSync(truncated)), /terminator/);
+});
+
+function canonicalFixture() {
+  const files = new Map(inventory.map((path) => [path, Buffer.from('text\n')]));
+  files.set(
+    'dist/index.js.map',
+    Buffer.from(
+      JSON.stringify({
+        sources: ['../src/index.ts'],
+        sourcesContent: ['source\n'],
+      }),
+    ),
+  );
+  return files;
+}
+test('canonical content accepts six LF members with parsed LF embedded sources', () => {
+  verifyCanonicalContent(canonicalFixture());
+});
+for (const path of inventory)
+  test(`canonical content rejects physical CRLF in ${path}`, () => {
+    const files = canonicalFixture();
+    files.set(path, Buffer.from(files.get(path).toString() + '\r\n'));
+    assert.throws(() => verifyCanonicalContent(files), /Canonical LF required/);
+  });
+test('canonical content rejects escaped CRLF in sourcesContent despite physical LF map', () => {
+  const files = canonicalFixture();
+  files.set(
+    'dist/index.js.map',
+    Buffer.from(
+      JSON.stringify({
+        sources: ['../src/index.ts'],
+        sourcesContent: ['source\r\n'],
+      }),
+    ),
+  );
+  assert(!files.get('dist/index.js.map').includes(13));
+  assert.throws(
+    () => verifyCanonicalContent(files),
+    /Canonical LF sourcesContent/,
+  );
+});
+test('canonical content rejects missing/extra members and incomplete/nontext map content', () => {
+  const missing = canonicalFixture();
+  missing.delete('LICENSE');
+  const extra = canonicalFixture();
+  extra.set('extra.txt', Buffer.from('text'));
+  for (const files of [missing, extra])
+    assert.throws(() => verifyCanonicalContent(files), /six-file inventory/);
+  for (const content of [undefined, [], [null]]) {
+    const files = canonicalFixture();
+    files.set(
+      'dist/index.js.map',
+      Buffer.from(
+        JSON.stringify({
+          sources: ['../src/index.ts'],
+          sourcesContent: content,
+        }),
+      ),
+    );
+    assert.throws(() => verifyCanonicalContent(files));
+  }
+});
+test('Git attributes govern all actual embedded sources and package metadata only', async () => {
+  const map = JSON.parse(
+    await readFile(join(root, 'dist/index.js.map'), 'utf8'),
+  );
+  const paths = [
+    'LICENSE',
+    'README.md',
+    'package.json',
+    ...map.sources.map((path) => path.slice(3)),
+  ];
+  const result = execFileSync(
+    'git',
+    ['check-attr', '-z', 'text', 'eol', '--', ...paths],
+    { cwd: root },
+  )
+    .toString()
+    .split('\0');
+  for (let index = 0; index < result.length - 1; index += 3)
+    assert.equal(
+      result[index + 2],
+      result[index + 1] === 'text' ? 'set' : 'lf',
+      result[index],
+    );
+  const unrelated = execFileSync(
+    'git',
+    [
+      'check-attr',
+      '-z',
+      'text',
+      'eol',
+      '--',
+      'package-lock.json',
+      'scripts/artifact/archive.mjs',
+      'tests/package.test.ts',
+    ],
+    { cwd: root },
+  )
+    .toString()
+    .split('\0');
+  for (let index = 0; index < unrelated.length - 1; index += 3)
+    assert.equal(unrelated[index + 2], 'unspecified');
 });

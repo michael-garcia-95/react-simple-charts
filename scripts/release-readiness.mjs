@@ -16,6 +16,8 @@ export function readinessDecision({
   availableChecks,
   metadataFiles,
   sourceSha,
+  policy = manifestPolicy(),
+  lockfile,
 }) {
   const checks = [];
   const check = (name, action) => {
@@ -26,9 +28,19 @@ export function readinessDecision({
       checks.push({ name, status: 'failed', error: error.message });
     }
   };
-  check('unchanged development manifest and required package metadata', () =>
-    validateManifest(manifest),
+  check('explicit manifest policy and required package metadata', () =>
+    validateManifest(manifest, policy),
   );
+  if (lockfile)
+    check('root lockfile identity matches manifest', () => {
+      if (
+        lockfile.name !== manifest.name ||
+        lockfile.version !== manifest.version ||
+        lockfile.packages?.['']?.name !== manifest.name ||
+        lockfile.packages?.['']?.version !== manifest.version
+      )
+        throw new Error('Lockfile root identity differs from manifest');
+    });
   check('required metadata documents present', () => {
     if (metadataFiles.some((row) => !row.available))
       throw new Error('Required release metadata document unavailable');
@@ -52,8 +64,20 @@ export function readinessDecision({
   return {
     name: 'release-readiness',
     sourceSha,
+    policy,
+    lockfile: {
+      status: lockfile
+        ? checks.find(
+            (row) => row.name === 'root lockfile identity matches manifest',
+          ).status
+        : 'not supplied',
+    },
+    artifactEvidence: {
+      status: 'not ingested or validated by this assessment',
+      note: 'Completed exact-artifact and CI reports must be reviewed separately; script availability is not verification evidence.',
+    },
     summary: preparationPassed
-      ? 'Preparation checks passed; publication is blocked because the package remains private at 0.0.0 and final release gates are outstanding.'
+      ? `Preparation checks passed for explicit ${policy.name} policy; publication remains blocked by final release gates.`
       : 'Preparation checks failed; publication remains blocked. See required checks and final release gates.',
     current: {
       name: manifest.name,
@@ -80,9 +104,17 @@ export function readinessDecision({
       status: 'blocked',
       eligible: false,
       gates: [
+        { name: 'Development Lead review of candidate PR', status: 'pending' },
+        {
+          name: 'owner confirmation of npm account readiness before publication',
+          status: 'pending',
+        },
         {
           name: 'separately authorized manifest preparation and genuine 0.1.0 candidate',
-          status: 'pending',
+          status:
+            policy.name === 'release-candidate' && !candidateError
+              ? 'manifest prepared; archive verification and review separate'
+              : 'pending',
         },
         {
           name: 'manual NVDA + Firefox across all five chart families',
@@ -109,7 +141,9 @@ export function readinessDecision({
         'npm run format:check',
         'npm test',
         'node --test scripts/tests/*.test.mjs',
-        'npm run verify:package',
+        policy.name === 'development'
+          ? 'npm run verify:package'
+          : 'explicit candidate exact-package gate (same selected archive)',
         'npm run verify:site:snippets',
         'npm run build:playground',
         'both production site builds/base-path verifiers',
@@ -137,7 +171,11 @@ export function readinessDecision({
     ],
   };
 }
-export async function assessReadiness(root) {
+export async function assessReadiness(root, options = {}) {
+  const policy = manifestPolicy(options);
+  const lockfile = JSON.parse(
+    await readFile(join(root, 'package-lock.json'), 'utf8'),
+  );
   const manifest = JSON.parse(
     await readFile(join(root, 'package.json'), 'utf8'),
   );
@@ -180,6 +218,8 @@ export async function assessReadiness(root) {
   ]);
   return readinessDecision({
     manifest,
+    policy,
+    lockfile,
     availableChecks,
     metadataFiles,
     sourceSha: identity.stdout.trim(),
@@ -189,11 +229,25 @@ if (
   process.argv[1] &&
   resolve(process.argv[1]) === resolve(import.meta.filename)
 ) {
-  if (process.argv.slice(2).some((arg) => arg !== '--json'))
-    throw new Error(
-      'Use node scripts/release-readiness.mjs [--json]; no approval or publishing options exist',
-    );
-  const report = await assessReadiness(resolve(import.meta.dirname, '..'));
+  const args = process.argv.slice(2).filter((arg) => arg !== '--json');
+  const options = {};
+  for (let index = 0; index < args.length; index += 2) {
+    const key = args[index];
+    if (
+      !['--policy', '--expected-name', '--expected-version'].includes(key) ||
+      !args[index + 1] ||
+      args[index + 1].startsWith('--') ||
+      Object.hasOwn(options, key.slice(2))
+    )
+      throw new Error(
+        'Use explicit policy/name/version; no approval or publishing options exist',
+      );
+    options[key.slice(2)] = args[index + 1];
+  }
+  const report = await assessReadiness(
+    resolve(import.meta.dirname, '..'),
+    options,
+  );
   if (!process.argv.includes('--json')) console.log(report.summary);
   console.log(JSON.stringify(report, null, 2));
   if (report.preparation.status !== 'passed') process.exitCode = 1;

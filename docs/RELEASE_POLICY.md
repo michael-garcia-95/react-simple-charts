@@ -1,8 +1,46 @@
 # Release and maintenance policy
 
-**Status: approved for planning in M06-T06B2; publication is not authorized.**
-Initial public release target: **0.1.0**, unpublished. The repository remains
-`@michael-garcia-95/react-simple-charts`, version `0.0.0`, `private: true`.
+## M06-T07B — transition preparation (pre-merge snapshot)
+
+Current main remains private 0.0.0; the candidate remains unpublished 0.1.0.
+A future separately approved merge would move main to 0.1.0/private false.
+[Transition policy and cross-platform diagnosis](M06_MAIN_BRANCH_RELEASE_TRANSITION.md)
+record pre/post-merge CI selection, identical runtime/types, confirmed line-ending
+payload differences, and proposed canonical packaging/README corrections requiring
+Lead review. This update supersedes earlier branch-only CI-selection descriptions;
+historical milestone outcomes and the original owner manual PASS are retained.
+Publication remains **NO-GO**; no merge or exact publication operation is approved.
+
+## M06-T07A — current readiness update
+
+Owner-performed Windows NVDA + Firefox assessment: **PASS / ALL PASSED** on
+October 12, 2026 (Trinidad and Tobago local time), for tested source
+`83b51f0b025a0135b9e074778fc1f27764340971`. See the
+[manual evidence](M06_MANUAL_ACCESSIBILITY_RESULTS.md) for exact archive identity,
+coverage and limitations. Manual accessibility is complete for that candidate if
+its six packaged file contents remain unchanged; historical pending-test statements
+below retain earlier milestone context. Previously passed automated GitHub Actions
+checks are separate evidence, linked in the [current readiness update](M06_RELEASE_READINESS.md#m06-t07a--current-readiness-update).
+
+**Publication remains NO-GO**: 0.1.0 unpublished, PR #38 unmerged, exact publication
+operation unauthorized. All remaining review, account, merge/publication approval
+and post-publication gates are listed in the current readiness update above.
+The read-only readiness script does not ingest human evidence; its conservative
+pending markers confer no publication approval. Final documentation-head CI must
+be checked separately in PR #38.
+
+> **M06-T06B3 candidate branch:** Local 0.1.0 / `private: false` preparation,
+> lock synchronization and verification are authorized only on
+> `feat/m06-t06b3-release-candidate`. Main remains unchanged; npm publication,
+> staging, registry writes, tags/releases, deployment and merge are not authorized.
+> Publication remains **NO-GO**. Historical records below retain their original
+> outcomes and T06B2 boundaries. See the
+> [candidate execution guide](VERIFICATION_EXECUTION.md#first-local-release-candidate--m06-t06b3).
+
+**Status: local preparation approved in M06-T06B3; publication is not authorized.**
+Initial public release target: **0.1.0**, unpublished. The separate candidate branch
+uses `@michael-garcia-95/react-simple-charts`, version `0.1.0`, `private: false`;
+main remains unchanged.
 This document does not authorize publication, staging, tags, GitHub releases,
 credentials, trusted publishers, publishing workflows or deployment. M06-T06
 security preparation and M06-T07 publication require separate authorization.
@@ -11,8 +49,9 @@ security preparation and M06-T07 publication require separate authorization.
 
 Settled architecture and identity are recorded in [open decisions](OPEN_DECISIONS.md)
 and [architecture](ARCHITECTURE.md). Versioning, maintenance and conservative supported-environment conventions below
-are approved for planning. This does not approve manifest changes, candidate
-creation/distribution or the final publication operation.
+are approved for planning. M06-T06B3 separately authorizes local manifest/candidate
+preparation only on the feature branch. Distribution and the final publication
+operation remain unapproved.
 
 Use [Semantic Versioning](https://semver.org/). After 1.0.0, compatible fixes
 increment patch, compatible additions increment minor and incompatible public

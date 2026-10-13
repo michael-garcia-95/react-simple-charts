@@ -1,7 +1,10 @@
 name: Exact artifact verification
 
 on:
+  push:
+    branches: [main, feat/m06-t06b3-release-candidate]
   pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -22,31 +25,25 @@ jobs:
         with:
           node-version: '24.19.0'
           cache: npm
+      - name: Select constrained verification policy
+        env:
+          RSC_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          RSC_BASE_REPOSITORY: ${{ github.event.pull_request.base.repo.full_name }}
+          RSC_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node scripts/ci-verification-policy.mjs
       - run: npm ci
       - name: Prepare isolated drivers and all engines
         run: |
           node scripts/browser-driver.mjs --install
           node scripts/browser-driver.mjs --install --smoke
           node work/browser-smoke/driver/node_modules/playwright-core/cli.js install --with-deps chromium firefox webkit
-      - name: Prepare one private local archive and record its identity
+      - name: Build and select one local archive (publication blocked)
         run: |
-          mkdir -p work/candidate
-          npm run build
-          npm pack --ignore-scripts --pack-destination work/candidate
-          node --input-type=module <<'NODE'
-          import {readFileSync, appendFileSync} from 'node:fs';
-          import {createHash} from 'node:crypto';
-          const path = 'work/candidate/michael-garcia-95-react-simple-charts-0.0.0.tgz';
-          const digest = createHash('sha256').update(readFileSync(path)).digest('hex');
-          appendFileSync(process.env.GITHUB_ENV, `RSC_EXACT_SHA256=${digest}\n`);
-          NODE
+          node scripts/prepare-verification-artifact.mjs --policy "$RSC_VERIFICATION_POLICY" --expected-name "$RSC_EXPECTED_NAME" --expected-version "$RSC_EXPECTED_VERSION"
       - name: Verify that single archive through all genuine gates
         run: |
           set -o pipefail
-          node scripts/verify-exact-artifact.mjs \
-            --artifact work/candidate/michael-garcia-95-react-simple-charts-0.0.0.tgz \
-            --sha256 "$RSC_EXACT_SHA256" \
-            --source-sha "$(git rev-parse HEAD)" 2>&1 | tee work/exact-verification.log
+          node scripts/verify-prepared-artifact.mjs all 2>&1 | tee work/exact-verification.log
       - name: Summarize finalized exact evidence
         if: always()
         run: |
@@ -58,7 +55,11 @@ jobs:
           assert.equal(pointer.runId, report.runId);
           appendFileSync(process.env.GITHUB_STEP_SUMMARY, `Exact run ${report.runId}: ${report.status}\nArchive SHA-256: ${report.artifact?.sha256 ?? 'not selected'}\nSource: ${report.artifact?.source.checkoutSha ?? 'not established'}\n`);
           assert.equal(report.status, 'passed');
-          assert.equal(report.artifact.sha256, process.env.RSC_EXACT_SHA256);
+          const {identity} = JSON.parse(readFileSync('work/candidate/current.json', 'utf8'));
+          assert.equal(report.artifact.sha256, identity.sha256);
+          assert.deepEqual(report.policy, identity.policy);
+          assert.equal(report.artifact.source.checkoutSha, identity.source.checkoutSha);
+          appendFileSync(process.env.GITHUB_STEP_SUMMARY, `Policy: ${report.policy.name}; publication remains BLOCKED.\n`);
           assert.equal(report.package.status, 'passed');
           assert.deepEqual(report.gates.map(gate => [gate.name, gate.status]), [['installed-consumers', 'passed'], ['browser-smoke', 'passed']]);
           NODE
@@ -69,6 +70,8 @@ jobs:
           retention-days: 14
           if-no-files-found: warn
           path: |
+            work/candidate/current.json
+            work/candidate/run-*/identity.json
             work/exact-artifact/current.json
             work/exact-artifact/runs/
             work/exact-verification.log
@@ -77,3 +80,4 @@ jobs:
             work/browser-smoke/driver/package.json
             work/browser-smoke/driver/package-lock.json
             !work/**/*.tgz
+            !work/**/*.tar.gz

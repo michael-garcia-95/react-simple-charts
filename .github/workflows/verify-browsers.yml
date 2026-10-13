@@ -1,7 +1,10 @@
 name: Browser verification
 
 on:
+  push:
+    branches: [main, feat/m06-t06b3-release-candidate]
   pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -17,10 +20,18 @@ jobs:
       RSC_SMOKE_BROWSERS: chromium,firefox,webkit
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: '24.19.0'
           cache: npm
+      - name: Select constrained verification policy
+        env:
+          RSC_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          RSC_BASE_REPOSITORY: ${{ github.event.pull_request.base.repo.full_name }}
+          RSC_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node scripts/ci-verification-policy.mjs
       - run: npm ci
       - name: Install isolated pinned browser driver
         run: node scripts/verify-browser-smoke.mjs --install-driver-only
@@ -28,10 +39,18 @@ jobs:
         run: |
           set -o pipefail
           node work/browser-smoke/driver/node_modules/playwright-core/cli.js install --with-deps chromium firefox webkit 2>&1 | tee work/browser-smoke/installation.log
+      - name: Build and select one local archive (publication blocked)
+        if: env.RSC_VERIFICATION_POLICY == 'release-candidate'
+        run: |
+          node scripts/prepare-verification-artifact.mjs --policy "$RSC_VERIFICATION_POLICY" --expected-name "$RSC_EXPECTED_NAME" --expected-version "$RSC_EXPECTED_VERSION"
       - name: Verify genuine installed archive in all engines
         run: |
           set -o pipefail
-          npm run verify:browsers 2>&1 | tee work/browser-smoke/verification.log
+          if [ "$RSC_VERIFICATION_POLICY" = release-candidate ]; then
+            node scripts/verify-prepared-artifact.mjs browsers 2>&1 | tee work/browser-smoke/verification.log
+          else
+            npm run verify:browsers 2>&1 | tee work/browser-smoke/verification.log
+          fi
       - name: Report and enforce complete browser evidence
         if: always()
         run: |
@@ -70,8 +89,12 @@ jobs:
           retention-days: 14
           if-no-files-found: warn
           path: |
+            work/candidate/current.json
+            work/candidate/run-*/identity.json
             work/browser-smoke/current.json
             work/browser-smoke/runs/
             work/browser-smoke/*.log
             work/browser-smoke/driver/package.json
             work/browser-smoke/driver/package-lock.json
+            !work/**/*.tgz
+            !work/**/*.tar.gz
