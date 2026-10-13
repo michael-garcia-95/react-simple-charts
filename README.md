@@ -7,24 +7,20 @@ pointer, and provide source-data tables alongside the graphics.
 [Live examples and documentation](https://michael-garcia-95.github.io/react-simple-charts/)
 · [Source on GitHub](https://github.com/michael-garcia-95/react-simple-charts)
 
-## Current availability
+## Install
 
-All five components are implemented and exported from
-`@michael-garcia-95/react-simple-charts`. The library is **not published to npm**;
-the local release candidate is version `0.1.0` with `private: false`. Evaluate its
-reviewed commit on the candidate branch or, after a separately approved merge,
-on main. A technically publishable manifest is not authorization to publish.
-You can explore the live website or build a local tarball to try it in a React application.
+Version **0.1.0** was published publicly to npm on **October 13, 2026**
+under the `latest` dist-tag.
 
-Candidate verification and outstanding release gates are documented in
-[the execution guide](docs/VERIFICATION_EXECUTION.md#first-local-release-candidate--m06-t06b3).
-The owner-performed Windows NVDA + Firefox assessment **passed on October 12, 2026**
-(Trinidad and Tobago local time) for the candidate recorded in
-[manual accessibility evidence](docs/M06_MANUAL_ACCESSIBILITY_RESULTS.md).
-This is neither WCAG certification nor universal accessibility compatibility.
-Publication remains **NO-GO** pending Lead evidence and final source/package review,
-account readiness, and explicit owner authorization for the exact manual 2FA
-operation. That planned first publication has no automatic GitHub OIDC provenance.
+```sh
+npm install @michael-garcia-95/react-simple-charts
+```
+
+Supply React and React DOM `^18.2.0 || ^19.0.0` in your application. Import from
+the scoped package root; internal subpaths and CommonJS are unavailable.
+
+[Package on npm](https://www.npmjs.com/package/@michael-garcia-95/react-simple-charts)
+· [Release record](https://github.com/michael-garcia-95/react-simple-charts/blob/main/docs/M06_POST_PUBLICATION.md)
 
 ## Features
 
@@ -39,7 +35,7 @@ operation. That planned first publication has no automatic GitHub OIDC provenanc
 
 ## Quick example
 
-With the local package installed in your application:
+With the package installed in your React application:
 
 ```tsx
 import { LineChart } from '@michael-garcia-95/react-simple-charts';
@@ -69,44 +65,18 @@ Omitting `width` makes the chart measure its container. Use a positive numeric
 width, such as `width={640}`, for explicit sizing and complete initial SVG during
 server rendering.
 
-## Try a local package
-
-For local evaluation, clone the repository and check out the exact candidate commit
-reviewed by the Development Lead before creating an archive. Before the planned
-merge, the candidate is on `feat/m06-t06b3-release-candidate`; after an approved
-merge it can be selected from main. Replace `REVIEWED_CANDIDATE_COMMIT` below
-with the approved full commit SHA in either case:
-
-```sh
-git clone https://github.com/michael-garcia-95/react-simple-charts.git
-cd react-simple-charts
-git checkout --detach REVIEWED_CANDIDATE_COMMIT
-npm ci
-npm pack
-```
-
-Then, from your existing React application, install the generated file using its
-actual path (quote paths containing spaces):
-
-```sh
-npm install "/path/to/react-simple-charts/michael-garcia-95-react-simple-charts-0.1.0.tgz"
-```
-
-Supply compatible React and React DOM peers and import from the scoped package
-root. Internal subpaths and CommonJS are unavailable.
-
 ## API and documentation
 
-| Guide                                                            | Use it for                                          |
-| ---------------------------------------------------------------- | --------------------------------------------------- |
-| [LineChart](docs/LINE_CHART.md)                                  | Trends, gaps and category/numeric/time scales       |
-| [AreaChart](docs/AREA_CHART.md)                                  | Independent unstacked areas relative to zero        |
-| [BarChart](docs/BAR_CHART.md)                                    | Grouped comparisons in either orientation           |
-| [PieChart](docs/PIE_CHART.md)                                    | Positive values as parts of a whole                 |
-| [DonutChart](docs/DONUT_CHART.md)                                | Ring geometry and optional center content           |
-| [TypeScript contracts](docs/API_TYPE_CONTRACTS.md)               | Generic props, mappings and callback payloads       |
-| [Architecture](docs/ARCHITECTURE.md)                             | Module boundaries and implementation decisions      |
-| [Compatibility evidence](docs/M06_DISTRIBUTION_COMPATIBILITY.md) | Tested configurations, reproduction and limitations |
+| Guide                                                                                                                               | Use it for                                          |
+| ----------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| [LineChart](https://github.com/michael-garcia-95/react-simple-charts/blob/main/docs/LINE_CHART.md)                                  | Trends, gaps and category/numeric/time scales       |
+| [AreaChart](https://github.com/michael-garcia-95/react-simple-charts/blob/main/docs/AREA_CHART.md)                                  | Independent unstacked areas relative to zero        |
+| [BarChart](https://github.com/michael-garcia-95/react-simple-charts/blob/main/docs/BAR_CHART.md)                                    | Grouped comparisons in either orientation           |
+| [PieChart](https://github.com/michael-garcia-95/react-simple-charts/blob/main/docs/PIE_CHART.md)                                    | Positive values as parts of a whole                 |
+| [DonutChart](https://github.com/michael-garcia-95/react-simple-charts/blob/main/docs/DONUT_CHART.md)                                | Ring geometry and optional center content           |
+| [TypeScript contracts](https://github.com/michael-garcia-95/react-simple-charts/blob/main/docs/API_TYPE_CONTRACTS.md)               | Generic props, mappings and callback payloads       |
+| [Architecture](https://github.com/michael-garcia-95/react-simple-charts/blob/main/docs/ARCHITECTURE.md)                             | Module boundaries and implementation decisions      |
+| [Compatibility evidence](https://github.com/michael-garcia-95/react-simple-charts/blob/main/docs/M06_DISTRIBUTION_COMPATIBILITY.md) | Tested configurations, reproduction and limitations |
 
 ## Compatibility
 
@@ -137,8 +107,14 @@ respects reduced motion.
 
 Automated axe and accessibility-tree checks passed the focused browser suite with
 zero violations, but axe left SVG text contrast and an empty-table check incomplete.
-Manual NVDA testing is pending; automated results are not WCAG certification or
-proof of screen-reader announcements. See the [manual test plan](docs/M06_SCREEN_READER_TEST_PLAN.md).
+The owner-performed Windows NVDA 2026.2 + Firefox 157.0.1 assessment passed on
+October 12, 2026 (Trinidad and Tobago local time), covering all five charts in
+explicit and responsive layouts. NVDA Focus Mode was needed for chart navigation.
+The [manual assessment](https://github.com/michael-garcia-95/react-simple-charts/blob/main/docs/M06_MANUAL_ACCESSIBILITY_RESULTS.md) remains attached
+to its original tested candidate, not the later published archive. Runtime and
+declaration bytes were preserved through the documented package normalization;
+no new manual assessment is claimed. These results are not WCAG certification,
+a third-party audit or universal screen-reader compatibility.
 
 Large datasets add SVG/control cost; no performance budget or decimation is
 promised. Tiny segments can be difficult pointer targets, labels use estimated
@@ -180,15 +156,15 @@ supported installation commands are in the compatibility report.
 
 ## Contributing
 
-Read [the architecture](docs/ARCHITECTURE.md), [repository rules](AGENTS.md) and
-[current open decisions](docs/OPEN_DECISIONS.md). Keep changes focused, preserve
+Read [the architecture](https://github.com/michael-garcia-95/react-simple-charts/blob/main/docs/ARCHITECTURE.md), [repository rules](https://github.com/michael-garcia-95/react-simple-charts/blob/main/AGENTS.md) and
+[current open decisions](https://github.com/michael-garcia-95/react-simple-charts/blob/main/docs/OPEN_DECISIONS.md). Keep changes focused, preserve
 public contracts and include relevant tests. Report defects with a reproducible
 dataset, chart props, environment versions and expected versus observed behavior
 in the [issue tracker](https://github.com/michael-garcia-95/react-simple-charts/issues).
 
-[Engineering reports](docs/) preserve design and validation history. Use current
+[Engineering reports](https://github.com/michael-garcia-95/react-simple-charts/tree/main/docs) preserve design and validation history. Use current
 guides and the compatibility report for present behavior.
 
 ## License
 
-[MIT](LICENSE). Copyright (c) 2026 Michael Garcia.
+[MIT](https://github.com/michael-garcia-95/react-simple-charts/blob/main/LICENSE). Copyright (c) 2026 Michael Garcia.

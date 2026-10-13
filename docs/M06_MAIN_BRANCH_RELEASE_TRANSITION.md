@@ -1,5 +1,11 @@
 # M06 — Main-branch release transition and canonical package baseline
 
+> **Historical preparation record.** Unpublished, NO-GO, unmerged and pending-test
+> statements below describe their original milestones. For the October 13, 2026
+> publication and current follow-up boundaries, see the
+> [post-publication record](M06_POST_PUBLICATION.md). Original evidence identities
+> and outcomes are retained; historical readiness scripts are not registry status.
+
 ## M06-T07C — completed canonical package baseline
 
 **Publication: NO-GO. Merge: not authorized.** Lead-authorized normalization and

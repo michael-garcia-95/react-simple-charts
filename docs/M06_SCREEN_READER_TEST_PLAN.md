@@ -1,5 +1,11 @@
 # M06-T03 — Windows screen-reader test plan
 
+> **Historical preparation record.** Unpublished, NO-GO, unmerged and pending-test
+> statements below describe their original milestones. For the October 13, 2026
+> publication and current follow-up boundaries, see the
+> [post-publication record](M06_POST_PUBLICATION.md). Original evidence identities
+> and outcomes are retained; historical readiness scripts are not registry status.
+
 **Status: completed owner-performed assessment — PASS**, October 12, 2026,
 Trinidad and Tobago local time, for source
 `83b51f0b025a0135b9e074778fc1f27764340971`. All five families and both sizing
