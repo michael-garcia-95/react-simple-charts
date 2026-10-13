@@ -3,7 +3,13 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { readFile, writeFile, chmod } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
-import { archiveBytes, inspectArchive, sha256, inventory } from './archive.mjs';
+import {
+  archiveBytes,
+  inspectArchive,
+  sha256,
+  inventory,
+  verifyCanonicalContent,
+} from './archive.mjs';
 import { manifestPolicy, validateSourceManifest } from './manifest-policy.mjs';
 const git = promisify(execFile);
 export function artifactOptions(args = process.argv.slice(2)) {
@@ -58,6 +64,7 @@ export async function sourceIdentity(root, claim) {
     'Source SHA claim does not match actual checkout HEAD',
   );
   const sourcePaths = [
+    '.gitattributes',
     'src',
     'package.json',
     'package-lock.json',
@@ -103,6 +110,7 @@ export async function selectArtifact({ root, work, options }) {
     'Selected archive SHA-256 mismatch',
   );
   const files = inspectArchive(bytes);
+  verifyCanonicalContent(files);
   const manifest = JSON.parse(files.get('package.json').toString());
   const expected = JSON.parse(
     await readFile(join(root, 'package.json'), 'utf8'),

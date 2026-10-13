@@ -20,6 +20,7 @@ import {
   inventory,
   sha256,
   verifyInstalledInventory,
+  verifyCanonicalContent,
 } from '../artifact/archive.mjs';
 import {
   artifactOptions,
@@ -539,4 +540,107 @@ test('header checksum and missing terminator fail before extraction', () => {
     gunzipSync(bytes).length - 1024,
   );
   assert.throws(() => inspectArchive(gzipSync(truncated)), /terminator/);
+});
+
+function canonicalFixture() {
+  const files = new Map(inventory.map((path) => [path, Buffer.from('text\n')]));
+  files.set(
+    'dist/index.js.map',
+    Buffer.from(
+      JSON.stringify({
+        sources: ['../src/index.ts'],
+        sourcesContent: ['source\n'],
+      }),
+    ),
+  );
+  return files;
+}
+test('canonical content accepts six LF members with parsed LF embedded sources', () => {
+  verifyCanonicalContent(canonicalFixture());
+});
+for (const path of inventory)
+  test(`canonical content rejects physical CRLF in ${path}`, () => {
+    const files = canonicalFixture();
+    files.set(path, Buffer.from(files.get(path).toString() + '\r\n'));
+    assert.throws(() => verifyCanonicalContent(files), /Canonical LF required/);
+  });
+test('canonical content rejects escaped CRLF in sourcesContent despite physical LF map', () => {
+  const files = canonicalFixture();
+  files.set(
+    'dist/index.js.map',
+    Buffer.from(
+      JSON.stringify({
+        sources: ['../src/index.ts'],
+        sourcesContent: ['source\r\n'],
+      }),
+    ),
+  );
+  assert(!files.get('dist/index.js.map').includes(13));
+  assert.throws(
+    () => verifyCanonicalContent(files),
+    /Canonical LF sourcesContent/,
+  );
+});
+test('canonical content rejects missing/extra members and incomplete/nontext map content', () => {
+  const missing = canonicalFixture();
+  missing.delete('LICENSE');
+  const extra = canonicalFixture();
+  extra.set('extra.txt', Buffer.from('text'));
+  for (const files of [missing, extra])
+    assert.throws(() => verifyCanonicalContent(files), /six-file inventory/);
+  for (const content of [undefined, [], [null]]) {
+    const files = canonicalFixture();
+    files.set(
+      'dist/index.js.map',
+      Buffer.from(
+        JSON.stringify({
+          sources: ['../src/index.ts'],
+          sourcesContent: content,
+        }),
+      ),
+    );
+    assert.throws(() => verifyCanonicalContent(files));
+  }
+});
+test('Git attributes govern all actual embedded sources and package metadata only', async () => {
+  const map = JSON.parse(
+    await readFile(join(root, 'dist/index.js.map'), 'utf8'),
+  );
+  const paths = [
+    'LICENSE',
+    'README.md',
+    'package.json',
+    ...map.sources.map((path) => path.slice(3)),
+  ];
+  const result = execFileSync(
+    'git',
+    ['check-attr', '-z', 'text', 'eol', '--', ...paths],
+    { cwd: root },
+  )
+    .toString()
+    .split('\0');
+  for (let index = 0; index < result.length - 1; index += 3)
+    assert.equal(
+      result[index + 2],
+      result[index + 1] === 'text' ? 'set' : 'lf',
+      result[index],
+    );
+  const unrelated = execFileSync(
+    'git',
+    [
+      'check-attr',
+      '-z',
+      'text',
+      'eol',
+      '--',
+      'package-lock.json',
+      'scripts/artifact/archive.mjs',
+      'tests/package.test.ts',
+    ],
+    { cwd: root },
+  )
+    .toString()
+    .split('\0');
+  for (let index = 0; index < unrelated.length - 1; index += 3)
+    assert.equal(unrelated[index + 2], 'unspecified');
 });

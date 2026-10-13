@@ -10,6 +10,7 @@ import ts from 'typescript';
 
 import { validateManifest } from './artifact/manifest-policy.mjs';
 import { artifactOptions } from './artifact/selection.mjs';
+import { verifyCanonicalContent } from './artifact/archive.mjs';
 
 if (artifactOptions())
   throw new Error(
@@ -228,6 +229,16 @@ try {
       await readFile(path),
     );
   }
+  verifyCanonicalContent(
+    new Map(
+      await Promise.all(
+        inventory.map(async (path) => [
+          path,
+          await readFile(join(packedRoot, path)),
+        ]),
+      ),
+    ),
+  );
   console.log(
     `Actual archive verified: ${packed.filename}, ${packed.entryCount} files, ${packed.size} packed bytes, ${packed.unpackedSize} unpacked bytes.`,
   );

@@ -164,6 +164,38 @@ export function inspectArchive(bytes) {
   );
   return files;
 }
+// Check actual archive bytes; checkout attributes alone cannot detect leaked CRLF.
+export function verifyCanonicalContent(files) {
+  assert.deepEqual(
+    [...files.keys()].sort(),
+    [...inventory],
+    'Canonical six-file inventory',
+  );
+  for (const path of inventory) {
+    assert(!files.get(path).includes(13), `Canonical LF required: ${path}`);
+  }
+  const map = JSON.parse(files.get('dist/index.js.map').toString());
+  assert(
+    Array.isArray(map.sources) && map.sources.length > 0,
+    'Source-map sources required',
+  );
+  assert(
+    Array.isArray(map.sourcesContent),
+    'Embedded source-map content required',
+  );
+  assert.equal(
+    map.sourcesContent.length,
+    map.sources.length,
+    'Complete embedded source-map content required',
+  );
+  for (const [index, content] of map.sourcesContent.entries()) {
+    assert(typeof content === 'string', 'Embedded source must be text');
+    assert(
+      !content.includes('\r'),
+      `Canonical LF sourcesContent required: ${map.sources[index]}`,
+    );
+  }
+}
 export async function verifyInstalledInventory(directory, files) {
   const found = [];
   async function visit(path, prefix = '') {

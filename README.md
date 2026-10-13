@@ -11,17 +11,20 @@ pointer, and provide source-data tables alongside the graphics.
 
 All five components are implemented and exported from
 `@michael-garcia-95/react-simple-charts`. The library is **not published to npm**;
-this separate `feat/m06-t06b3-release-candidate` branch prepares version `0.1.0`
-with `private: false`. These changes are not merged into main. A technically
-publishable manifest is not authorization to publish. You can explore the live
-website or build a local tarball to try it in a React application.
+the local release candidate is version `0.1.0` with `private: false`. Evaluate its
+reviewed commit on the candidate branch or, after a separately approved merge,
+on main. A technically publishable manifest is not authorization to publish.
+You can explore the live website or build a local tarball to try it in a React application.
 
 Candidate verification and outstanding release gates are documented in
 [the execution guide](docs/VERIFICATION_EXECUTION.md#first-local-release-candidate--m06-t06b3).
-Publication remains **NO-GO** pending Lead review, manual Windows NVDA + Firefox,
-final human accessibility assessment, exact source/artifact review, account
-readiness and owner authorization for the exact manual 2FA operation. That planned
-first publication has no automatic GitHub OIDC provenance.
+The owner-performed Windows NVDA + Firefox assessment **passed on October 12, 2026**
+(Trinidad and Tobago local time) for the candidate recorded in
+[manual accessibility evidence](docs/M06_MANUAL_ACCESSIBILITY_RESULTS.md).
+This is neither WCAG certification nor universal accessibility compatibility.
+Publication remains **NO-GO** pending Lead evidence and final source/package review,
+account readiness, and explicit owner authorization for the exact manual 2FA
+operation. That planned first publication has no automatic GitHub OIDC provenance.
 
 ## Features
 
@@ -68,11 +71,16 @@ server rendering.
 
 ## Try a local package
 
-For local candidate evaluation, clone the separate candidate branch and create an archive (this grants no publication approval):
+For local evaluation, clone the repository and check out the exact candidate commit
+reviewed by the Development Lead before creating an archive. Before the planned
+merge, the candidate is on `feat/m06-t06b3-release-candidate`; after an approved
+merge it can be selected from main. Replace `REVIEWED_CANDIDATE_COMMIT` below
+with the approved full commit SHA in either case:
 
 ```sh
-git clone --branch feat/m06-t06b3-release-candidate https://github.com/michael-garcia-95/react-simple-charts.git
+git clone https://github.com/michael-garcia-95/react-simple-charts.git
 cd react-simple-charts
+git checkout --detach REVIEWED_CANDIDATE_COMMIT
 npm ci
 npm pack
 ```
