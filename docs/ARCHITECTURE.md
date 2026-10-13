@@ -121,7 +121,7 @@ Revisit that flag if global effects or imported styles are introduced.
 
 The six-file archive includes the ESM, declarations, map, manifest, README and MIT
 license. Site, playground, sources, tests, drivers and local evidence are excluded.
-The package remains private `0.0.0` and unpublished. Contributor Node requirements
+The separate M06-T06B3 candidate branch prepares `0.1.0` / `private: false`; main remains unchanged and the package is unpublished. Contributor Node requirements
 come from build/test tools; the package has no engines declaration.
 
 ## Validation and historical evidence

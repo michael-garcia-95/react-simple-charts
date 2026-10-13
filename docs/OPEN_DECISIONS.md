@@ -1,7 +1,7 @@
 # Open decisions
 
 This page separates unresolved choices from implemented policies. The package is
-`@michael-garcia-95/react-simple-charts`, private at `0.0.0` and unpublished. All
+`@michael-garcia-95/react-simple-charts`, `0.1.0` / `private: false` on the separate candidate branch and unpublished; main remains unchanged. All
 five chart components are implemented. The website is live on GitHub Pages.
 
 ## Release and compatibility gates
@@ -26,7 +26,7 @@ five chart components are implemented. The website is live on GitHub Pages.
   documentation, stronger stability from 1.0.0, latest-line maintenance and GitHub
   Issues support without guaranteed response times are approved by Lead/owner.
   See [release policy](RELEASE_POLICY.md) and the [unpublished changelog](../CHANGELOG.md).
-  This approval does not authorize changing the manifest or creating a candidate.
+  M06-T06B3 separately authorizes local manifest/candidate preparation on the feature branch only.
 - **Supported contracts approved for planning:** React 18.2+ within React 18 and
   React 19 under existing peers; TypeScript minimum 5.4. Tested compilers are
   5.4.5/6.0.3, Vite 8.3.4 and Next 14.2.35/16.4.0 with tested App/Pages routing.
@@ -41,8 +41,7 @@ five chart components are implemented. The website is live on GitHub Pages.
   ever created, and GitHub Private Vulnerability Reporting enabled. These are
   owner statements supplied for M06-T06B2, not independently verified account
   settings. No credentials or recovery material are collected.
-- **Operational approval outstanding:** Actual version/private/lock migration,
-  genuine release-candidate creation or distribution, exact final artifact review,
+- **Operational approval outstanding:** M06-T06B3 authorizes version/private/lock migration and local candidate creation on the feature branch. Candidate distribution, exact final artifact review,
   publication, tags/releases and any staging/trust/settings operation remain
   unauthorized. Manual NVDA + Firefox is deferred until final pre-publication
   validation and remains a gate, alongside final human accessibility assessment

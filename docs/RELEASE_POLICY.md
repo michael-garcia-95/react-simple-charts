@@ -1,8 +1,17 @@
 # Release and maintenance policy
 
-**Status: approved for planning in M06-T06B2; publication is not authorized.**
-Initial public release target: **0.1.0**, unpublished. The repository remains
-`@michael-garcia-95/react-simple-charts`, version `0.0.0`, `private: true`.
+> **M06-T06B3 candidate branch:** Local 0.1.0 / `private: false` preparation,
+> lock synchronization and verification are authorized only on
+> `feat/m06-t06b3-release-candidate`. Main remains unchanged; npm publication,
+> staging, registry writes, tags/releases, deployment and merge are not authorized.
+> Publication remains **NO-GO**. Historical records below retain their original
+> outcomes and T06B2 boundaries. See the
+> [candidate execution guide](VERIFICATION_EXECUTION.md#first-local-release-candidate--m06-t06b3).
+
+**Status: local preparation approved in M06-T06B3; publication is not authorized.**
+Initial public release target: **0.1.0**, unpublished. The separate candidate branch
+uses `@michael-garcia-95/react-simple-charts`, version `0.1.0`, `private: false`;
+main remains unchanged.
 This document does not authorize publication, staging, tags, GitHub releases,
 credentials, trusted publishers, publishing workflows or deployment. M06-T06
 security preparation and M06-T07 publication require separate authorization.
@@ -11,8 +20,9 @@ security preparation and M06-T07 publication require separate authorization.
 
 Settled architecture and identity are recorded in [open decisions](OPEN_DECISIONS.md)
 and [architecture](ARCHITECTURE.md). Versioning, maintenance and conservative supported-environment conventions below
-are approved for planning. This does not approve manifest changes, candidate
-creation/distribution or the final publication operation.
+are approved for planning. M06-T06B3 separately authorizes local manifest/candidate
+preparation only on the feature branch. Distribution and the final publication
+operation remain unapproved.
 
 Use [Semantic Versioning](https://semver.org/). After 1.0.0, compatible fixes
 increment patch, compatible additions increment minor and incompatible public

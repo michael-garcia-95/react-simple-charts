@@ -19,9 +19,20 @@ import {
   consumerConfigurations,
 } from '../consumers/fixtures.mjs';
 const root = resolve(import.meta.dirname, '../..');
-const development = JSON.parse(
-  await readFile(join(root, 'package.json'), 'utf8'),
-);
+const actual = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
+const development = {
+  ...structuredClone(actual),
+  version: '0.0.0',
+  private: true,
+};
+const selectedOptions =
+  process.env.RSC_VERIFICATION_POLICY === 'release-candidate'
+    ? {
+        policy: 'release-candidate',
+        'expected-name': packageName,
+        'expected-version': '0.1.0',
+      }
+    : {};
 const release = () => ({
   ...structuredClone(development),
   version: '0.1.0',
@@ -42,7 +53,7 @@ const exactArgs = [
   'b'.repeat(40),
 ];
 
-test('current development manifest passes explicit and default development policy', () => {
+test('independent synthetic development manifest passes explicit and default development policy', () => {
   assert.equal(validateManifest(development).name, 'development');
   assert.deepEqual(manifestPolicy(), manifestPolicy({ policy: 'development' }));
 });
@@ -353,7 +364,7 @@ test('missing implementation/metadata fails preparation without granting release
 });
 test('real repository read-only readiness assessment passes preparation and blocks publication', async () => {
   const before = await readFile(join(root, 'package.json'));
-  const report = await assessReadiness(root);
+  const report = await assessReadiness(root, selectedOptions);
   assert.equal(report.preparation.status, 'passed');
   assert.equal(report.publication.eligible, false);
   assert.equal(report.ownerConfirmations.independentlyVerified, false);

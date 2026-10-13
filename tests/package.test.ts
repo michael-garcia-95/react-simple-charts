@@ -21,11 +21,17 @@ describe('package safety contract', () => {
     expect(typeof AreaChart).toBe('function');
     expect(typeof LineChart).toBe('function');
   });
-  it('remains private and exposes only an ESM root entry with declarations', () => {
+  it('enforces explicitly selected package state and exposes only an ESM root entry with declarations', () => {
     expect(pkg.name).toBe('@michael-garcia-95/react-simple-charts');
-    expect(pkg.version).toBe('0.0.0');
+    expect(pkg.version).toBe(
+      process.env.RSC_VERIFICATION_POLICY === 'release-candidate'
+        ? '0.1.0'
+        : '0.0.0',
+    );
     expect(pkg.publishConfig).toEqual({ access: 'public' });
-    expect(pkg.private).toBe(true);
+    expect(pkg.private).toBe(
+      process.env.RSC_VERIFICATION_POLICY !== 'release-candidate',
+    );
     expect(pkg.type).toBe('module');
     expect(pkg.exports).toEqual({
       '.': { types: './dist/index.d.ts', import: './dist/index.js' },

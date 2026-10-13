@@ -6,6 +6,7 @@ import ts from 'typescript';
 import { createElement } from 'react';
 import { renderToString } from 'react-dom/server';
 import { verifyInstalledInventory } from './archive.mjs';
+import { build } from 'tsdown';
 
 export async function verifyExactPackage({ artifact, work, root }) {
   await artifact.verify();
@@ -27,6 +28,39 @@ export async function verifyExactPackage({ artifact, work, root }) {
   ]);
   for (const [name, chart] of Object.entries(api))
     assert.equal(typeof chart, 'function', `${name} runtime export`);
+  // Preserve the legacy package gate's React subpath externalization probe.
+  const probeEntry = join(work, 'external-probe.ts');
+  await writeFile(
+    probeEntry,
+    `
+    export { createElement } from 'react';
+    export { jsx } from 'react/jsx-runtime';
+    export { createPortal } from 'react-dom';
+    export { createRoot } from 'react-dom/client';
+  `,
+  );
+  await build({
+    config: join(root, 'tsdown.config.ts'),
+    entry: [probeEntry],
+    outDir: join(work, 'external-probe'),
+    dts: false,
+  });
+  const probe = await readFile(
+    join(work, 'external-probe/external-probe.js'),
+    'utf8',
+  );
+  for (const specifier of [
+    'react',
+    'react/jsx-runtime',
+    'react-dom',
+    'react-dom/client',
+  ])
+    assert(
+      probe.includes(`from "${specifier}"`) ||
+        probe.includes(`from '${specifier}'`),
+      `${specifier} must remain external`,
+    );
+  assert.match(probe, /^\s*["']use client["'];/);
   assert.match(
     renderToString(
       createElement(api.LineChart, {
@@ -97,5 +131,6 @@ export async function verifyExactPackage({ artifact, work, root }) {
     declarations:
       'strict archived declarations and source public contracts passed',
     ssr: 'passed',
+    reactSubpathExternalization: 'passed',
   };
 }

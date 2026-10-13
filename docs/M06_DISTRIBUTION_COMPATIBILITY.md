@@ -1,5 +1,13 @@
 # M06-T03 — Distribution and compatibility hardening
 
+> **M06-T06B3 candidate branch:** Local 0.1.0 / `private: false` preparation,
+> lock synchronization and verification are authorized only on
+> `feat/m06-t06b3-release-candidate`. Main remains unchanged; npm publication,
+> staging, registry writes, tags/releases, deployment and merge are not authorized.
+> Publication remains **NO-GO**. Historical records below retain their original
+> outcomes and T06B2 boundaries. See the
+> [candidate execution guide](VERIFICATION_EXECUTION.md#first-local-release-candidate--m06-t06b3).
+
 ## Scope, baseline and approved policies
 
 Fetched `origin/main` and verified exact SHA

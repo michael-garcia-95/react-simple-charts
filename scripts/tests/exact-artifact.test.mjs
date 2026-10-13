@@ -35,6 +35,14 @@ import {
 import { consumerConfigurations } from '../consumers/fixtures.mjs';
 
 const root = resolve(import.meta.dirname, '../..');
+const selectedOptions =
+  process.env.RSC_VERIFICATION_POLICY === 'release-candidate'
+    ? {
+        policy: 'release-candidate',
+        'expected-name': packageName,
+        'expected-version': '0.1.0',
+      }
+    : {};
 function tar(entries) {
   const parts = [];
   for (const {
@@ -191,6 +199,7 @@ test('real checkout archive: identity, copied bytes, no repack and mutation reje
     const input = join(dir, 'candidate with spaces.tgz');
     await writeFile(input, bytes);
     const options = {
+      ...selectedOptions,
       artifact: input,
       sha256: sha256(bytes),
       'source-sha': execFileSync('git', ['rev-parse', 'HEAD'], {
@@ -239,6 +248,7 @@ for (const bad of ['sha256', 'source', 'name', 'version'])
       const input = join(dir, 'candidate.tgz');
       await writeFile(input, bytes);
       const options = {
+        ...selectedOptions,
         artifact: input,
         sha256: bad === 'sha256' ? '0'.repeat(64) : sha256(bytes),
         'source-sha':

@@ -11,8 +11,17 @@ pointer, and provide source-data tables alongside the graphics.
 
 All five components are implemented and exported from
 `@michael-garcia-95/react-simple-charts`. The library is **not published to npm**;
-the repository package remains private at version `0.0.0`. You can explore the
-live website or build a local tarball to try it in a React application.
+this separate `feat/m06-t06b3-release-candidate` branch prepares version `0.1.0`
+with `private: false`. These changes are not merged into main. A technically
+publishable manifest is not authorization to publish. You can explore the live
+website or build a local tarball to try it in a React application.
+
+Candidate verification and outstanding release gates are documented in
+[the execution guide](docs/VERIFICATION_EXECUTION.md#first-local-release-candidate--m06-t06b3).
+Publication remains **NO-GO** pending Lead review, manual Windows NVDA + Firefox,
+final human accessibility assessment, exact source/artifact review, account
+readiness and owner authorization for the exact manual 2FA operation. That planned
+first publication has no automatic GitHub OIDC provenance.
 
 ## Features
 
@@ -59,10 +68,10 @@ server rendering.
 
 ## Try a local package
 
-Clone the repository and create an archive:
+For local candidate evaluation, clone the separate candidate branch and create an archive (this grants no publication approval):
 
 ```sh
-git clone https://github.com/michael-garcia-95/react-simple-charts.git
+git clone --branch feat/m06-t06b3-release-candidate https://github.com/michael-garcia-95/react-simple-charts.git
 cd react-simple-charts
 npm ci
 npm pack
@@ -72,7 +81,7 @@ Then, from your existing React application, install the generated file using its
 actual path (quote paths containing spaces):
 
 ```sh
-npm install "/path/to/react-simple-charts/michael-garcia-95-react-simple-charts-0.0.0.tgz"
+npm install "/path/to/react-simple-charts/michael-garcia-95-react-simple-charts-0.1.0.tgz"
 ```
 
 Supply compatible React and React DOM peers and import from the scoped package

@@ -1,5 +1,13 @@
 # M06-T01 — npm release readiness assessment
 
+> **M06-T06B3 candidate branch:** Local 0.1.0 / `private: false` preparation,
+> lock synchronization and verification are authorized only on
+> `feat/m06-t06b3-release-candidate`. Main remains unchanged; npm publication,
+> staging, registry writes, tags/releases, deployment and merge are not authorized.
+> Publication remains **NO-GO**. Historical records below retain their original
+> outcomes and T06B2 boundaries. See the
+> [candidate execution guide](VERIFICATION_EXECUTION.md#first-local-release-candidate--m06-t06b3).
+
 > Historical M06-T01 audit: the baseline, observations and results below are
 > preserved. Current identity and packaging decisions supersede earlier blockers.
 > M06-T06B2 approves 0.1.0/versioning/maintenance/support and manual first publication

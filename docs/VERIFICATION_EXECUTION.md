@@ -437,3 +437,85 @@ Ordinary CI adds only the lightweight read-only readiness command and policy tes
 its matrix/permissions are unchanged. Existing development browser and exact
 workflows stay in development policy, retain archive exclusions, and cannot publish.
 CI success is preparation evidence, never release authorization.
+
+## First local release candidate — M06-T06B3
+
+Only `feat/m06-t06b3-release-candidate` is authorized to prepare the actual
+`@michael-garcia-95/react-simple-charts` manifest at `0.1.0`, `private: false`,
+with public scoped access and matching root lockfile versions. Main is unchanged.
+The public API, ESM-only root, peers, dependencies, MIT license, client banner,
+embedded maps and six-file allowlist are unchanged. npm has no published package.
+A publishable manifest does not grant permission to publish or merge it.
+
+Defaults remain development-only (`0.0.0`, private true). Candidate mode is never
+inferred from manifest values. CI selects it only for this repository's exact
+candidate branch (including same-repository PR heads), using GitHub event context;
+other branches and fork PRs retain development selection. The Node 22/24 × React
+18.2/19 matrix and read-only verification permissions remain intact. The existing
+manually dispatched Pages workflow is unchanged and must not be invoked here.
+
+For source checks on this branch, explicitly set `RSC_VERIFICATION_POLICY=release-candidate`
+for `npm test` and `node --test scripts/tests/*.test.mjs`. Independent synthetic
+fixtures still test strict development behavior. Run all source/type/lint/format,
+site snippet, playground and both production site/base-path checks. Commit the
+approved source and ensure relevant source is clean before selecting an archive:
+
+```sh
+node scripts/prepare-verification-artifact.mjs \
+  --policy release-candidate \
+  --expected-name @michael-garcia-95/react-simple-charts \
+  --expected-version 0.1.0
+```
+
+The helper validates explicit policy and committed clean source, builds once,
+and packs with `--ignore-scripts` into a unique ignored `work/candidate/run-*`
+directory. It runs the existing strict archive selector, records `identity.json`
+and `work/candidate/current.json` with the source SHA, actual filename, SHA-256,
+byte size, per-file inventory/digests, Node/npm/platform and blocked publication.
+No raw archive is committed or uploaded. Source/content comparison does not
+establish independently attested build provenance.
+
+Use that one archive, digest and full source SHA with the existing
+`verify-exact-package.mjs` and `verify-exact-artifact.mjs` entry points and the
+explicit candidate flags shown above in T06B2. Do not rebuild or repack between
+gates. CI's `verify-prepared-artifact.mjs package|browsers|all` wrapper requires
+its explicitly selected environment policy to match the retained identity;
+it forwards the exact path/digest/source and policy flags without packing.
+The candidate package gate also preserves the React/DOM subpath externalization
+probe from the legacy development gate. `npm run verify:package` remains strictly
+development-only and is expected to reject this branch, not count as a passed check.
+
+The coordinator uses strict six-file inspection, exact checkout bytes and tracked
+embedded maps, credential checks, archived API/declarations/SSR, all four genuine
+Vite/Next × React 18/19 installed consumers and 15 scenarios in each of Chromium,
+Firefox and WebKit. Parent/child identities, digests, policy/version, freshness,
+complete outcomes and cleanup stay mandatory. A local unavailable engine is a
+failed/blocked consolidated gate. Final-head GitHub Actions browser and exact
+artifact success is required before claiming full candidate verification.
+
+Read-only candidate assessment:
+
+```sh
+node scripts/release-readiness.mjs --json \
+  --policy release-candidate \
+  --expected-name @michael-garcia-95/react-simple-charts \
+  --expected-version 0.1.0
+```
+
+It checks selected manifest, lockfile and metadata/entry-point availability and
+reports the expected inventory. It does **not** ingest archive evidence or execute
+source gates: inspect completed CI/JSON evidence separately. Manifest preparation
+can pass while `publication.status` remains `blocked` and `eligible` remains false.
+No option can confer publication authorization.
+
+Remaining gates: Development Lead PR review; Windows NVDA + Firefox across all
+five charts; final human accessibility assessment and resolution of material
+barriers; final source/artifact digest and package review; owner npm-account
+readiness; explicit authorization for the exact manual-first 2FA publication;
+and post-publication registry-byte/tag/access and consumer verification. No manual
+NVDA/native Windows result is claimed. The planned first manual publication does
+not automatically have GitHub OIDC provenance. No publication-capable workflow,
+credentials, new release permissions, tags, releases or deployment are introduced.
+The 0.1.0 changelog remains unpublished and undated. Existing compatibility limits
+remain: no verified older Node minimum, universal Safari/mobile/device support,
+Turbopack, strict-CSP guarantee or accessibility certification.

@@ -1,25 +1,26 @@
 # Changelog
 
 Human-readable changes following [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
-Versioning conventions are [approved for planning](docs/RELEASE_POLICY.md). **No npm release is recorded here.** The package remains
-private at `0.0.0`; there is no release date for the candidate below.
+Versioning conventions are [approved for planning](docs/RELEASE_POLICY.md). **No npm release is recorded here.** The separate candidate branch prepares `0.1.0` / `private: false`; main remains unchanged and the candidate is unpublished and undated.
 
 ## Unreleased
 
 ### Added
 
+- Authorized local 0.1.0 candidate preparation, explicit candidate CI selection,
+  lockfile consistency checks and read-only candidate readiness (M06-T06B3).
+  No publication, distribution, deployment or merge approval is granted.
 - Explicit development/future-candidate verification policies and read-only release
-  preparation assessment (M06-T06B2). Actual version/private state is unchanged;
-  candidate creation and publication remain unauthorized.
+  preparation assessment (M06-T06B2 historical scope). That task left version/private
+  state unchanged; T06B3 now authorizes local preparation only.
 - Proposed release/maintenance policy and this draft initial changelog (M06-T05).
   Documentation only; version, security setup and publication are not approved.
 
-## 0.1.0 — Planned, unpublished draft
+## 0.1.0 — Unpublished candidate
 
 This candidate summarizes already implemented capabilities at baseline
-`a3a03ef32767bf333fbb54bfd9596587fe702bf0`; it is not a published version or an
-approved release candidate or publication. The target version is approved for
-planning only; no release date has been assigned.
+`a3a03ef32767bf333fbb54bfd9596587fe702bf0`; it is not a published version or final release approval. Local candidate preparation
+is authorized only on the feature branch; no release date has been assigned.
 
 ### Added
 
