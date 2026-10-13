@@ -41,7 +41,7 @@ const selectedOptions =
     ? {
         policy: 'release-candidate',
         'expected-name': packageName,
-        'expected-version': '0.1.0',
+        'expected-version': process.env.RSC_EXPECTED_VERSION,
       }
     : {};
 function tar(entries) {

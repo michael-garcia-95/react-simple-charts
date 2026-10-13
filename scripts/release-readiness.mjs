@@ -52,7 +52,10 @@ export function readinessDecision({
   const candidatePolicy = manifestPolicy({
     policy: 'release-candidate',
     'expected-name': packageName,
-    'expected-version': plannedVersion,
+    'expected-version':
+      policy.name === 'release-candidate'
+        ? policy.expectedVersion
+        : plannedVersion,
   });
   let candidateError;
   try {
@@ -86,7 +89,7 @@ export function readinessDecision({
       access: manifest.publishConfig?.access,
     },
     planned: {
-      version: plannedVersion,
+      version: candidatePolicy.expectedVersion,
       policy: candidatePolicy,
       firstPublication:
         'manual owner-controlled npm session with 2FA; no publishing token or automatic GitHub OIDC provenance',
@@ -110,7 +113,7 @@ export function readinessDecision({
           status: 'pending',
         },
         {
-          name: 'separately authorized manifest preparation and genuine 0.1.0 candidate',
+          name: 'separately authorized manifest preparation and genuine version-specific candidate',
           status:
             policy.name === 'release-candidate' && !candidateError
               ? 'manifest prepared; archive verification and review separate'

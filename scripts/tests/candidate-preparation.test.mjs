@@ -22,7 +22,10 @@ const candidateOptions = {
 const candidate = manifestPolicy(candidateOptions);
 const selectedOptions =
   process.env.RSC_VERIFICATION_POLICY === 'release-candidate'
-    ? candidateOptions
+    ? {
+        ...candidateOptions,
+        'expected-version': process.env.RSC_EXPECTED_VERSION,
+      }
     : {};
 test('actual checkout manifest and lockfile match explicitly selected policy', async () => {
   const manifest = JSON.parse(
@@ -74,7 +77,10 @@ for (const event of ['push', 'workflow_dispatch'])
           GITHUB_EVENT_NAME: event,
           GITHUB_REF: `refs/heads/${ref}`,
         }),
-        candidate,
+        manifestPolicy({
+          ...candidateOptions,
+          'expected-version': ref === 'main' ? '0.1.1' : '0.1.0',
+        }),
       );
     });
 test('candidate feature PR retains candidate policy before and after transition', () => {
@@ -259,7 +265,10 @@ test('candidate workflows retain read-only permissions and exclude raw archive u
       /id-token:|packages: write|npm (?:publish|stage|access|dist-tag|unpublish)/,
     );
     assert.match(code, /ci-verification-policy\.mjs/);
-    assert.match(code, /branches: \[main, feat\/m06-t06b3-release-candidate\]/);
+    assert.match(
+      code,
+      /branches:\s*\[main, feat\/m06-t06b3-release-candidate, feat\/m06-t10a-docs-patch-0\.1\.1\]/,
+    );
     assert.match(
       code,
       /RSC_BASE_SHA: \$\{\{ github\.event\.pull_request\.base\.sha \}\}/,
@@ -313,15 +322,21 @@ test('CLI reads immutable event base, not moving main or PR head manifest', asyn
       JSON.stringify(candidateManifest),
     );
     const candidateSha = commit();
+    await writeFile(
+      join(dir, 'package.json'),
+      JSON.stringify({ ...candidateManifest, version: '0.1.1' }),
+    );
+    const patchSha = commit();
     git('remote', 'add', 'origin', dir);
     // Current head deliberately invalid: it cannot influence selected base policy.
     await writeFile(
       join(dir, 'package.json'),
       JSON.stringify({ version: '9.9.9' }),
     );
-    for (const [sha, expected] of [
-      [developmentSha, 'development'],
-      [candidateSha, 'release-candidate'],
+    for (const [sha, expected, version] of [
+      [developmentSha, 'development', '0.0.0'],
+      [candidateSha, 'release-candidate', '0.1.0'],
+      [patchSha, 'release-candidate', '0.1.1'],
     ]) {
       const destination = join(dir, `env-${sha}`);
       execFileSync(
@@ -342,7 +357,7 @@ test('CLI reads immutable event base, not moving main or PR head manifest', asyn
       );
       assert.equal(
         await readFile(destination, 'utf8'),
-        `RSC_VERIFICATION_POLICY=${expected}\nRSC_EXPECTED_NAME=${packageName}\nRSC_EXPECTED_VERSION=${expected === 'development' ? '0.0.0' : '0.1.0'}\n`,
+        `RSC_VERIFICATION_POLICY=${expected}\nRSC_EXPECTED_NAME=${packageName}\nRSC_EXPECTED_VERSION=${version}\n`,
       );
     }
     assert.throws(() =>
@@ -364,4 +379,86 @@ test('CLI reads immutable event base, not moving main or PR head manifest', asyn
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
+});
+
+const patchOptions = { ...candidateOptions, 'expected-version': '0.1.1' };
+const patchPolicy = manifestPolicy(patchOptions);
+const patchManifest = { ...candidateManifest, version: '0.1.1' };
+const patchContext = {
+  ...prContext,
+  GITHUB_HEAD_REF: 'feat/m06-t10a-docs-patch-0.1.1',
+};
+test('explicit 0.1.1 candidate is strict and cannot substitute for historical 0.1.0', () => {
+  validateManifest(patchManifest, patchPolicy);
+  assert.throws(() => validateManifest(candidateManifest, patchPolicy));
+  assert.throws(() => validateManifest(patchManifest, candidate));
+  for (const version of [undefined, '', '0.1.2', '9.9.9'])
+    assert.throws(() =>
+      manifestPolicy({ ...patchOptions, 'expected-version': version }),
+    );
+  for (const options of [
+    { policy: 'release-candidate', 'expected-version': '0.1.1' },
+    { policy: 'release-candidate', 'expected-name': packageName },
+  ])
+    assert.throws(() => manifestPolicy(options));
+});
+test('only owner documentation branch overrides a validated public 0.1.0 base', () => {
+  assert.deepEqual(
+    ciVerificationPolicy(patchContext, candidateManifest),
+    patchPolicy,
+  );
+  assert.throws(() => ciVerificationPolicy(patchContext, developmentManifest));
+  for (const env of [
+    { ...patchContext, RSC_HEAD_REPOSITORY: 'attacker/fork' },
+    { ...patchContext, GITHUB_HEAD_REF: 'feat/m06-t10a-docs-patch-0.1.2' },
+    {
+      ...patchContext,
+      GITHUB_HEAD_REF: 'ordinary-pr',
+      RSC_EXPECTED_VERSION: '0.1.1',
+    },
+  ]) {
+    assert.deepEqual(ciVerificationPolicy(env, candidateManifest), candidate);
+    assert.throws(() =>
+      validateManifest(
+        patchManifest,
+        ciVerificationPolicy(env, candidateManifest),
+      ),
+    );
+  }
+  for (const manifest of [
+    { ...candidateManifest, publishConfig: { access: 'restricted' } },
+    { ...candidateManifest, dependencies: {} },
+    { ...candidateManifest, version: '0.1.2' },
+  ])
+    assert.throws(() => ciVerificationPolicy(patchContext, manifest));
+});
+test('reviewed 0.1.1 main transition selects patch for all subsequent PRs', () => {
+  for (const env of [
+    patchContext,
+    prContext,
+    {
+      ...prContext,
+      RSC_HEAD_REPOSITORY: 'contributor/fork',
+      GITHUB_HEAD_REF: 'ordinary',
+    },
+  ])
+    assert.deepEqual(ciVerificationPolicy(env, patchManifest), patchPolicy);
+  for (const event of ['push', 'workflow_dispatch'])
+    for (const ref of ['main', patchContext.GITHUB_HEAD_REF])
+      assert.deepEqual(
+        ciVerificationPolicy({
+          GITHUB_REPOSITORY: repository,
+          GITHUB_EVENT_NAME: event,
+          GITHUB_REF: `refs/heads/${ref}`,
+        }),
+        patchPolicy,
+      );
+  const report = readinessDecision({
+    manifest: patchManifest,
+    policy: patchPolicy,
+    metadataFiles: [],
+    availableChecks: [],
+  });
+  assert.equal(report.planned.version, '0.1.1');
+  assert.equal(report.publication.eligible, false);
 });

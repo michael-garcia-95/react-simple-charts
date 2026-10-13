@@ -30,7 +30,7 @@ const selectedOptions =
     ? {
         policy: 'release-candidate',
         'expected-name': packageName,
-        'expected-version': '0.1.0',
+        'expected-version': process.env.RSC_EXPECTED_VERSION,
       }
     : {};
 const release = () => ({
@@ -349,7 +349,7 @@ test('readiness never approves publication from a manifest alone and preserves N
       assert.equal(report.candidateManifest.satisfied, false);
     } else {
       assert.equal(report.preparation.status, 'failed');
-      assert.equal(report.candidateManifest.satisfied, true);
+      assert.equal(report.candidateManifest.satisfied, false);
     }
   }
 });

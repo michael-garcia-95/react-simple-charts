@@ -1,16 +1,13 @@
 # React Simple Charts
 
-Five React and TypeScript chart components built with SVG: **Line, Area, Bar, Pie
-and Donut**. Map fields from your own records, inspect values with a keyboard or
+Five React and TypeScript chart components built with SVG: **LineChart, AreaChart, BarChart, PieChart
+and DonutChart**. Map fields from your own records, inspect values with a keyboard or
 pointer, and provide source-data tables alongside the graphics.
 
 [Live examples and documentation](https://michael-garcia-95.github.io/react-simple-charts/)
 · [Source on GitHub](https://github.com/michael-garcia-95/react-simple-charts)
 
 ## Install
-
-Version **0.1.0** was published publicly to npm on **October 13, 2026**
-under the `latest` dist-tag.
 
 ```sh
 npm install @michael-garcia-95/react-simple-charts
@@ -110,8 +107,9 @@ zero violations, but axe left SVG text contrast and an empty-table check incompl
 The owner-performed Windows NVDA 2026.2 + Firefox 157.0.1 assessment passed on
 October 12, 2026 (Trinidad and Tobago local time), covering all five charts in
 explicit and responsive layouts. NVDA Focus Mode was needed for chart navigation.
-The [manual assessment](https://github.com/michael-garcia-95/react-simple-charts/blob/main/docs/M06_MANUAL_ACCESSIBILITY_RESULTS.md) remains attached
-to its original tested candidate, not the later published archive. Runtime and
+The [manual assessment](https://github.com/michael-garcia-95/react-simple-charts/blob/21eef6fc6b52e9e3f9fd70f5e08c5eac648c583d/docs/M06_MANUAL_ACCESSIBILITY_RESULTS.md) remains attached
+to its original tested candidate at source
+`83b51f0b025a0135b9e074778fc1f27764340971`, not later package archives. Runtime and
 declaration bytes were preserved through the documented package normalization;
 no new manual assessment is claimed. These results are not WCAG certification,
 a third-party audit or universal screen-reader compatibility.

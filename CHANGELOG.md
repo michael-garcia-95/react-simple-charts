@@ -8,6 +8,15 @@ records are linked from the [post-publication record](docs/M06_POST_PUBLICATION.
 
 No unreleased library changes are recorded.
 
+## 0.1.1 — Pending publication
+
+### Documentation
+
+- Correct the npm-packaged README with ordinary installation instructions,
+  npm-safe documentation links and accurate historical accessibility attribution.
+- Prepare explicit version-specific verification for this documentation patch.
+  Chart implementation, public API, dependencies and accessibility behavior are unchanged.
+
 ## 0.1.0 — 2026-10-13
 
 First public npm release of `@michael-garcia-95/react-simple-charts`, published
