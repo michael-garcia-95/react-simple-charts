@@ -1,34 +1,17 @@
 # Changelog
 
 Human-readable changes following [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
-Versioning conventions are [approved for planning](docs/RELEASE_POLICY.md). **No npm release is recorded here.** The separate candidate branch prepares `0.1.0` / `private: false`; a future separately approved merge would install that state on main. The candidate is unpublished and undated.
+Versioning follows Semantic Versioning. Historical preparation and verification
+records are linked from the [post-publication record](docs/M06_POST_PUBLICATION.md).
 
 ## Unreleased
 
-### Added
+No unreleased library changes are recorded.
 
-- Read-only main-branch transition verification and pre/post-merge fork-PR policy
-  regressions (M06-T07B); no merge or publication approval. Cross-platform payload
-  differences and prospective packaging/README corrections are documented in
-  [the transition review](docs/M06_MAIN_BRANCH_RELEASE_TRANSITION.md).
-- Owner-performed Windows NVDA + Firefox accessibility PASS for the exact recorded
-  0.1.0 candidate (M06-T07A), separate from automated evidence; see
-  [manual results](docs/M06_MANUAL_ACCESSIBILITY_RESULTS.md).
-- Authorized local 0.1.0 candidate preparation, explicit candidate CI selection,
-  lockfile consistency checks and read-only candidate readiness (M06-T06B3).
-  No publication, distribution, deployment or merge approval is granted.
-- Explicit development/future-candidate verification policies and read-only release
-  preparation assessment (M06-T06B2 historical scope). That task left version/private
-  state unchanged; T06B3 now authorizes local preparation only.
-- Proposed release/maintenance policy and this draft initial changelog (M06-T05).
-  Documentation only; version, security setup and publication are not approved.
+## 0.1.0 — 2026-10-13
 
-## 0.1.0 — Unpublished candidate
-
-This candidate summarizes already implemented capabilities at baseline
-`a3a03ef32767bf333fbb54bfd9596587fe702bf0`; it is not a published version or final release approval. Local candidate preparation
-was authorized on the feature branch; future main verification is prepared in
-M06-T07B, with merging still requiring separate approval. No release date has been assigned.
+First public npm release of `@michael-garcia-95/react-simple-charts`, published
+under `latest`. Published source: `21eef6fc6b52e9e3f9fd70f5e08c5eac648c583d`.
 
 ### Added
 
@@ -60,14 +43,14 @@ See [public exports](src/index.ts), [contracts](src/types/contracts.ts),
 [architecture](docs/ARCHITECTURE.md), [five-family integration](docs/M04_INTEGRATION_HARDENING.md),
 [distribution/consumer/browser results](docs/M06_DISTRIBUTION_COMPATIBILITY.md),
 [package verifier](scripts/verify-package.mjs) and
-[current decisions](docs/OPEN_DECISIONS.md). These describe implemented behavior,
-not adoption, production usage or registry publication.
+[current decisions](docs/OPEN_DECISIONS.md). These preserve implementation and verification evidence; they do not establish
+adoption or production usage.
 
 Verified React/DOM versions are 18.2.0 and 19.3.0; tested TypeScript versions are
 5.4.5 and 6.0.3. Browser evidence is focused on exact recorded builds, including
 CI Chromium 156.0.8078.4, Firefox 157.0 and Playwright WebKit 27.2. Physical devices,
 other browser configurations, strict CSP and broader framework support remain
 unverified. Owner-performed manual NVDA testing passed for the artifact recorded in
-M06_MANUAL_ACCESSIBILITY_RESULTS; Lead review remains outstanding. Automated checks
+M06_MANUAL_ACCESSIBILITY_RESULTS, not a new assessment of the published archive. Automated checks
 do not establish announcements or WCAG certification. No stacking,
 decimation, CommonJS or public pure-helper entry is included.

@@ -1,5 +1,11 @@
 # M06-T02 — Package identity and metadata
 
+> **Historical preparation record.** Unpublished, NO-GO, unmerged and pending-test
+> statements below describe their original milestones. For the October 13, 2026
+> publication and current follow-up boundaries, see the
+> [post-publication record](M06_POST_PUBLICATION.md). Original evidence identities
+> and outcomes are retained; historical readiness scripts are not registry status.
+
 ## Scope and baseline
 
 Fetched `origin/main` and verified baseline

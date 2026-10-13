@@ -1,5 +1,11 @@
 # M06-T03 — Distribution and compatibility hardening
 
+> **Historical preparation record.** Unpublished, NO-GO, unmerged and pending-test
+> statements below describe their original milestones. For the October 13, 2026
+> publication and current follow-up boundaries, see the
+> [post-publication record](M06_POST_PUBLICATION.md). Original evidence identities
+> and outcomes are retained; historical readiness scripts are not registry status.
+
 > **M06-T06B3 candidate branch:** Local 0.1.0 / `private: false` preparation,
 > lock synchronization and verification are authorized only on
 > `feat/m06-t06b3-release-candidate`. Main remains unchanged; npm publication,
