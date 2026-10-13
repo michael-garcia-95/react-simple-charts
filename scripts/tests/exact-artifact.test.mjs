@@ -320,6 +320,28 @@ function goodReport() {
 }
 test('exact consolidated browser evidence requires all three successful engines', () =>
   validateGateReport(goodReport(), context));
+test('manual fixture evidence cannot pass a full gate even with forged browser outcomes', () => {
+  for (const marker of [
+    { preparedFixture: 'retained-app' },
+    { manualVerification: { status: 'not executed' } },
+  ])
+    assert.throws(
+      () => validateGateReport({ ...goodReport(), ...marker }, context),
+      /Manual fixture preparation/,
+    );
+  assert.throws(
+    () =>
+      validateGateReport(
+        {
+          ...goodReport(),
+          name: 'browser-fixture-preparation',
+          mode: 'manual-fixture-preparation',
+        },
+        context,
+      ),
+    /Wrong gate name/,
+  );
+});
 for (const [name, change] of [
   [
     'wrong digest',

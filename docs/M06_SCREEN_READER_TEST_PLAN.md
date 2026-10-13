@@ -7,30 +7,128 @@ checks is neither screen-reader approval nor WCAG certification.
 
 ## Setup on Windows 10/11
 
-1. Use a reviewed checkout of `chore/m06-t03-distribution-hardening`; record its
-   `git rev-parse HEAD`. Install a contributor-compatible Node environment (see
-   the compatibility report), then run `npm ci`. The package remains private,
-   unpublished at 0.0.0; never install it by name from the public registry.
-2. In PowerShell at the repository root run:
+1. Use the Development Lead-reviewed head of PR #38 on
+   `feat/m06-t06b3-release-candidate`, not the historical development branch.
+   The prior reviewed candidate source was
+   `9cae1373dd98210852cb14364630619b5f8a7d04`; this correction produces a newer
+   PR head. Record and confirm the **current full source SHA** against the Lead's
+   reviewed PR head before testing. Do not claim the old source SHA for a new
+   checkout or substitute an old archive. The manifest is 0.1.0 / `private: false`,
+   scoped public access, but the package is **unpublished** and publication remains
+   **NO-GO**. Never install this candidate by name from the public registry.
+
+   Use contributor-compatible Node/npm (Node 24.19.0 / npm 11.9.0 is the existing
+   verification baseline). In Windows PowerShell, enter your repository checkout
+   and pin the fetched candidate source without changing main:
 
    ```powershell
-   node scripts/verify-browser-smoke.mjs --prepare-only
-   Set-Location work/browser-smoke/app
+   Set-Location "C:\path with spaces\react-simple-charts"
+   $ErrorActionPreference = 'Stop'
+   $CandidateBranch = 'feat/m06-t06b3-release-candidate'
+   if (git status --porcelain) { throw 'Use a clean reviewed checkout' }
+   git fetch --no-tags origin "refs/heads/$CandidateBranch"
+   if ($LASTEXITCODE -ne 0) { throw 'Candidate fetch failed' }
+   $SourceSha = (git rev-parse FETCH_HEAD).Trim()
+   if ($LASTEXITCODE -ne 0 -or $SourceSha -notmatch '^[a-f0-9]{40}$') {
+     throw 'Full fetched source SHA required'
+   }
+   # Confirm this printed SHA matches the Development Lead-reviewed PR #38 head.
+   Write-Host "Candidate branch: $CandidateBranch; source: $SourceSha"
+   git switch --detach $SourceSha
+   if ($LASTEXITCODE -ne 0) { throw 'Candidate checkout failed' }
+   npm ci
+   if ($LASTEXITCODE -ne 0) { throw 'Dependency installation failed' }
+   ```
+
+2. Select **one** genuine archive from that committed source. If no matching local
+   archive exists, prepare it once using the existing helper:
+
+   ```powershell
+   node scripts/prepare-verification-artifact.mjs `
+     --policy release-candidate `
+     --expected-name '@michael-garcia-95/react-simple-charts' `
+     --expected-version '0.1.0'
+   if ($LASTEXITCODE -ne 0) { throw 'Candidate archive preparation failed' }
+   ```
+
+   This is the only build/pack step: it builds once and packs with lifecycle
+   scripts disabled into ignored `work/candidate/run-*`, then records actual
+   identity through the strict selector. If already prepared at this exact source,
+   skip that command and use its existing `work/candidate/current.json`; do not
+   repack just to prepare a manual fixture. In the same PowerShell session:
+
+   ```powershell
+   $Candidate = Get-Content -Raw work/candidate/current.json | ConvertFrom-Json
+   $Artifact = $Candidate.identity.selectedPath
+   $Digest = $Candidate.identity.sha256
+   if ($Candidate.identity.source.checkoutSha -ne $SourceSha -or
+       (git rev-parse HEAD).Trim() -ne $SourceSha) {
+     throw 'Archive identity and reviewed checkout must use the same source SHA'
+   }
+   if ($Candidate.identity.policy.name -ne 'release-candidate' -or
+       $Candidate.identity.name -ne '@michael-garcia-95/react-simple-charts' -or
+       $Candidate.identity.version -ne '0.1.0' -or
+       $Candidate.identity.private -ne $false) {
+     throw 'Explicit 0.1.0 candidate identity required'
+   }
+   if ((Get-FileHash -Algorithm SHA256 -LiteralPath $Artifact).Hash.ToLowerInvariant() -ne $Digest) {
+     throw 'Selected archive digest changed'
+   }
+   Write-Host "Archive: $Artifact; SHA-256: $Digest; source: $SourceSha"
+   node scripts/verify-browser-smoke.mjs --prepare-only `
+     --policy release-candidate `
+     --expected-name '@michael-garcia-95/react-simple-charts' `
+     --expected-version '0.1.0' `
+     --artifact "$Artifact" `
+     --sha256 "$Digest" `
+     --source-sha "$SourceSha"
+   if ($LASTEXITCODE -ne 0) { throw 'Manual fixture preparation failed' }
+
+   $Current = Get-Content -Raw work/browser-smoke/current.json | ConvertFrom-Json
+   $ReportPath = Join-Path $Current.directory 'results.json'
+   $Report = Get-Content -Raw $ReportPath | ConvertFrom-Json
+   if ($Report.runId -ne $Current.runId -or
+       $Report.status -ne 'passed' -or
+       $Report.name -ne 'browser-fixture-preparation' -or
+       $Report.mode -ne 'manual-fixture-preparation' -or
+       $Report.artifact.sha256 -ne $Digest -or
+       $Report.artifact.source.checkoutSha -ne $SourceSha -or
+       $Report.manualVerification.status -ne 'not executed') {
+     throw 'Matching finalized fixture-preparation evidence required'
+   }
+   Write-Host "Retain preparation evidence: $ReportPath"
+   Set-Location -LiteralPath $Report.preparedFixture
    node node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port 4323 --strictPort
    ```
 
-   Leave the server running. This preparation packs the library, creates a fresh
-   independent Vite application, installs the actual tarball and builds it. It
-   does not install any browser driver/binary in prepare-only mode. Reprepare
-   from the repository root after source changes; record the new commit.
-   Windows npm invocations use the running Node executable with npm-cli.js rather
-   than launching npm.cmd without a shell. The script discovers that CLI from
-   npm_execpath (when run through npm), PATH or the Node installation directory.
-   Keep npm installed with Node/on PATH. Paths with spaces are passed as separate
-   arguments; use `Set-Location "C:\path with spaces\react-simple-charts"` to
-   enter your checkout. Native Windows preparation has not been executed in
-   Codex's Linux environment; see the review verification record in the
-   compatibility report. The manual NVDA checklist remains pending.
+   Leave that server running; stop it with Ctrl+C after the human session.
+   `preparedFixture` is the actual unique retained app directory, not the outdated
+   `work/browser-smoke/app` path. Use the same recorded report/path if restarting
+   the server; do not repack or choose another archive. After the server stops,
+   the retained app's parent `temporary-*` directory can be removed from the
+   repository root once its identity/results have been retained for review.
+
+   Exact preparation uses the existing six-file inspector, committed clean relevant
+   source, full manifest equality, included-file and embedded-map comparisons,
+   digest-preserving copy, credential/client-boundary checks and complete installed
+   byte comparisons before and after the fixture build. It installs and production
+   builds the same independent five-family Vite fixture; it neither repacks nor
+   substitutes the library archive. It does not install or download Playwright
+   drivers/browsers and does not launch an automated browser. Normal npm dependency
+   reads are still required. PowerShell backticks must have no trailing spaces.
+
+   Windows npm calls inside verification use Node with npm-cli.js rather than
+   launching npm.cmd through a shell. Keep npm installed with Node/on PATH.
+   Paths with spaces remain separate arguments. Native Windows preparation has
+   not been executed in Codex's Linux environment.
+
+   A preparation report's `status: passed` means **fixture preparation only**.
+   Browser rows remain `unexecuted`; human NVDA and automated browser verification
+   remain unexecuted by this command. Its distinct name/mode and explicit manual
+   marker cannot satisfy the exact-artifact coordinator's full browser gate, and
+   it cannot be run as a coordinator child. Default development preparation stays
+   available only for its strict private 0.0.0 policy; do not use that command on
+   this candidate checkout. Publication remains blocked.
 
 3. Install current Firefox from <https://www.mozilla.org/firefox/> and NVDA from
    <https://www.nvaccess.org/download/> using their normal Windows installers.
@@ -134,14 +232,16 @@ per row. Attach notes for every Fail or Not run.
 | Center button independent and reachable         | N/A     | N/A     | N/A     | N/A     | Pending |
 
 Additional checks: Empty Line ___; Unavailable Pie ___; secondary Chrome ___
-(optional). Tester/date ___; commit ___; Windows version ___; NVDA version/mode ___;
+(optional). Tester/date ___; branch ___; full source SHA ___; archive filename/SHA-256 ___;
+preparation report/run ID ___; commit ___; Windows version ___; NVDA version/mode ___;
 Firefox version ___; Node/npm ___; settings changes ___; overall result ___ .
 
 ## Defect report template and disposition
 
 ```text
 Title:
-Tester/date and commit:
+Tester/date, branch and full source commit:
+Archive filename/SHA-256 and preparation report/run ID:
 Windows / NVDA / Firefox versions:
 NVDA layout, browse/focus mode, modified settings:
 Fixture section (family, explicit/responsive), initial data/state:

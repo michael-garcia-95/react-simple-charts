@@ -37,7 +37,7 @@ jobs:
       - run: npm test
       - run: node --test scripts/tests/npm-command.test.mjs
       - run: node --test scripts/tests/verification-server.test.mjs
-      - run: node --test scripts/tests/verification-command.test.mjs scripts/tests/browser-driver.test.mjs scripts/tests/verification-evidence.test.mjs scripts/tests/consumer-verification.test.mjs scripts/tests/exact-artifact.test.mjs scripts/tests/manifest-policy.test.mjs scripts/tests/candidate-preparation.test.mjs
+      - run: node --test scripts/tests/verification-command.test.mjs scripts/tests/browser-driver.test.mjs scripts/tests/verification-evidence.test.mjs scripts/tests/consumer-verification.test.mjs scripts/tests/exact-artifact.test.mjs scripts/tests/manifest-policy.test.mjs scripts/tests/candidate-preparation.test.mjs scripts/tests/browser-preparation.test.mjs
       - run: node scripts/release-readiness.mjs --policy "$RSC_VERIFICATION_POLICY" --expected-name "$RSC_EXPECTED_NAME" --expected-version "$RSC_EXPECTED_VERSION"
       - run: npm run verify:package
         if: env.RSC_VERIFICATION_POLICY == 'development'

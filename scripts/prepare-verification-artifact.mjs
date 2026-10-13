@@ -66,7 +66,14 @@ try {
     ...artifact.identity,
     filename,
     node: process.version,
-    npm: execFileSync('npm', ['--version'], { encoding: 'utf8' }).trim(),
+    npm: (
+      await runVerificationCommand('npm', ['--version'], {
+        cwd: root,
+        env: process.env,
+        capture: true,
+        timeoutMs: 10000,
+      })
+    ).stdout.trim(),
     platform: process.platform,
     architecture: process.arch,
     publication: { status: 'blocked', eligible: false },

@@ -11,6 +11,7 @@ import { verifyInstalledInventory } from './artifact/archive.mjs';
 import { createEvidenceRun, errorDetails } from './verification-evidence.mjs';
 import { runVerificationCommand } from './verification-command.mjs';
 import { installBrowserDriver, loadBrowserDriver } from './browser-driver.mjs';
+import { browserExecutionMode } from './browser-preparation.mjs';
 // Focused installed-tarball browser gate; fixtures and drivers stay in ignored work/.
 /* global document, getComputedStyle */
 import assert from 'node:assert/strict';
@@ -30,30 +31,34 @@ const base = exact?.['evidence-base']
   : join(root, 'work/browser-smoke');
 const setupOnly = process.argv.includes('--install-driver-only');
 const prepareOnly = process.argv.includes('--prepare-only');
+const execution = browserExecutionMode({
+  exact,
+  policy,
+  setupOnly,
+  prepareOnly,
+});
 const requested = (
   process.env.RSC_SMOKE_BROWSERS ?? 'chromium,firefox,webkit'
 ).split(',');
-const evidenceRun = await createEvidenceRun(
-  base,
-  setupOnly
-    ? 'browser-driver-setup'
-    : prepareOnly
-      ? 'browser-fixture-preparation'
-      : 'browser-smoke',
-  {
-    react: '19.3.0',
-    vite: '8.3.4',
-    playwright: '1.64.0',
-    browsers: requested.map((engine) => ({
-      engine,
-      status: 'unexecuted',
-      checks: [],
-    })),
-  },
-);
+const evidenceRun = await createEvidenceRun(base, execution.name, {
+  react: '19.3.0',
+  vite: '8.3.4',
+  playwright: '1.64.0',
+  browsers: requested.map((engine) => ({
+    engine,
+    status: 'unexecuted',
+    checks: [],
+  })),
+});
 const report = evidenceRun.report;
 report.policy = policy;
-report.mode = exact ? 'exact-artifact' : 'development';
+report.mode = execution.mode;
+if (prepareOnly)
+  report.manualVerification = {
+    status: 'not executed',
+    automatedBrowsers: 'not executed',
+    note: 'Successful fixture preparation is not browser verification, human accessibility approval or publication authorization.',
+  };
 report.parentRunId = exact?.['parent-run'];
 if (exact) report.selectionRequest = exact;
 const driver = join(root, 'work/browser-smoke/driver');
@@ -67,10 +72,6 @@ evidenceRun.onCancel(async () => {
 });
 await evidenceRun.execute(
   async () => {
-    assert(
-      !(exact && (setupOnly || prepareOnly)),
-      'Exact mode requires complete browser execution',
-    );
     const work = evidenceRun.directory;
     const env = {
       ...process.env,
@@ -205,6 +206,13 @@ createRoot(document.getElementById('root')).render(h(App));`,
     await run('npm', ['ls', 'react', 'react-dom'], app);
     await run('node', ['node_modules/vite/bin/vite.js', 'build'], app);
     if (prepareOnly) {
+      if (exact) {
+        await artifact.verify();
+        await verifyInstalledInventory(
+          join(app, 'node_modules', pkg.name),
+          artifact.files,
+        );
+      }
       console.log(
         `Manual fixture directory: ${app}\nFrom that directory: node node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port 4323 --strictPort`,
       );
