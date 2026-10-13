@@ -158,7 +158,7 @@ describe('public website foundation', () => {
     );
     expect(manifest.version).toBe(
       process.env.RSC_VERIFICATION_POLICY === 'release-candidate'
-        ? '0.1.0'
+        ? process.env.RSC_EXPECTED_VERSION
         : '0.0.0',
     );
     expect(manifest.scripts['build:site']).toMatch(/^npm run build &&/);

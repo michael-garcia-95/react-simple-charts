@@ -25,7 +25,7 @@ describe('package safety contract', () => {
     expect(pkg.name).toBe('@michael-garcia-95/react-simple-charts');
     expect(pkg.version).toBe(
       process.env.RSC_VERIFICATION_POLICY === 'release-candidate'
-        ? '0.1.0'
+        ? process.env.RSC_EXPECTED_VERSION
         : '0.0.0',
     );
     expect(pkg.publishConfig).toEqual({ access: 'public' });
