@@ -1,5 +1,16 @@
 # Open decisions
 
+## M06-T07B — transition preparation (pre-merge snapshot)
+
+Current main remains private 0.0.0; the candidate remains unpublished 0.1.0.
+A future separately approved merge would move main to 0.1.0/private false.
+[Transition policy and cross-platform diagnosis](M06_MAIN_BRANCH_RELEASE_TRANSITION.md)
+record pre/post-merge CI selection, identical runtime/types, confirmed line-ending
+payload differences, and proposed canonical packaging/README corrections requiring
+Lead review. This update supersedes earlier branch-only CI-selection descriptions;
+historical milestone outcomes and the original owner manual PASS are retained.
+Publication remains **NO-GO**; no merge or exact publication operation is approved.
+
 ## M06-T07A — current readiness update
 
 Owner-performed Windows NVDA + Firefox assessment: **PASS / ALL PASSED** on

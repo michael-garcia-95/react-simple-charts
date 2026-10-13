@@ -1,12 +1,19 @@
 # Changelog
 
 Human-readable changes following [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
-Versioning conventions are [approved for planning](docs/RELEASE_POLICY.md). **No npm release is recorded here.** The separate candidate branch prepares `0.1.0` / `private: false`; main remains unchanged and the candidate is unpublished and undated.
+Versioning conventions are [approved for planning](docs/RELEASE_POLICY.md). **No npm release is recorded here.** The separate candidate branch prepares `0.1.0` / `private: false`; a future separately approved merge would install that state on main. The candidate is unpublished and undated.
 
 ## Unreleased
 
 ### Added
 
+- Read-only main-branch transition verification and pre/post-merge fork-PR policy
+  regressions (M06-T07B); no merge or publication approval. Cross-platform payload
+  differences and prospective packaging/README corrections are documented in
+  [the transition review](docs/M06_MAIN_BRANCH_RELEASE_TRANSITION.md).
+- Owner-performed Windows NVDA + Firefox accessibility PASS for the exact recorded
+  0.1.0 candidate (M06-T07A), separate from automated evidence; see
+  [manual results](docs/M06_MANUAL_ACCESSIBILITY_RESULTS.md).
 - Authorized local 0.1.0 candidate preparation, explicit candidate CI selection,
   lockfile consistency checks and read-only candidate readiness (M06-T06B3).
   No publication, distribution, deployment or merge approval is granted.
@@ -20,7 +27,8 @@ Versioning conventions are [approved for planning](docs/RELEASE_POLICY.md). **No
 
 This candidate summarizes already implemented capabilities at baseline
 `a3a03ef32767bf333fbb54bfd9596587fe702bf0`; it is not a published version or final release approval. Local candidate preparation
-is authorized only on the feature branch; no release date has been assigned.
+was authorized on the feature branch; future main verification is prepared in
+M06-T07B, with merging still requiring separate approval. No release date has been assigned.
 
 ### Added
 
@@ -59,6 +67,7 @@ Verified React/DOM versions are 18.2.0 and 19.3.0; tested TypeScript versions ar
 5.4.5 and 6.0.3. Browser evidence is focused on exact recorded builds, including
 CI Chromium 156.0.8078.4, Firefox 157.0 and Playwright WebKit 27.2. Physical devices,
 other browser configurations, strict CSP and broader framework support remain
-unverified. Manual NVDA and human accessibility review remain pending; automated
-checks do not establish announcements or WCAG certification. No stacking,
+unverified. Owner-performed manual NVDA testing passed for the artifact recorded in
+M06_MANUAL_ACCESSIBILITY_RESULTS; Lead review remains outstanding. Automated checks
+do not establish announcements or WCAG certification. No stacking,
 decimation, CommonJS or public pure-helper entry is included.

@@ -40,37 +40,152 @@ test('actual checkout manifest and lockfile match explicitly selected policy', a
   assert.equal(report.publication.eligible, false);
   if (selectedOptions.policy) assert.equal(manifest.private, false);
 });
-test('candidate CI selection requires exact repository, event and branch; never manifest values', () => {
-  const env = {
-    GITHUB_REPOSITORY: 'michael-garcia-95/react-simple-charts',
-    GITHUB_EVENT_NAME: 'pull_request',
-    RSC_HEAD_REPOSITORY: 'michael-garcia-95/react-simple-charts',
-    GITHUB_HEAD_REF: 'feat/m06-t06b3-release-candidate',
-  };
-  assert.deepEqual(ciVerificationPolicy(env), candidate);
-  for (const change of [
-    { GITHUB_REPOSITORY: 'other/repo' },
-    { RSC_HEAD_REPOSITORY: 'fork/repo' },
-    { GITHUB_HEAD_REF: 'main' },
-    { GITHUB_EVENT_NAME: 'pull_request_target' },
-    { GITHUB_EVENT_NAME: 'schedule' },
-  ])
-    assert.equal(
-      ciVerificationPolicy({ ...env, ...change }).name,
-      'development',
-    );
-  assert.equal(ciVerificationPolicy({}).name, 'development');
-  for (const event of ['push', 'workflow_dispatch']) {
-    const context = {
-      GITHUB_REPOSITORY: env.GITHUB_REPOSITORY,
-      GITHUB_EVENT_NAME: event,
-      GITHUB_REF: `refs/heads/${env.GITHUB_HEAD_REF}`,
+const actualManifest = JSON.parse(
+  await readFile(join(root, 'package.json'), 'utf8'),
+);
+const developmentManifest = {
+  ...actualManifest,
+  version: '0.0.0',
+  private: true,
+};
+const candidateManifest = {
+  ...actualManifest,
+  version: '0.1.0',
+  private: false,
+};
+const repository = 'michael-garcia-95/react-simple-charts';
+const branch = 'feat/m06-t06b3-release-candidate';
+const prContext = {
+  GITHUB_REPOSITORY: repository,
+  GITHUB_EVENT_NAME: 'pull_request',
+  GITHUB_REF: 'refs/pull/38/merge',
+  GITHUB_BASE_REF: 'main',
+  RSC_BASE_REPOSITORY: repository,
+  RSC_BASE_SHA: 'a'.repeat(40),
+  RSC_HEAD_REPOSITORY: repository,
+  GITHUB_HEAD_REF: branch,
+};
+for (const event of ['push', 'workflow_dispatch'])
+  for (const ref of [branch, 'main'])
+    test(`${event} on ${ref} explicitly selects fixed candidate identity`, () => {
+      assert.deepEqual(
+        ciVerificationPolicy({
+          GITHUB_REPOSITORY: repository,
+          GITHUB_EVENT_NAME: event,
+          GITHUB_REF: `refs/heads/${ref}`,
+        }),
+        candidate,
+      );
+    });
+test('candidate feature PR retains candidate policy before and after transition', () => {
+  for (const manifest of [developmentManifest, candidateManifest])
+    assert.deepEqual(ciVerificationPolicy(prContext, manifest), candidate);
+});
+for (const headRepository of [repository, 'contributor/fork'])
+  test(`ordinary main PR from ${headRepository} follows exact pre/post-merge base`, () => {
+    const env = {
+      ...prContext,
+      RSC_HEAD_REPOSITORY: headRepository,
+      GITHUB_HEAD_REF: 'fix/chart-docs',
     };
-    assert.equal(ciVerificationPolicy(context).name, 'release-candidate');
-    assert.equal(
-      ciVerificationPolicy({ ...context, GITHUB_REF: 'refs/heads/main' }).name,
-      'development',
+    assert.deepEqual(
+      ciVerificationPolicy(env, developmentManifest),
+      manifestPolicy(),
     );
+    assert.deepEqual(ciVerificationPolicy(env, candidateManifest), candidate);
+    // Only event/base identity selects policy; head manifest must pass separately.
+    assert.throws(() =>
+      validateManifest(
+        candidateManifest,
+        ciVerificationPolicy(env, developmentManifest),
+      ),
+    );
+    assert.throws(() =>
+      validateManifest(
+        developmentManifest,
+        ciVerificationPolicy(env, candidateManifest),
+      ),
+    );
+  });
+test('fork named like candidate branch cannot override a development main base', () => {
+  assert.equal(
+    ciVerificationPolicy(
+      { ...prContext, RSC_HEAD_REPOSITORY: 'contributor/fork' },
+      developmentManifest,
+    ).name,
+    'development',
+  );
+});
+for (const [label, change] of [
+  ['wrong repository', { GITHUB_REPOSITORY: 'other/repo' }],
+  ['wrong base repository', { RSC_BASE_REPOSITORY: 'other/repo' }],
+  ['wrong target branch', { GITHUB_BASE_REF: 'develop' }],
+  ['wrong PR ref', { GITHUB_REF: 'refs/heads/main' }],
+  ['missing base SHA', { RSC_BASE_SHA: undefined }],
+  ['malformed base SHA', { RSC_BASE_SHA: '--all' }],
+  ['missing head context', { RSC_HEAD_REPOSITORY: undefined }],
+  ['pull_request_target', { GITHUB_EVENT_NAME: 'pull_request_target' }],
+  ['schedule', { GITHUB_EVENT_NAME: 'schedule' }],
+  ['missing event', { GITHUB_EVENT_NAME: undefined }],
+])
+  test(`CI selection rejects ${label}`, () => {
+    assert.throws(() =>
+      ciVerificationPolicy({ ...prContext, ...change }, candidateManifest),
+    );
+  });
+for (const ref of ['refs/heads/unknown', 'refs/tags/v0.1.0', 'main', undefined])
+  test(`push rejects unknown/non-branch ref ${ref}`, () => {
+    assert.throws(() =>
+      ciVerificationPolicy({
+        GITHUB_REPOSITORY: repository,
+        GITHUB_EVENT_NAME: 'push',
+        GITHUB_REF: ref,
+      }),
+    );
+  });
+test('PR policy rejects missing, unexpected and unknown future base manifests', () => {
+  for (const manifest of [
+    undefined,
+    {},
+    { ...candidateManifest, name: 'other' },
+    { ...candidateManifest, version: '0.2.0' },
+    { ...candidateManifest, private: true },
+    { ...developmentManifest, private: false },
+    { ...candidateManifest, exports: {} },
+  ])
+    assert.throws(() => ciVerificationPolicy(prContext, manifest));
+});
+test('development fixtures and fixed expected versions remain independently strict', () => {
+  validateManifest(developmentManifest, manifestPolicy());
+  assert.throws(() => validateManifest(candidateManifest, manifestPolicy()));
+  assert.throws(() =>
+    validateManifest(
+      { ...developmentManifest, private: false },
+      manifestPolicy(),
+    ),
+  );
+  for (const version of ['0.0.0', '0.2.0', '1.0.0']) {
+    assert.throws(() =>
+      manifestPolicy({ ...candidateOptions, 'expected-version': version }),
+    );
+    assert.throws(() =>
+      validateManifest({ ...candidateManifest, version }, candidate),
+    );
+  }
+});
+test('selected policies never confer implicit publication authorization', () => {
+  for (const [manifest, policy] of [
+    [developmentManifest, manifestPolicy()],
+    [candidateManifest, candidate],
+  ]) {
+    const report = readinessDecision({
+      manifest,
+      policy,
+      metadataFiles: [],
+      availableChecks: [],
+    });
+    assert.equal(report.publication.eligible, false);
+    assert.equal(report.publication.status, 'blocked');
   }
 });
 test('candidate readiness rejects inconsistent lock identity and cannot grant publication', async () => {
@@ -144,6 +259,14 @@ test('candidate workflows retain read-only permissions and exclude raw archive u
       /id-token:|packages: write|npm (?:publish|stage|access|dist-tag|unpublish)/,
     );
     assert.match(code, /ci-verification-policy\.mjs/);
+    assert.match(code, /branches: \[main, feat\/m06-t06b3-release-candidate\]/);
+    assert.match(
+      code,
+      /RSC_BASE_SHA: \$\{\{ github\.event\.pull_request\.base\.sha \}\}/,
+    );
+    assert.match(code, /RSC_BASE_REPOSITORY:/);
+    assert.match(code, /workflow_dispatch:/);
+    assert.doesNotMatch(code, /pull_request_target:/);
     if (name !== 'ci') {
       assert.match(code, /!work\/\*\*\/\*\.tgz/);
       assert.match(code, /!work\/\*\*\/\*\.tar\.gz/);
@@ -159,4 +282,86 @@ test('readiness rejects approval switches', () => {
       }),
     /Command failed/,
   );
+});
+
+test('CLI reads immutable event base, not moving main or PR head manifest', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'rsc-ci-base-'));
+  const git = (...args) =>
+    execFileSync('git', args, { cwd: dir, encoding: 'utf8' }).trim();
+  const commit = () => {
+    git('add', 'package.json');
+    git(
+      '-c',
+      'user.name=Policy test',
+      '-c',
+      'user.email=policy-test@example.invalid',
+      'commit',
+      '-qm',
+      'synthetic fixture',
+    );
+    return git('rev-parse', 'HEAD');
+  };
+  try {
+    git('init', '-q', '-b', 'main');
+    await writeFile(
+      join(dir, 'package.json'),
+      JSON.stringify(developmentManifest),
+    );
+    const developmentSha = commit();
+    await writeFile(
+      join(dir, 'package.json'),
+      JSON.stringify(candidateManifest),
+    );
+    const candidateSha = commit();
+    git('remote', 'add', 'origin', dir);
+    // Current head deliberately invalid: it cannot influence selected base policy.
+    await writeFile(
+      join(dir, 'package.json'),
+      JSON.stringify({ version: '9.9.9' }),
+    );
+    for (const [sha, expected] of [
+      [developmentSha, 'development'],
+      [candidateSha, 'release-candidate'],
+    ]) {
+      const destination = join(dir, `env-${sha}`);
+      execFileSync(
+        process.execPath,
+        [join(root, 'scripts/ci-verification-policy.mjs')],
+        {
+          cwd: dir,
+          env: {
+            ...process.env,
+            ...prContext,
+            GITHUB_HEAD_REF: 'contribution',
+            RSC_HEAD_REPOSITORY: 'contributor/fork',
+            RSC_BASE_SHA: sha,
+            GITHUB_ENV: destination,
+          },
+          stdio: 'pipe',
+        },
+      );
+      assert.equal(
+        await readFile(destination, 'utf8'),
+        `RSC_VERIFICATION_POLICY=${expected}\nRSC_EXPECTED_NAME=${packageName}\nRSC_EXPECTED_VERSION=${expected === 'development' ? '0.0.0' : '0.1.0'}\n`,
+      );
+    }
+    assert.throws(() =>
+      execFileSync(
+        process.execPath,
+        [join(root, 'scripts/ci-verification-policy.mjs')],
+        {
+          cwd: dir,
+          env: {
+            ...process.env,
+            ...prContext,
+            RSC_BASE_SHA: 'f'.repeat(40),
+            GITHUB_ENV: join(dir, 'missing-base-env'),
+          },
+          stdio: 'pipe',
+        },
+      ),
+    );
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 });
