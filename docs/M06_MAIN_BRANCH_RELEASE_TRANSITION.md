@@ -1,4 +1,155 @@
-# M06-T07B — Main-branch release transition preparation
+# M06 — Main-branch release transition and canonical package baseline
+
+## M06-T07C — completed canonical package baseline
+
+**Publication: NO-GO. Merge: not authorized.** Lead-authorized normalization and
+README corrections are implemented; they do not approve publication or merging.
+Main remains at the pre-merge private 0.0.0 baseline. The local candidate remains
+0.1.0/private false and unpublished.
+
+### Scoped LF policy and regression protection
+
+The source-map source list was inspected before implementation: all 50 inputs are
+`.ts` or `.tsx` under `src/`. The committed .gitattributes rules are:
+
+```gitattributes
+/LICENSE text eol=lf
+/README.md text eol=lf
+/package.json text eol=lf
+/src/**/*.ts text eol=lf
+/src/**/*.tsx text eol=lf
+```
+
+These rules override autocrlf for the three packaged metadata files and TypeScript
+library inputs, including future files of the same kinds. They do not normalize
+scripts, tests, package-lock, site or unrelated documentation. No global Git
+configuration, blind renormalization, source blob, manifest/lock value, dependency,
+runtime/API or build configuration changed. The source-tree Git object is identical
+to T07B. .gitattributes itself is excluded from the npm six-file inventory.
+
+The shared archive infrastructure now checks the exact six-member inventory and
+rejects CR bytes in physical packaged text. It also parses source-map JSON and
+rejects carriage returns in each `sourcesContent` string, which catches escaped
+CRLF invisible to a physical-file scan. Missing/incomplete/nontext embedded content
+is rejected. The exact selector applies this check before using any archive;
+strict development package verification shares it. .gitattributes is now a
+source-identity input, so dirty policy changes cannot accompany an exact candidate.
+Existing digest, content/source matching, API, installed-byte and genuine gates
+remain mandatory; policy selection and publishing permissions are unchanged.
+
+Ten focused regressions were added to the existing exact-artifact suite, already
+run by the CI matrix: physical CRLF in all six members, escaped embedded CRLF,
+missing/extra inventory or incomplete content, and actual Git attributes for all
+map inputs with unrelated files left unspecified. There are no new dependencies,
+build system or publishing workflows.
+
+A global Git override would depend on each contributor's machine; broad repository
+normalization would change unrelated checkout behavior. Scoped attributes establish
+the invariant, while archive-byte checks detect editor/build leakage rather than
+trusting configuration alone. The tradeoff is intentional rejection of older CRLF
+archives by the new canonical verifier; historical results are not rewritten.
+
+### Clean checkout verification and exact candidate identities
+
+Package implementation commit: `4f789060ce24f65131d490615e311be20a717c68`.
+Two clean isolated Linux-hosted checkouts of this **same commit** were prepared:
+
+- LF checkout: clone-local `core.autocrlf=false`, `core.eol=lf`.
+- Controlled Windows-style checkout: clone-local `core.autocrlf=true`, no explicit
+  `core.eol`, with the committed attributes enforced.
+
+Both independently ran `npm ci` from the identical unchanged lockfile, using
+Node 24.19.0/npm 11.9.0 and the same Linux platform. Both ran the existing explicit
+candidate-preparation helper to build once, pack locally with lifecycle scripts
+disabled, and perform strict archive/source selection. `git status --porcelain`
+was empty. `git check-attr text eol` reported text/set and eol/lf for the metadata
+and all 50 embedded sources; `git ls-files --eol` reported `i/lf w/lf attr/text eol=lf`
+in both checkouts. Actual source bytes were checked for CR leakage, not inferred
+from attributes. All 50 parsed source-map contents were LF.
+
+This is controlled checkout simulation, **not native Windows execution**. Dependency
+resolution, Node/npm and build inputs were held constant; other toolchain/OS
+combinations are not universally certified. Global Git settings were untouched.
+
+Selected archives at the implementation commit:
+
+| Checkout      | Filename                                        |  Bytes | Archive SHA-256                                                    |
+| ------------- | ----------------------------------------------- | -----: | ------------------------------------------------------------------ |
+| LF            | michael-garcia-95-react-simple-charts-0.1.0.tgz | 82,954 | `274a9f24d333071943021394b56ca6108dc57f2837a2f7faa2cb0e00f361f158` |
+| Windows-style | michael-garcia-95-react-simple-charts-0.1.0.tgz | 82,954 | `274a9f24d333071943021394b56ca6108dc57f2837a2f7faa2cb0e00f361f158` |
+
+Each identity records exact source `4f789060ce24f65131d490615e311be20a717c68`.
+These compressed archives happened to match; acceptance requires identical member
+contents, not compressed reproducibility. Documentation-only follow-up commits
+have separate source/archive identities in the PR #38 handoff; they do not replace
+this verified implementation identity or the original human-tested identity.
+
+### Complete canonical six-file inventory and before/after comparison
+
+The final canonical member inventory is identical between the two checkouts:
+
+| Member            |  Bytes | LF and Windows-style content SHA-256                               | Versus prior Linux candidate |
+| ----------------- | -----: | ------------------------------------------------------------------ | ---------------------------- |
+| LICENSE           |   1071 | `c438c0cd89f4c4f69f79c40056c1f57ec2f9da213a38e99a474885ff15fe31bb` | Unchanged                    |
+| README.md         |  10507 | `2ca953c99828754bea8eb19ecf8234a016b416af3c8a6b7c6470d47f0828205f` | Changed (README corrections) |
+| dist/index.d.ts   |   6855 | `7e0ce3f48ad8f2d870f5fb65e3e06c2d44830412ad1f6c9d86899bdff72dbc24` | Unchanged                    |
+| dist/index.js     | 106382 | `1eab157b241fc17dfa356ebb1cfc5ef1cce6151016d39000d9a8f9aa35f71426` | Unchanged                    |
+| dist/index.js.map | 228134 | `5a7d53774cf48a24b56f35ccb1a436859f32b2452ceaad7ccb48271cef6fd608` | Unchanged                    |
+| package.json      |   3057 | `e50269294e7dbd7ab07a4f1322682d066389ad9e3dbe6985f3f2b561f59ceba1` | Unchanged                    |
+
+The before digests are recorded in the historical T07B table below. The new README
+is 10,507 bytes, versus 9,984 LF bytes before, and changes from
+`42b5bb1e9463cb8f4a78430a2c559e3b90c573a8bfcae7385084d23ab77b828a`
+to `2ca953c99828754bea8eb19ecf8234a016b416af3c8a6b7c6470d47f0828205f`.
+All other five LF member digests remain unchanged. This expected README change
+means the package is not byte-identical to the original human-tested package.
+
+README now records the owner's October 12, 2026 local NVDA + Firefox PASS and links
+the exact historical evidence; retains certification/compatibility limits; uses
+reviewed-commit checkout guidance valid on the candidate branch or post-merge main;
+and preserves unpublished/unauthorized publication status. API examples, features,
+compatibility text and prior links are retained; no release date is assigned.
+
+### Original accessibility evidence continuity
+
+The [human assessment](M06_MANUAL_ACCESSIBILITY_RESULTS.md) remains unchanged:
+source `83b51f0b025a0135b9e074778fc1f27764340971`, original Windows archive SHA-256
+`4c282c257fc1e75f852c0ddc1f96d36c381b786a3508cd0e1a973fe59c56c5dc`,
+owner-reported **ALL PASSED** for all five families and both layouts. It is not a
+new test at the normalization commit.
+
+Against the original Windows digests supplied by the owner, compiled JavaScript
+and declarations remain identical. LICENSE and package.json now use LF rather
+than CRLF. The map uses canonical LF embedded source strings while sources,
+names and mappings remain identical. README has both normalization and authorized
+wording changes. The prior independently reconstructed Windows map/file digests
+matched all supplied originals, supporting this comparison without transferring
+the raw Windows archive.
+
+No source implementation, runtime/type bytes, chart interactions or accessibility
+behavior changed. README text and source-map embedded formatting do not execute
+chart interactions; the original PASS therefore remains meaningful behavioral
+evidence for the unchanged implementation. It remains attributed to the owner and
+original artifact, not an independently witnessed test, formal audit, WCAG
+certification, universal compatibility claim or manual approval of every new
+archive byte. No NVDA session was repeated or fabricated. Lead review of the new
+package identity and evidence continuity remains required.
+
+### Remaining release requirements
+
+The packaging-normalization and README correction implementation items are
+complete, subject to Development Lead review. Remaining: Lead review of the final
+changes/evidence; exact final source/package review; main transition/CI-policy
+approval; owner npm readiness confirmation; explicit merge approval; exact manual
+npm publication authorization; and subsequent registry/consumer verification.
+Publication remains **NO-GO / eligible false**. No publication, staging, tags,
+GitHub release, deployment, publisher credentials or merge occurred.
+
+Full command results, documentation-head source/archive identities and final-head
+Actions links are recorded in the PR #38 handoff. Historical T07B proposals below
+are retained as the earlier review, superseded by this authorized completion.
+
+## Historical M06-T07B transition preparation
 
 **Publication: NO-GO.** This task prepares verification for a future separately
 approved merge of PR #38. It grants no merge, publication, staging, tag, GitHub

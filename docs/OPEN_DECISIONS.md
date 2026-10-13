@@ -1,5 +1,17 @@
 # Open decisions
 
+## M06-T07C — canonical package correction completed
+
+Scoped LF attributes and packaged README corrections are implemented. Both clean
+LF and controlled Windows-style checkouts produced identical six-file contents;
+only README differs from the previous Linux payload. Runtime/declarations remain
+identical to the owner-tested implementation. See the
+[canonical package baseline](M06_MAIN_BRANCH_RELEASE_TRANSITION.md#m06-t07c--completed-canonical-package-baseline)
+for exact inventories, archive identities, method and accessibility-continuity limits.
+Earlier proposed normalization/README items are now completed pending Lead review.
+Publication remains **NO-GO**; merge and the exact npm publication operation remain
+unauthorized. All other final review/account/authorization gates remain required.
+
 ## M06-T07B — transition preparation (pre-merge snapshot)
 
 Current main remains private 0.0.0; the candidate remains unpublished 0.1.0.
